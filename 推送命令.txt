@@ -1,0 +1,35 @@
+# Git 推送命令（在 Git Bash 或新的 PowerShell 窗口中执行）
+
+# 1. 进入项目目录
+cd E:/Huawei/ai_transform
+
+# 2. 初始化 Git 仓库（如果还没有）
+git init
+
+# 3. 配置用户信息（首次使用，只需执行一次）
+git config --global user.name "Your Name"
+git config --global user.email "your.email@example.com"
+
+# 4. 添加远程仓库
+git remote add origin https://github.com/LZY18829039855/AI_Transform.git
+
+# 如果远程仓库已存在，可以更新：
+# git remote set-url origin https://github.com/LZY18829039855/AI_Transform.git
+
+# 5. 添加所有文件
+git add .
+
+# 6. 提交更改
+git commit -m "Initial commit: AI Transform Backend Service"
+
+# 7. 设置主分支
+git branch -M main
+
+# 8. 推送到远端
+git push -u origin main
+
+# 注意：
+# - 首次推送需要输入 GitHub 用户名和 Personal Access Token
+# - 生成 Token: https://github.com/settings/tokens
+# - Token 需要 'repo' 权限
+

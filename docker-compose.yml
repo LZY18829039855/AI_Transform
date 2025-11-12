@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  # Spring Boot 应用
+  ai-transform:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ai-transform-app
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/ai_transform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+      - SPRING_DATASOURCE_USERNAME=root
+      - SPRING_DATASOURCE_PASSWORD=admin123
+    depends_on:
+      - mysql
+    restart: unless-stopped
+    networks:
+      - ai-transform-network
+
+  # MySQL 数据库
+  mysql:
+    image: mysql:5.7
+    container_name: ai-transform-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      - MYSQL_ROOT_PASSWORD=admin123
+      - MYSQL_DATABASE=ai_transform
+      - MYSQL_CHARACTER_SET_SERVER=utf8mb4
+      - MYSQL_COLLATION_SERVER=utf8mb4_unicode_ci
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./src/main/resources/db:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - ai-transform-network
+    command: --character-set-server=utf8mb4 --collation-server=utf8mb4_unicode_ci
+
+networks:
+  ai-transform-network:
+    driver: bridge
+
+volumes:
+  mysql_data:
+

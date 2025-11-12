@@ -1,0 +1,50 @@
+# Maven
+target/
+pom.xml.tag
+pom.xml.releaseBackup
+pom.xml.versionsBackup
+pom.xml.next
+release.properties
+dependency-reduced-pom.xml
+buildNumber.properties
+.mvn/timing.properties
+.mvn/wrapper/maven-wrapper.jar
+
+# IDE
+.idea/
+*.iml
+*.iws
+*.ipr
+.vscode/
+.classpath
+.project
+.settings/
+bin/
+
+# Logs
+*.log
+logs/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Spring Boot
+application-local.yml
+application-dev.yml
+application-prod.yml
+
+# Docker
+.dockerignore
+
+# 测试脚本
+test_*.bat
+test_*.ps1
+*.bat
+*.ps1
+
+# 临时文件
+insert_dept_temp.sql
+create_department_info_hrms.sql
+insert_department_info_hrms.sql
+
