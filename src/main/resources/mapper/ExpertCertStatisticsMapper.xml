@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.ExpertCertStatisticsMapper">
+
+    <!-- 查询三层组织的专家信息，联表查询证书信息 -->
+    <select id="getExpertStatisticsByLevel3" resultType="com.huawei.aitransform.entity.ExpertCertStatisticsVO">
+        SELECT 
+            e.ai_maturity AS aiMaturity,
+            e.job_category AS jobCategory,
+            e.employee_number AS employeeNumber,
+            CASE 
+                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasCert
+        FROM expert_info e
+        LEFT JOIN (
+            SELECT DISTINCT 
+                COALESCE(employee_number, w3_account) AS employee_number,
+                w3_account
+            FROM dwr_t_cert_record_t
+            WHERE (cer_title LIKE '华为研究类能力认证（专业级，%'
+                OR cer_title LIKE '%华为研究类能力认证（专业级，%')
+            AND (status = 1 OR approved_status = 1)
+        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+        WHERE e.org_level = #{deptName}
+        AND e.on_duty_status = 1
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        ORDER BY e.ai_maturity, e.job_category
+    </select>
+
+    <!-- 查询四层组织的专家信息，联表查询证书信息 -->
+    <select id="getExpertStatisticsByLevel4" resultType="com.huawei.aitransform.entity.ExpertCertStatisticsVO">
+        SELECT 
+            e.ai_maturity AS aiMaturity,
+            e.job_category AS jobCategory,
+            e.employee_number AS employeeNumber,
+            CASE 
+                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasCert
+        FROM expert_info e
+        LEFT JOIN (
+            SELECT DISTINCT 
+                COALESCE(employee_number, w3_account) AS employee_number,
+                w3_account
+            FROM dwr_t_cert_record_t
+            WHERE (cer_title LIKE '华为研究类能力认证（专业级，%'
+                OR cer_title LIKE '%华为研究类能力认证（专业级，%')
+            AND (status = 1 OR approved_status = 1)
+        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+        WHERE e.l4_org_code = #{deptCode}
+        AND e.on_duty_status = 1
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        ORDER BY e.ai_maturity, e.job_category
+    </select>
+
+    <!-- 查询已通过AI认证的专家工号列表 -->
+    <select id="getCertifiedEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT c.employee_number
+        FROM dwr_t_cert_record_t c
+        WHERE c.employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+        AND (c.status = 1 OR c.approved_status = 1)
+        AND (
+            -- AI认证：证书标题包含AI相关关键词
+            c.cer_title LIKE '%AI%'
+            OR c.cer_title LIKE '%人工智能%'
+            OR c.cer_title LIKE '%算法%'
+            -- 华为研究类能力认证（专业级，xxx）
+            OR c.cer_title LIKE '%华为研究类能力认证（专业级，%'
+        )
+    </select>
+
+</mapper>
+

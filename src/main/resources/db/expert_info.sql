@@ -37,3 +37,4 @@ CREATE TABLE `expert_info` (
   KEY `idx_ai_maturity` (`ai_maturity`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='专家信息表';
 
+

@@ -37,3 +37,4 @@ CREATE TABLE `t_employee` (
   KEY `index_full_account` (`full_account`) USING BTREE COMMENT '全工号索引'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
+

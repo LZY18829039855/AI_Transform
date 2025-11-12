@@ -8,3 +8,4 @@ CREATE TABLE IF NOT EXISTS `organization_maturity` (
     KEY `idx_maturity_level` (`maturity_level`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织成熟度等级表';
 
+

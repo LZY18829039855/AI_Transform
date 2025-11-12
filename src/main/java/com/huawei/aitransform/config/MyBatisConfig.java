@@ -12,3 +12,4 @@ public class MyBatisConfig {
     // MyBatis配置已通过application.yml完成
 }
 
+

@@ -7,7 +7,7 @@ spring:
   application:
     name: ai-transform
   datasource:
-    driver-class-name: com.mysql.jdbc.Driver
+    driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_transform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
     password: admin123
@@ -24,6 +24,8 @@ mybatis:
   configuration:
     map-underscore-to-camel-case: true
     log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+    cache-enabled: false  # 禁用二级缓存
+    local-cache-scope: statement  # 一级缓存作用域改为statement级别，每次查询都重新执行
 
 logging:
   level:

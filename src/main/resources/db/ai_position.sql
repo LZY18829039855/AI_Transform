@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS `ai_position` (
     KEY `idx_name` (`name`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI任职表';
 
+

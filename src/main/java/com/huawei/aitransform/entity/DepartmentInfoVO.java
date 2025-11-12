@@ -27,6 +27,11 @@ public class DepartmentInfoVO implements Serializable {
     private String deptLevel;
 
     /**
+     * 父部门编码
+     */
+    private String parentDeptCode;
+
+    /**
      * 子部门列表
      */
     private List<DepartmentInfoVO> children;
@@ -64,6 +69,14 @@ public class DepartmentInfoVO implements Serializable {
 
     public void setDeptLevel(String deptLevel) {
         this.deptLevel = deptLevel;
+    }
+
+    public String getParentDeptCode() {
+        return parentDeptCode;
+    }
+
+    public void setParentDeptCode(String parentDeptCode) {
+        this.parentDeptCode = parentDeptCode;
     }
 
     public List<DepartmentInfoVO> getChildren() {

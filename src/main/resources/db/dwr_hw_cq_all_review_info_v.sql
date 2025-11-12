@@ -54,3 +54,4 @@ CREATE TABLE `dwr_hw_cq_all_review_info_v` (
   KEY `idx_l2_department_code` (`l2_department_code`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='任职资格表';
 
+

@@ -96,3 +96,4 @@ CREATE TABLE `dwr_tlms_cadre_information_m` (
   KEY `idx_month` (`month`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='干部信息表';
 
+
