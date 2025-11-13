@@ -18,5 +18,12 @@ public interface DepartmentInfoMapper {
      * @return 子部门列表（只包含部门ID和中文名称）
      */
     List<DepartmentInfoVO> getChildDepartments(@Param("parentDeptCode") String parentDeptCode);
+
+    /**
+     * 根据部门编码查询部门信息
+     * @param deptCode 部门编码
+     * @return 部门信息
+     */
+    DepartmentInfoVO getDepartmentByCode(@Param("deptCode") String deptCode);
 }
 
