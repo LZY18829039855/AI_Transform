@@ -205,7 +205,7 @@ public class ExpertCertStatisticsService {
 
     /**
      * 查询全员任职认证信息
-     * @param deptCode 部门ID（部门编码），当为"0"时查询所有四级部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有四级部门
      * @param personType 人员类型（0-全员）
      * @return 认证统计信息（包含各部门统计和总计）
      */
@@ -213,10 +213,10 @@ public class ExpertCertStatisticsService {
         List<DepartmentInfoVO> targetDepts;
         Integer queryLevel;
 
-        // 特殊处理：当 deptCode 为 "0" 时，查询所有四级部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有四级部门
         if ("0".equals(deptCode)) {
-            // 查询所有四级部门
-            targetDepts = departmentInfoMapper.getAllLevel4Departments();
+            // 查询2级部门031562下的所有四级部门
+            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2("031562");
             if (targetDepts == null || targetDepts.isEmpty()) {
                 // 如果没有四级部门，返回空统计
                 EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();

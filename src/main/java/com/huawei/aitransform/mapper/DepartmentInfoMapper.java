@@ -31,5 +31,12 @@ public interface DepartmentInfoMapper {
      * @return 四级部门列表
      */
     List<DepartmentInfoVO> getAllLevel4Departments();
+
+    /**
+     * 查询指定2级部门下的所有四级部门
+     * @param level2DeptCode 2级部门编码
+     * @return 四级部门列表
+     */
+    List<DepartmentInfoVO> getLevel4DepartmentsUnderLevel2(@Param("level2DeptCode") String level2DeptCode);
 }
 

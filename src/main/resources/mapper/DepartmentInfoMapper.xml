@@ -37,5 +37,19 @@
         ORDER BY dept_code
     </select>
 
+    <!-- 查询指定2级部门下的所有四级部门 -->
+    <select id="getLevel4DepartmentsUnderLevel2" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT DISTINCT
+            d4.dept_code AS deptCode,
+            d4.dept_name AS deptName,
+            d4.dept_level AS deptLevel,
+            d4.parent_dept_code AS parentDeptCode
+        FROM department_info_hrms d4
+        INNER JOIN department_info_hrms d3 ON d4.parent_dept_code = d3.dept_code AND d3.dept_level = '3'
+        WHERE d4.dept_level = '4'
+        AND d3.parent_dept_code = #{level2DeptCode}
+        ORDER BY d4.dept_code
+    </select>
+
 </mapper>
 
