@@ -37,9 +37,17 @@ application-prod.yml
 # Docker
 .dockerignore
 
+# 脚本文件规则（注意：排除规则必须在通配符规则之前）
+# 保留编译和打包脚本（这些文件需要被git管理）
+!compile.bat
+!compile.ps1
+!build.bat
+
 # 测试脚本
 test_*.bat
 test_*.ps1
+
+# 其他所有.bat和.ps1文件（推送脚本等个人工具脚本）
 *.bat
 *.ps1
 
