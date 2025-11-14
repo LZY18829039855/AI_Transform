@@ -16,7 +16,7 @@ import java.util.List;
  * 部门信息控制器
  */
 @RestController
-@RequestMapping("/department-info")
+@RequestMapping("/webapi/department-info")
 public class DepartmentInfoController {
 
     @Autowired

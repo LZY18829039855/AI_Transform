@@ -20,7 +20,7 @@ import java.util.List;
  * 专家认证统计控制器
  */
 @RestController
-@RequestMapping("/expert-cert-statistics")
+@RequestMapping("/webapi/expert-cert-statistics")
 public class ExpertCertStatisticsController {
 
     @Autowired

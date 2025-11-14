@@ -53,7 +53,7 @@ public class PasswordEncryptor {
                     System.out.println("加密后: ENC(" + encrypted + ")");
                     System.out.println("\n请将以下内容复制到application.yml的password字段:");
                     System.out.println("  password: ENC(" + encrypted + ")");
-                    System.out.println("\n" + "=".repeat(50) + "\n");
+                    System.out.println("\n" + repeatString("=", 50) + "\n");
                 } catch (Exception e) {
                     System.err.println("加密失败: " + e.getMessage());
                     System.out.println();
@@ -62,6 +62,23 @@ public class PasswordEncryptor {
             
             scanner.close();
         }
+    }
+    
+    /**
+     * 重复字符串（Java 8 兼容方法）
+     * @param str 要重复的字符串
+     * @param count 重复次数
+     * @return 重复后的字符串
+     */
+    private static String repeatString(String str, int count) {
+        if (count <= 0) {
+            return "";
+        }
+        StringBuilder sb = new StringBuilder(str.length() * count);
+        for (int i = 0; i < count; i++) {
+            sb.append(str);
+        }
+        return sb.toString();
     }
 }
 
