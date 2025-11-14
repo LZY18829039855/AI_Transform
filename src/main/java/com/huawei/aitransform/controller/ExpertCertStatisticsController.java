@@ -1,11 +1,15 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
+import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -74,6 +78,83 @@ public class ExpertCertStatisticsController {
             }
             
             return ResponseEntity.ok(Result.success("查询成功", expertList));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 通用接口：根据工号列表查询已通过华为研究类能力认证的员工工号
+     * @param request 包含员工工号列表的请求对象
+     * @return 已通过认证的员工工号列表
+     */
+    @PostMapping("/check-certification")
+    public ResponseEntity<Result<List<String>>> checkEmployeeCertification(
+            @RequestBody EmployeeCertCheckRequestVO request) {
+        try {
+            if (request == null || request.getEmployeeNumbers() == null || request.getEmployeeNumbers().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "员工工号列表不能为空"));
+            }
+
+            List<String> certifiedNumbers = expertCertStatisticsService.getCertifiedEmployeeNumbers(
+                    request.getEmployeeNumbers());
+            return ResponseEntity.ok(Result.success("查询成功", certifiedNumbers));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 快速查询接口：查询单个员工是否通过认证（GET方式，方便测试）
+     * @param employeeNumber 员工工号
+     * @return 是否通过认证（true/false）
+     */
+    @GetMapping("/check-single")
+    public ResponseEntity<Result<Boolean>> checkSingleEmployee(
+            @RequestParam(value = "employeeNumber", required = true) String employeeNumber) {
+        try {
+            if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "员工工号不能为空"));
+            }
+
+            List<String> employeeNumbers = new java.util.ArrayList<>();
+            employeeNumbers.add(employeeNumber);
+            List<String> certifiedNumbers = expertCertStatisticsService.getCertifiedEmployeeNumbers(employeeNumbers);
+            boolean isCertified = certifiedNumbers != null && certifiedNumbers.contains(employeeNumber);
+            return ResponseEntity.ok(Result.success("查询成功", isCertified));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 查询全员任职认证信息
+     * @param deptCode 部门ID（部门编码）
+     * @param personType 人员类型（0-全员）
+     * @return 认证统计信息（包含各部门统计和总计）
+     */
+    @GetMapping("/employee-cert-statistics")
+    public ResponseEntity<Result<EmployeeCertStatisticsResponseVO>> getEmployeeCertStatistics(
+            @RequestParam(value = "deptCode", required = true) String deptCode,
+            @RequestParam(value = "personType", required = true) Integer personType) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            if (personType == null) {
+                return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
+            }
+
+            // 目前只支持全员（personType=0）
+            if (personType != 0) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）"));
+            }
+
+            EmployeeCertStatisticsResponseVO result = expertCertStatisticsService.getEmployeeCertStatistics(deptCode, personType);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }

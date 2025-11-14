@@ -57,7 +57,7 @@
         ORDER BY e.ai_maturity, e.job_category
     </select>
 
-    <!-- 查询已通过AI认证的专家工号列表 -->
+    <!-- 查询已通过华为研究类能力认证的专家工号列表 -->
     <select id="getCertifiedEmployeeNumbers" resultType="java.lang.String">
         SELECT DISTINCT c.employee_number
         FROM dwr_t_cert_record_t c
@@ -65,13 +65,27 @@
         <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
             #{empNo}
         </foreach>
+        AND c.employee_number IS NOT NULL 
+        AND c.employee_number != ''
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
-            -- AI认证：证书标题包含AI相关关键词
-            c.cer_title LIKE '%AI%'
-            OR c.cer_title LIKE '%人工智能%'
-            OR c.cer_title LIKE '%算法%'
             -- 华为研究类能力认证（专业级，xxx）
+            c.cer_title LIKE '华为研究类能力认证（专业级，%'
+            OR c.cer_title LIKE '%华为研究类能力认证（专业级，%'
+        )
+        UNION
+        SELECT DISTINCT c.w3_account
+        FROM dwr_t_cert_record_t c
+        WHERE c.w3_account IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+        AND c.w3_account IS NOT NULL 
+        AND c.w3_account != ''
+        AND (c.status = 1 OR c.approved_status = 1)
+        AND (
+            -- 华为研究类能力认证（专业级，xxx）
+            c.cer_title LIKE '华为研究类能力认证（专业级，%'
             OR c.cer_title LIKE '%华为研究类能力认证（专业级，%'
         )
     </select>

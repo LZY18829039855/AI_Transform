@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.EmployeeMapper">
+
+    <!-- 根据部门层级和部门ID列表查询员工工号列表 -->
+    <select id="getEmployeeNumbersByDeptLevel" resultType="java.lang.String">
+        SELECT DISTINCT account
+        FROM t_employee
+        WHERE expired_date IS NULL
+        <choose>
+            <when test="deptLevel == 1">
+                AND department1_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 2">
+                AND department2_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 3">
+                AND department3_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 4">
+                AND department4_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 5">
+                AND department5_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 6">
+                AND department6_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 7">
+                AND department7_id IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+        </choose>
+        AND account IS NOT NULL
+        AND account != ''
+    </select>
+
+</mapper>
+
