@@ -205,51 +205,75 @@ public class ExpertCertStatisticsService {
 
     /**
      * 查询全员任职认证信息
-     * @param deptCode 部门ID（部门编码）
+     * @param deptCode 部门ID（部门编码），当为"0"时查询所有四级部门
      * @param personType 人员类型（0-全员）
      * @return 认证统计信息（包含各部门统计和总计）
      */
     public EmployeeCertStatisticsResponseVO getEmployeeCertStatistics(String deptCode, Integer personType) {
-        // 1. 查询部门信息
-        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
-        if (deptInfo == null) {
-            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        List<DepartmentInfoVO> targetDepts;
+        Integer queryLevel;
+
+        // 特殊处理：当 deptCode 为 "0" 时，查询所有四级部门
+        if ("0".equals(deptCode)) {
+            // 查询所有四级部门
+            targetDepts = departmentInfoMapper.getAllLevel4Departments();
+            if (targetDepts == null || targetDepts.isEmpty()) {
+                // 如果没有四级部门，返回空统计
+                EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
+                response.setDepartmentStatistics(new ArrayList<>());
+                DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
+                total.setDeptCode("总计");
+                total.setDeptName("总计");
+                total.setTotalCount(0);
+                total.setCertifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
+            }
+            // 查询四级部门的员工，使用 deptLevel=3（因为 EmployeeMapper 中 deptLevel=3 时查询 department4_id）
+            queryLevel = 3;
+        } else {
+            // 1. 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
+            }
+
+            // 2. 查询下一层子部门列表
+            targetDepts = departmentInfoMapper.getChildDepartments(deptCode);
+            if (targetDepts == null || targetDepts.isEmpty()) {
+                // 如果没有子部门，返回空统计
+                EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
+                response.setDepartmentStatistics(new ArrayList<>());
+                DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
+                total.setDeptCode("总计");
+                total.setDeptName("总计");
+                total.setTotalCount(0);
+                total.setCertifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
+            }
+
+            // 3. 根据当前部门层级，确定查询的部门层级（下一层）
+            Integer currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
+            queryLevel = currentLevel;
         }
 
-        // 2. 查询下一层子部门列表
-        List<DepartmentInfoVO> childDepts = departmentInfoMapper.getChildDepartments(deptCode);
-        if (childDepts == null || childDepts.isEmpty()) {
-            // 如果没有子部门，返回空统计
-            EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
-            response.setDepartmentStatistics(new ArrayList<>());
-            DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
-            total.setDeptCode("总计");
-            total.setDeptName("总计");
-            total.setTotalCount(0);
-            total.setCertifiedCount(0);
-            total.setCertRate(BigDecimal.ZERO);
-            response.setTotalStatistics(total);
-            return response;
-        }
-
-        // 3. 根据当前部门层级，确定查询的部门层级（下一层）
-        Integer currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
-        Integer nextLevel = currentLevel + 1;
-
-        // 4. 遍历每个子部门，分别统计
+        // 4. 遍历每个部门，分别统计
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
         int totalCountSum = 0;
         int certifiedCountSum = 0;
 
-        for (DepartmentInfoVO childDept : childDepts) {
-            if (childDept.getDeptCode() == null || childDept.getDeptCode().trim().isEmpty()) {
+        for (DepartmentInfoVO dept : targetDepts) {
+            if (dept.getDeptCode() == null || dept.getDeptCode().trim().isEmpty()) {
                 continue;
             }
 
             // 4.1 查询该部门下的员工工号列表
             List<String> deptIdList = new ArrayList<>();
-            deptIdList.add(childDept.getDeptCode());
-            List<String> employeeNumbers = employeeMapper.getEmployeeNumbersByDeptLevel(nextLevel, deptIdList);
+            deptIdList.add(dept.getDeptCode());
+            List<String> employeeNumbers = employeeMapper.getEmployeeNumbersByDeptLevel(queryLevel, deptIdList);
 
             int deptTotalCount = (employeeNumbers != null) ? employeeNumbers.size() : 0;
 
@@ -271,8 +295,8 @@ public class ExpertCertStatisticsService {
 
             // 4.4 构建部门统计对象
             DepartmentCertStatisticsVO deptStat = new DepartmentCertStatisticsVO();
-            deptStat.setDeptCode(childDept.getDeptCode());
-            deptStat.setDeptName(childDept.getDeptName());
+            deptStat.setDeptCode(dept.getDeptCode());
+            deptStat.setDeptName(dept.getDeptName());
             deptStat.setTotalCount(deptTotalCount);
             deptStat.setCertifiedCount(deptCertifiedCount);
             deptStat.setCertRate(deptCertRate);

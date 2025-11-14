@@ -25,5 +25,11 @@ public interface DepartmentInfoMapper {
      * @return 部门信息
      */
     DepartmentInfoVO getDepartmentByCode(@Param("deptCode") String deptCode);
+
+    /**
+     * 查询所有四级部门
+     * @return 四级部门列表
+     */
+    List<DepartmentInfoVO> getAllLevel4Departments();
 }
 
