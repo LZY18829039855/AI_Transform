@@ -10,7 +10,14 @@ spring:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_transform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
     username: root
-    password: admin123
+    # 密码支持加密格式：使用 ENC(加密后的密码) 格式
+    # 生成加密密码的方法：
+    # 1. 编译项目: mvn compile
+    # 2. 运行工具: java -cp target/classes com.huawei.aitransform.util.PasswordEncryptor
+    # 3. 输入原始密码，将输出的 ENC(...) 格式复制到此处
+    # 详细说明请参考: 数据库加密使用说明.md
+    # 注意：如果使用明文密码，直接填写即可，系统会自动识别
+    password: admin123  # 请使用 PasswordEncryptor 工具生成加密密码后替换为 ENC(加密字符串) 格式
     hikari:
       minimum-idle: 5
       maximum-pool-size: 20

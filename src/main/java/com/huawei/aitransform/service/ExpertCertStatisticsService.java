@@ -230,8 +230,8 @@ public class ExpertCertStatisticsService {
                 response.setTotalStatistics(total);
                 return response;
             }
-            // 查询四级部门的员工，使用 deptLevel=3（因为 EmployeeMapper 中 deptLevel=3 时查询 department4_id）
-            queryLevel = 3;
+            // 查询四级部门的员工，使用 deptLevel=4（因为 EmployeeMapper 中 deptLevel=4 时查询 department5_id）
+            queryLevel = 4;
         } else {
             // 1. 查询部门信息
             DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);

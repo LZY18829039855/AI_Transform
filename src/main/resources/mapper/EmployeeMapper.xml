@@ -4,52 +4,51 @@
 <mapper namespace="com.huawei.aitransform.mapper.EmployeeMapper">
 
     <!-- 根据部门层级和部门ID列表查询员工工号列表 -->
+    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询department2_id -->
     <select id="getEmployeeNumbersByDeptLevel" resultType="java.lang.String">
         SELECT DISTINCT account
         FROM t_employee
         WHERE expired_date IS NULL
         <choose>
             <when test="deptLevel == 1">
-                AND department1_id IN
-                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
-                    #{deptId}
-                </foreach>
-            </when>
-            <when test="deptLevel == 2">
                 AND department2_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
-            <when test="deptLevel == 3">
+            <when test="deptLevel == 2">
                 AND department3_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
-            <when test="deptLevel == 4">
+            <when test="deptLevel == 3">
                 AND department4_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
-            <when test="deptLevel == 5">
+            <when test="deptLevel == 4">
                 AND department5_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
-            <when test="deptLevel == 6">
+            <when test="deptLevel == 5">
                 AND department6_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
-            <when test="deptLevel == 7">
+            <when test="deptLevel == 6">
                 AND department7_id IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
+            </when>
+            <when test="deptLevel == 7">
+                <!-- 如果deptLevel为7，已经是最高层级，无法再查询下一层 -->
+                AND 1 = 0
             </when>
         </choose>
         AND account IS NOT NULL
