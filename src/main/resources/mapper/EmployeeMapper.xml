@@ -53,6 +53,7 @@
         </choose>
         AND account IS NOT NULL
         AND account != ''
+        AND account REGEXP '^[a-z]0[0-9]{7}$'
     </select>
 
 </mapper>
