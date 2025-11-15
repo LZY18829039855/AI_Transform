@@ -514,7 +514,7 @@ public class ExpertCertStatisticsService {
 
     /**
      * 按组织成熟度统计通过认证的人数
-     * @param deptCode 部门ID（部门编码），当为"0"时查询所有六级部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有六级部门
      * @param personType 人员类型（0-全员）
      * @return 按成熟度统计的认证信息
      */
@@ -522,15 +522,15 @@ public class ExpertCertStatisticsService {
         List<DepartmentInfoVO> level6Depts;
         String deptName;
 
-        // 特殊处理：当 deptCode 为 "0" 时，查询所有六级部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有六级部门
         if ("0".equals(deptCode)) {
-            // 查询所有六级部门
-            level6Depts = departmentInfoMapper.getAllLevel6Departments();
+            // 查询2级部门031562下的所有六级部门（复用已有逻辑）
+            level6Depts = departmentInfoMapper.getAllLevel6DepartmentsUnderDept("031562");
             if (level6Depts == null || level6Depts.isEmpty()) {
                 // 如果没有六级部门，返回空统计
                 MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();
                 response.setDeptCode(deptCode);
-                response.setDeptName("所有六级部门");
+                response.setDeptName("云核心网下属所有六级部门");
                 response.setMaturityStatistics(new ArrayList<>());
                 MaturityCertStatisticsVO total = new MaturityCertStatisticsVO();
                 total.setMaturityLevel("总计");
@@ -540,7 +540,7 @@ public class ExpertCertStatisticsService {
                 response.setTotalStatistics(total);
                 return response;
             }
-            deptName = "所有六级部门";
+            deptName = "云核心网下属所有六级部门";
         } else {
             // 1. 查询部门信息
             DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
