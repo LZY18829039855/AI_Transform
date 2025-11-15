@@ -1,5 +1,6 @@
 package com.huawei.aitransform.service;
 
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
@@ -215,7 +216,7 @@ public class ExpertCertStatisticsService {
 
     /**
      * 查询全员任职认证信息
-     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有四级部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
      * @param personType 人员类型（0-全员）
      * @return 认证统计信息（包含各部门统计和总计）
      */
@@ -223,10 +224,10 @@ public class ExpertCertStatisticsService {
         List<DepartmentInfoVO> targetDepts;
         Integer queryLevel;
 
-        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有四级部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
-            // 查询2级部门031562下的所有四级部门
-            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2("031562");
+            // 查询云核心网产品线部门下的所有四级部门
+            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
             if (targetDepts == null || targetDepts.isEmpty()) {
                 // 如果没有四级部门，返回空统计
                 EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
@@ -345,7 +346,7 @@ public class ExpertCertStatisticsService {
 
     /**
      * 按职位类统计部门下不同职位类人数中的认证人数
-     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有四级部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
      * @param personType 人员类型（0-全员）
      * @return 按职位类统计的认证信息
      */
@@ -354,10 +355,10 @@ public class ExpertCertStatisticsService {
         Integer queryLevel;
         String deptName;
 
-        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有四级部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
-            // 查询2级部门031562下的所有四级部门（复用已有逻辑）
-            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2("031562");
+            // 查询云核心网产品线部门下的所有四级部门（复用已有逻辑）
+            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
             if (targetDepts == null || targetDepts.isEmpty()) {
                 // 如果没有四级部门，返回空统计
                 CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
@@ -514,7 +515,7 @@ public class ExpertCertStatisticsService {
 
     /**
      * 按组织成熟度统计通过认证的人数
-     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有六级部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有六级部门
      * @param personType 人员类型（0-全员）
      * @return 按成熟度统计的认证信息
      */
@@ -522,10 +523,10 @@ public class ExpertCertStatisticsService {
         List<DepartmentInfoVO> level6Depts;
         String deptName;
 
-        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有六级部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有六级部门
         if ("0".equals(deptCode)) {
-            // 查询2级部门031562下的所有六级部门（复用已有逻辑）
-            level6Depts = departmentInfoMapper.getAllLevel6DepartmentsUnderDept("031562");
+            // 查询云核心网产品线部门下的所有六级部门（复用已有逻辑）
+            level6Depts = departmentInfoMapper.getAllLevel6DepartmentsUnderDept(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
             if (level6Depts == null || level6Depts.isEmpty()) {
                 // 如果没有六级部门，返回空统计
                 MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();

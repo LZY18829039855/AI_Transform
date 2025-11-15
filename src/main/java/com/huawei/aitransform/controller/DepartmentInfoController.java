@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.service.DepartmentInfoService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,16 +25,16 @@ public class DepartmentInfoController {
 
     /**
      * 根据部门ID查询下一级部门信息
-     * @param deptId 部门ID（部门编码），为空或"0"时默认为"031562"
+     * @param deptId 部门ID（部门编码），为空或"0"时默认为云核心网产品线部门ID
      * @return 下一级部门列表（包含部门ID和中文名称）
      */
     @GetMapping("/children")
     public ResponseEntity<Result<List<DepartmentInfoVO>>> getChildDepartments(
             @RequestParam(value = "deptId", required = false) String deptId) {
         try {
-            // 如果入参为空或"0"，则使用默认值"031562"
+            // 如果入参为空或"0"，则使用默认值云核心网产品线部门ID
             if (deptId == null || deptId.trim().isEmpty() || "0".equals(deptId.trim())) {
-                deptId = "031562";
+                deptId = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
             List<DepartmentInfoVO> result = departmentInfoService.getChildDepartments(deptId);
             return ResponseEntity.ok(Result.success("查询成功", result));
