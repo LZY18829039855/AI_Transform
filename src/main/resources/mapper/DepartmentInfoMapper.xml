@@ -51,5 +51,43 @@
         ORDER BY d4.dept_code
     </select>
 
+    <!-- 递归查询指定部门下的所有六级部门 -->
+    <select id="getAllLevel6DepartmentsUnderDept" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        WITH RECURSIVE dept_tree AS (
+            -- 基础查询：找到起始部门
+            SELECT dept_code, dept_name, dept_level, parent_dept_code
+            FROM department_info_hrms
+            WHERE dept_code = #{deptCode}
+            
+            UNION ALL
+            
+            -- 递归查询：找到所有子部门
+            SELECT d.dept_code, d.dept_name, d.dept_level, d.parent_dept_code
+            FROM department_info_hrms d
+            INNER JOIN dept_tree dt ON d.parent_dept_code = dt.dept_code
+        )
+        SELECT DISTINCT
+            d6.dept_code AS deptCode,
+            d6.dept_name AS deptName,
+            d6.dept_level AS deptLevel,
+            d6.parent_dept_code AS parentDeptCode
+        FROM department_info_hrms d6
+        INNER JOIN dept_tree dt ON d6.dept_code = dt.dept_code
+        WHERE d6.dept_level = '6'
+        ORDER BY d6.dept_code
+    </select>
+
+    <!-- 查询所有六级部门 -->
+    <select id="getAllLevel6Departments" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT 
+            dept_code AS deptCode,
+            dept_name AS deptName,
+            dept_level AS deptLevel,
+            parent_dept_code AS parentDeptCode
+        FROM department_info_hrms
+        WHERE dept_level = '6'
+        ORDER BY dept_code
+    </select>
+
 </mapper>
 

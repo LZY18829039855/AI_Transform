@@ -4,11 +4,15 @@ import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
+import com.huawei.aitransform.entity.DepartmentMaturityVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
+import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.MaturityCertStatisticsVO;
 import com.huawei.aitransform.mapper.DepartmentInfoMapper;
+import com.huawei.aitransform.mapper.DepartmentMaturityMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.mapper.ExpertCertStatisticsMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +41,9 @@ public class ExpertCertStatisticsService {
     @Autowired
     private EmployeeMapper employeeMapper;
 
+    @Autowired
+    private DepartmentMaturityMapper departmentMaturityMapper;
+
     /**
      * 查询专家任职认证数据
      * @param deptCode 部门ID（部门编码）
@@ -44,7 +51,7 @@ public class ExpertCertStatisticsService {
      */
     public ExpertCertStatisticsResponseVO getExpertCertStatistics(String deptCode) {
         // 1. 查询部门信息
-        com.huawei.aitransform.entity.DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
         if (deptInfo == null) {
             throw new IllegalArgumentException("部门不存在：" + deptCode);
         }
@@ -176,7 +183,7 @@ public class ExpertCertStatisticsService {
     /**
      * 获取部门信息（供调试接口使用）
      */
-    public com.huawei.aitransform.entity.DepartmentInfoVO getDepartmentInfo(String deptCode) {
+    public DepartmentInfoVO getDepartmentInfo(String deptCode) {
         return departmentInfoMapper.getDepartmentByCode(deptCode);
     }
 
@@ -500,6 +507,192 @@ public class ExpertCertStatisticsService {
         response.setDeptCode(deptCode);
         response.setDeptName(deptName);
         response.setCategoryStatistics(categoryStats);
+        response.setTotalStatistics(totalStatistics);
+
+        return response;
+    }
+
+    /**
+     * 按组织成熟度统计通过认证的人数
+     * @param deptCode 部门ID（部门编码），当为"0"时查询所有六级部门
+     * @param personType 人员类型（0-全员）
+     * @return 按成熟度统计的认证信息
+     */
+    public MaturityCertStatisticsResponseVO getMaturityCertStatistics(String deptCode, Integer personType) {
+        List<DepartmentInfoVO> level6Depts;
+        String deptName;
+
+        // 特殊处理：当 deptCode 为 "0" 时，查询所有六级部门
+        if ("0".equals(deptCode)) {
+            // 查询所有六级部门
+            level6Depts = departmentInfoMapper.getAllLevel6Departments();
+            if (level6Depts == null || level6Depts.isEmpty()) {
+                // 如果没有六级部门，返回空统计
+                MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();
+                response.setDeptCode(deptCode);
+                response.setDeptName("所有六级部门");
+                response.setMaturityStatistics(new ArrayList<>());
+                MaturityCertStatisticsVO total = new MaturityCertStatisticsVO();
+                total.setMaturityLevel("总计");
+                total.setBaselineCount(0);
+                total.setCertifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
+            }
+            deptName = "所有六级部门";
+        } else {
+            // 1. 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
+            }
+
+            // 2. 查询该部门下所有六级部门
+            level6Depts = departmentInfoMapper.getAllLevel6DepartmentsUnderDept(deptCode);
+            if (level6Depts == null || level6Depts.isEmpty()) {
+                // 如果没有六级部门，返回空统计
+                MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();
+                response.setDeptCode(deptCode);
+                response.setDeptName(deptInfo.getDeptName());
+                response.setMaturityStatistics(new ArrayList<>());
+                MaturityCertStatisticsVO total = new MaturityCertStatisticsVO();
+                total.setMaturityLevel("总计");
+                total.setBaselineCount(0);
+                total.setCertifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
+            }
+            deptName = deptInfo.getDeptName();
+        }
+
+        // 3. 提取所有六级部门编码
+        List<String> level6DeptCodes = level6Depts.stream()
+                .map(DepartmentInfoVO::getDeptCode)
+                .filter(code -> code != null && !code.trim().isEmpty())
+                .collect(Collectors.toList());
+
+        // 4. 查询这些六级部门的AI成熟度信息
+        List<DepartmentMaturityVO> maturityList = departmentMaturityMapper.getDepartmentMaturities(level6DeptCodes);
+        // 构建部门编码到成熟度的映射
+        Map<String, String> deptMaturityMap = new HashMap<>();
+        for (DepartmentMaturityVO maturity : maturityList) {
+            if (maturity.getDeptCode() != null && maturity.getAiMaturity() != null) {
+                deptMaturityMap.put(maturity.getDeptCode(), maturity.getAiMaturity());
+            }
+        }
+
+        // 5. 按部门分组，然后按成熟度分组统计
+        // 5.1 先按部门分组员工（使用deptLevel=6，查询department7_id）
+        Map<String, List<String>> deptEmployeeMap = new HashMap<>();
+        List<String> allEmployeeNumbers = new ArrayList<>();
+        for (String deptCode6 : level6DeptCodes) {
+            List<String> deptIdList = new ArrayList<>();
+            deptIdList.add(deptCode6);
+            List<String> deptEmployees = employeeMapper.getEmployeeNumbersByDeptLevel(6, deptIdList);
+            if (deptEmployees != null && !deptEmployees.isEmpty()) {
+                deptEmployeeMap.put(deptCode6, deptEmployees);
+                allEmployeeNumbers.addAll(deptEmployees);
+            }
+        }
+
+        if (allEmployeeNumbers.isEmpty()) {
+            // 如果没有员工，返回空统计
+            MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();
+            response.setDeptCode(deptCode);
+            response.setDeptName(deptName);
+            response.setMaturityStatistics(new ArrayList<>());
+            MaturityCertStatisticsVO total = new MaturityCertStatisticsVO();
+            total.setMaturityLevel("总计");
+            total.setBaselineCount(0);
+            total.setCertifiedCount(0);
+            total.setCertRate(BigDecimal.ZERO);
+            response.setTotalStatistics(total);
+            return response;
+        }
+
+        // 6. 查询已通过认证的员工工号列表（复用现有方法）
+        List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
+
+        // 7. 按成熟度分组统计
+        Map<String, MaturityCertStatisticsVO> maturityMap = new HashMap<>();
+        int totalBaselineCount = 0;
+        int totalCertifiedCount = 0;
+
+        for (Map.Entry<String, List<String>> entry : deptEmployeeMap.entrySet()) {
+            String deptCode6 = entry.getKey();
+            List<String> employees = entry.getValue();
+            
+            // 获取该部门的成熟度
+            String maturity = deptMaturityMap.getOrDefault(deptCode6, "未知");
+            if (maturity == null || maturity.trim().isEmpty()) {
+                maturity = "未知";
+            }
+
+            // 获取或创建成熟度统计对象
+            MaturityCertStatisticsVO maturityStat = maturityMap.getOrDefault(maturity, new MaturityCertStatisticsVO());
+            maturityStat.setMaturityLevel(maturity);
+
+            // 累加基线人数
+            if (maturityStat.getBaselineCount() == null) {
+                maturityStat.setBaselineCount(0);
+            }
+            maturityStat.setBaselineCount(maturityStat.getBaselineCount() + employees.size());
+            totalBaselineCount += employees.size();
+
+            // 统计认证人数
+            int certifiedCount = 0;
+            for (String employeeNumber : employees) {
+                if (employeeNumber != null && certifiedNumbers.contains(employeeNumber)) {
+                    certifiedCount++;
+                }
+            }
+            if (maturityStat.getCertifiedCount() == null) {
+                maturityStat.setCertifiedCount(0);
+            }
+            maturityStat.setCertifiedCount(maturityStat.getCertifiedCount() + certifiedCount);
+            totalCertifiedCount += certifiedCount;
+
+            maturityMap.put(maturity, maturityStat);
+        }
+
+        // 8. 计算每个成熟度的认证率
+        List<MaturityCertStatisticsVO> maturityStats = new ArrayList<>();
+        for (MaturityCertStatisticsVO maturityStat : maturityMap.values()) {
+            if (maturityStat.getBaselineCount() != null && maturityStat.getBaselineCount() > 0) {
+                if (maturityStat.getCertifiedCount() == null) {
+                    maturityStat.setCertifiedCount(0);
+                }
+                BigDecimal rate = new BigDecimal(maturityStat.getCertifiedCount())
+                        .divide(new BigDecimal(maturityStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setCertRate(rate);
+            } else {
+                maturityStat.setCertRate(BigDecimal.ZERO);
+            }
+            maturityStats.add(maturityStat);
+        }
+
+        // 9. 构建总计统计对象
+        MaturityCertStatisticsVO totalStatistics = new MaturityCertStatisticsVO();
+        totalStatistics.setMaturityLevel("总计");
+        totalStatistics.setBaselineCount(totalBaselineCount);
+        totalStatistics.setCertifiedCount(totalCertifiedCount);
+        if (totalBaselineCount > 0) {
+            BigDecimal totalRate = new BigDecimal(totalCertifiedCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setCertRate(totalRate);
+        } else {
+            totalStatistics.setCertRate(BigDecimal.ZERO);
+        }
+
+        // 10. 构建返回结果
+        MaturityCertStatisticsResponseVO response = new MaturityCertStatisticsResponseVO();
+        response.setDeptCode(deptCode);
+        response.setDeptName(deptName);
+        response.setMaturityStatistics(maturityStats);
         response.setTotalStatistics(totalStatistics);
 
         return response;

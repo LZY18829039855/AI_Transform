@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.DepartmentMaturityMapper">
+
+    <!-- 批量查询部门AI成熟度信息 -->
+    <select id="getDepartmentMaturities" resultType="com.huawei.aitransform.entity.DepartmentMaturityVO">
+        SELECT 
+            dept_code AS deptCode,
+            ai_maturity AS aiMaturity
+        FROM department_ai_maturity
+        WHERE dept_code IN
+        <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+            #{deptCode}
+        </foreach>
+    </select>
+
+</mapper>
+

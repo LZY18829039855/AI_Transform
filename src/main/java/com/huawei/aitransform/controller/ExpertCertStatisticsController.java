@@ -2,9 +2,12 @@ package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
+import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -63,13 +66,13 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
             
-            com.huawei.aitransform.entity.DepartmentInfoVO deptInfo = 
+            DepartmentInfoVO deptInfo = 
                 expertCertStatisticsService.getDepartmentInfo(deptCode);
             if (deptInfo == null) {
                 return ResponseEntity.ok(Result.error(404, "部门不存在：" + deptCode));
             }
             
-            List<com.huawei.aitransform.entity.ExpertCertStatisticsVO> expertList;
+            List<ExpertCertStatisticsVO> expertList;
             if ("3".equals(deptInfo.getDeptLevel())) {
                 expertList = expertCertStatisticsService.getExpertListByLevel3(deptCode, deptInfo.getDeptName());
             } else if ("4".equals(deptInfo.getDeptLevel())) {
@@ -186,6 +189,39 @@ public class ExpertCertStatisticsController {
             }
 
             CompetenceCategoryCertStatisticsResponseVO result = expertCertStatisticsService.getCompetenceCategoryCertStatistics(deptCode, personType);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 按组织成熟度统计通过认证的人数
+     * @param deptCode 部门ID（部门编码）
+     * @param personType 人员类型（0-全员）
+     * @return 按成熟度统计的认证信息
+     */
+    @GetMapping("/maturity-cert-statistics")
+    public ResponseEntity<Result<MaturityCertStatisticsResponseVO>> getMaturityCertStatistics(
+            @RequestParam(value = "deptCode", required = true) String deptCode,
+            @RequestParam(value = "personType", required = true) Integer personType) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            if (personType == null) {
+                return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
+            }
+
+            // 目前只支持全员（personType=0）
+            if (personType != 0) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）"));
+            }
+
+            MaturityCertStatisticsResponseVO result = expertCertStatisticsService.getMaturityCertStatistics(deptCode, personType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));
