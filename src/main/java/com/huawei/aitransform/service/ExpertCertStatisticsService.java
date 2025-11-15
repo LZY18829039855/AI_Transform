@@ -338,32 +338,74 @@ public class ExpertCertStatisticsService {
 
     /**
      * 按职位类统计部门下不同职位类人数中的认证人数
-     * @param deptCode 部门ID（部门编码）
+     * @param deptCode 部门ID（部门编码），当为"0"时查询2级部门031562下的所有四级部门
      * @param personType 人员类型（0-全员）
      * @return 按职位类统计的认证信息
      */
     public CompetenceCategoryCertStatisticsResponseVO getCompetenceCategoryCertStatistics(String deptCode, Integer personType) {
-        // 1. 查询部门信息
-        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
-        if (deptInfo == null) {
-            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        List<DepartmentInfoVO> targetDepts;
+        Integer queryLevel;
+        String deptName;
+
+        // 特殊处理：当 deptCode 为 "0" 时，查询2级部门031562下的所有四级部门
+        if ("0".equals(deptCode)) {
+            // 查询2级部门031562下的所有四级部门（复用已有逻辑）
+            targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2("031562");
+            if (targetDepts == null || targetDepts.isEmpty()) {
+                // 如果没有四级部门，返回空统计
+                CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
+                response.setDeptCode(deptCode);
+                response.setDeptName("所有四级部门");
+                response.setCategoryStatistics(new ArrayList<>());
+                CompetenceCategoryCertStatisticsVO total = new CompetenceCategoryCertStatisticsVO();
+                total.setCompetenceCategory("总计");
+                total.setTotalCount(0);
+                total.setCertifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
+            }
+            // 查询四级部门的员工，使用 deptLevel=4（因为 EmployeeMapper 中 deptLevel=4 时查询 department5_id）
+            queryLevel = 4;
+            deptName = "所有四级部门";
+        } else {
+            // 1. 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
+            }
+
+            // 2. 根据部门层级，确定查询的部门层级
+            // getEmployeesWithCategoryByDeptLevel方法查询的是下一层级的部门
+            // 例如：如果当前部门层级是3，使用deptLevel=3会查询department4_id为部门ID的人员信息
+            Integer deptLevel = Integer.parseInt(deptInfo.getDeptLevel());
+            queryLevel = deptLevel;
+            deptName = deptInfo.getDeptName();
+            
+            // 只查询当前部门
+            targetDepts = new ArrayList<>();
+            targetDepts.add(deptInfo);
         }
 
-        // 2. 根据部门层级，确定查询的部门层级
-        // getEmployeesWithCategoryByDeptLevel方法查询的是下一层级的部门
-        // 例如：如果当前部门层级是3，使用deptLevel=3会查询department4_id为部门ID的人员信息
-        Integer deptLevel = Integer.parseInt(deptInfo.getDeptLevel());
-        Integer queryLevel = deptLevel;
+        // 3. 查询所有目标部门下的成员的工号和职位类
+        List<EmployeeWithCategoryVO> allEmployees = new ArrayList<>();
+        for (DepartmentInfoVO dept : targetDepts) {
+            if (dept.getDeptCode() == null || dept.getDeptCode().trim().isEmpty()) {
+                continue;
+            }
+            List<String> deptIdList = new ArrayList<>();
+            deptIdList.add(dept.getDeptCode());
+            List<EmployeeWithCategoryVO> employees = employeeMapper.getEmployeesWithCategoryByDeptLevel(queryLevel, deptIdList);
+            if (employees != null && !employees.isEmpty()) {
+                allEmployees.addAll(employees);
+            }
+        }
 
-        // 3. 查询当前部门下的所有成员的工号和职位类
-        List<String> deptIdList = new ArrayList<>();
-        deptIdList.add(deptCode);
-        List<EmployeeWithCategoryVO> allEmployees = employeeMapper.getEmployeesWithCategoryByDeptLevel(queryLevel, deptIdList);
-        if (allEmployees == null || allEmployees.isEmpty()) {
+        if (allEmployees.isEmpty()) {
             // 如果没有员工，返回空统计
             CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
             response.setDeptCode(deptCode);
-            response.setDeptName(deptInfo.getDeptName());
+            response.setDeptName(deptName);
             response.setCategoryStatistics(new ArrayList<>());
             CompetenceCategoryCertStatisticsVO total = new CompetenceCategoryCertStatisticsVO();
             total.setCompetenceCategory("总计");
@@ -456,7 +498,7 @@ public class ExpertCertStatisticsService {
         // 9. 构建返回结果
         CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
         response.setDeptCode(deptCode);
-        response.setDeptName(deptInfo.getDeptName());
+        response.setDeptName(deptName);
         response.setCategoryStatistics(categoryStats);
         response.setTotalStatistics(totalStatistics);
 
