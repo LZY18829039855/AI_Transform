@@ -9,3 +9,4 @@ CREATE TABLE IF NOT EXISTS `organization_maturity` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='组织成熟度等级表';
 
 
+

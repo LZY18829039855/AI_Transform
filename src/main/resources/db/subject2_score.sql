@@ -10,3 +10,4 @@ CREATE TABLE IF NOT EXISTS `subject2_score` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='科目二成绩表';
 
 
+

@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
@@ -152,6 +153,39 @@ public class ExpertCertStatisticsController {
             }
 
             EmployeeCertStatisticsResponseVO result = expertCertStatisticsService.getEmployeeCertStatistics(deptCode, personType);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 按职位类统计部门下不同职位类人数中的认证人数
+     * @param deptCode 部门ID（部门编码）
+     * @param personType 人员类型（0-全员）
+     * @return 按职位类统计的认证信息
+     */
+    @GetMapping("/competence-category-cert-statistics")
+    public ResponseEntity<Result<CompetenceCategoryCertStatisticsResponseVO>> getCompetenceCategoryCertStatistics(
+            @RequestParam(value = "deptCode", required = true) String deptCode,
+            @RequestParam(value = "personType", required = true) Integer personType) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            if (personType == null) {
+                return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
+            }
+
+            // 目前只支持全员（personType=0）
+            if (personType != 0) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）"));
+            }
+
+            CompetenceCategoryCertStatisticsResponseVO result = expertCertStatisticsService.getCompetenceCategoryCertStatistics(deptCode, personType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));
