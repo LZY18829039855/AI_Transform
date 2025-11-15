@@ -9,12 +9,18 @@ spring:
   datasource:
     driver-class-name: com.mysql.cj.jdbc.Driver
     url: jdbc:mysql://localhost:3306/ai_transform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
-    username: root
+    # 用户名支持加密格式：使用 ENC(加密后的用户名) 格式
+    # 生成加密用户名的方法：
+    # 1. 编译项目: mvn compile
+    # 2. 运行工具: java -cp target/classes com.huawei.aitransform.util.PasswordEncryptor
+    # 3. 选择 1-用户名，输入原始用户名，将输出的 ENC(...) 格式复制到此处
+    # 注意：如果使用明文用户名，直接填写即可，系统会自动识别
+    username: root  # 请使用 PasswordEncryptor 工具生成加密用户名后替换为 ENC(加密字符串) 格式
     # 密码支持加密格式：使用 ENC(加密后的密码) 格式
     # 生成加密密码的方法：
     # 1. 编译项目: mvn compile
     # 2. 运行工具: java -cp target/classes com.huawei.aitransform.util.PasswordEncryptor
-    # 3. 输入原始密码，将输出的 ENC(...) 格式复制到此处
+    # 3. 选择 2-密码，输入原始密码，将输出的 ENC(...) 格式复制到此处
     # 详细说明请参考: 数据库加密使用说明.md
     # 注意：如果使用明文密码，直接填写即可，系统会自动识别
     password: admin123  # 请使用 PasswordEncryptor 工具生成加密密码后替换为 ENC(加密字符串) 格式

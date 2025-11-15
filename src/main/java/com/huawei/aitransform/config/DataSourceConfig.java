@@ -12,7 +12,7 @@ import javax.sql.DataSource;
 
 /**
  * 数据源配置类
- * 支持自动解密数据库密码
+ * 支持自动解密数据库用户名和密码
  */
 @Configuration
 public class DataSourceConfig {
@@ -46,7 +46,7 @@ public class DataSourceConfig {
     
     /**
      * 创建数据源Bean
-     * 自动解密数据库密码
+     * 自动解密数据库用户名和密码
      */
     @Bean
     @Primary
@@ -54,7 +54,10 @@ public class DataSourceConfig {
         HikariConfig config = new HikariConfig();
         config.setDriverClassName(driverClassName);
         config.setJdbcUrl(url);
-        config.setUsername(username);
+        
+        // 自动解密用户名（如果是加密格式）
+        String decryptedUsername = CryptoUtil.decryptIfNeeded(username);
+        config.setUsername(decryptedUsername);
         
         // 自动解密密码（如果是加密格式）
         String decryptedPassword = CryptoUtil.decryptIfNeeded(password);
