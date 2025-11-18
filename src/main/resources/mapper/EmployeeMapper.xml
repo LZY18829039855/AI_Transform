@@ -119,7 +119,6 @@
             e.account AS employeeNumber,
             e.competence_category AS competenceCategory,
             e.competence_subcategory AS competenceSubcategory,
-            e.departname1,
             e.departname2,
             e.departname3,
             e.departname4,

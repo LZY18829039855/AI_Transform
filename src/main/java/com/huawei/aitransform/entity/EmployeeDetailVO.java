@@ -1,5 +1,6 @@
 package com.huawei.aitransform.entity;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
 
@@ -31,38 +32,39 @@ public class EmployeeDetailVO implements Serializable {
     private String competenceSubcategory;
 
     /**
-     * 一级部门名称
+     * 一级部门名称（对应数据库字段departname2）
      */
-    private String departname1;
-
-    /**
-     * 二级部门名称
-     */
+    @JsonProperty("firstLevelDept")
     private String departname2;
 
     /**
-     * 三级部门名称
+     * 二级部门名称（对应数据库字段departname3）
      */
+    @JsonProperty("secondLevelDept")
     private String departname3;
 
     /**
-     * 四级部门名称
+     * 三级部门名称（对应数据库字段departname4）
      */
+    @JsonProperty("thirdLevelDept")
     private String departname4;
 
     /**
-     * 五级部门名称
+     * 四级部门名称（对应数据库字段departname5）
      */
+    @JsonProperty("fourthLevelDept")
     private String departname5;
 
     /**
-     * 六级部门名称
+     * 五级部门名称（对应数据库字段departname6）
      */
+    @JsonProperty("fifthLevelDept")
     private String departname6;
 
     /**
-     * 七级部门名称
+     * 六级部门名称（对应数据库字段departname7）
      */
+    @JsonProperty("sixthLevelDept")
     private String departname7;
 
     /**
@@ -113,14 +115,6 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setCompetenceSubcategory(String competenceSubcategory) {
         this.competenceSubcategory = competenceSubcategory;
-    }
-
-    public String getDepartname1() {
-        return departname1;
-    }
-
-    public void setDepartname1(String departname1) {
-        this.departname1 = departname1;
     }
 
     public String getDepartname2() {
