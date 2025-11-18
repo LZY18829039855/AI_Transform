@@ -4,15 +4,20 @@
 <mapper namespace="com.huawei.aitransform.mapper.CadreMapper">
 
     <!-- 根据部门编码列表查询干部工号列表 -->
+    <!-- 只匹配最小部门编码（dept_code）字段 -->
     <select id="getCadreEmployeeNumbersByDeptCodes" resultType="java.lang.String">
         SELECT DISTINCT employee_number
-        FROM dwr_tlms_cadre_information_m
-        WHERE dept_code IN
-        <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
-            #{deptCode}
-        </foreach>
-        AND employee_number IS NOT NULL
-        AND employee_number != ''
+        FROM t_cadre
+        <where>
+            <if test="deptCodes != null and deptCodes.size() > 0">
+                dept_code IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </if>
+            AND employee_number IS NOT NULL
+            AND employee_number != ''
+        </where>
     </select>
 
 </mapper>
