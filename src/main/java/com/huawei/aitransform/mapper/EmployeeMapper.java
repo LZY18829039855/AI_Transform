@@ -1,5 +1,6 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.EmployeeDetailVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -31,5 +32,15 @@ public interface EmployeeMapper {
     List<EmployeeWithCategoryVO> getEmployeesWithCategoryByDeptLevel(
             @Param("deptLevel") Integer deptLevel,
             @Param("deptIds") List<String> deptIds);
+
+    /**
+     * 根据部门层级和部门ID查询员工认证详细信息（用于下钻）
+     * @param deptLevel 部门层级（1-7）
+     * @param deptId 部门ID
+     * @return 员工详细信息列表（包含认证信息）
+     */
+    List<EmployeeDetailVO> getEmployeeCertDetailsByDeptLevel(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptId") String deptId);
 }
 

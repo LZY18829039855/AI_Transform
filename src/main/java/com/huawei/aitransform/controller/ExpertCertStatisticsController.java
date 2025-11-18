@@ -5,6 +5,7 @@ import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.EmployeeDrillDownResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
@@ -243,6 +244,40 @@ public class ExpertCertStatisticsController {
             }
 
             MaturityCertStatisticsResponseVO result = expertCertStatisticsService.getMaturityCertStatistics(deptCode, personType);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 查询部门维度的下钻信息
+     * @param deptCode 部门ID（部门编码）
+     * @param personType 人员类型（0：全员数据）
+     * @param dataType 数据类型（0：基线，1：任职数据，2：认证数据）
+     * @return 员工详细信息列表
+     */
+    @GetMapping("/employee-drill-down")
+    public ResponseEntity<Result<EmployeeDrillDownResponseVO>> getEmployeeDrillDownInfo(
+            @RequestParam(value = "deptCode", required = true) String deptCode,
+            @RequestParam(value = "personType", required = true) Integer personType,
+            @RequestParam(value = "dataType", required = true) Integer dataType) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            if (personType == null) {
+                return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
+            }
+
+            if (dataType == null) {
+                return ResponseEntity.ok(Result.error(400, "数据类型不能为空"));
+            }
+
+            EmployeeDrillDownResponseVO result = expertCertStatisticsService.getEmployeeDrillDownInfo(deptCode, personType, dataType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));

@@ -7,6 +7,8 @@ import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.DepartmentMaturityVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.EmployeeDetailVO;
+import com.huawei.aitransform.entity.EmployeeDrillDownResponseVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
@@ -888,6 +890,61 @@ public class ExpertCertStatisticsService {
         response.setDeptName(deptName);
         response.setMaturityStatistics(maturityStats);
         response.setTotalStatistics(totalStatistics);
+
+        return response;
+    }
+
+    /**
+     * 查询部门维度的下钻信息
+     * @param deptCode 部门ID（部门编码）
+     * @param personType 人员类型（0：全员数据）
+     * @param dataType 数据类型（0：基线，1：任职数据，2：认证数据）
+     * @return 员工详细信息列表
+     */
+    public EmployeeDrillDownResponseVO getEmployeeDrillDownInfo(String deptCode, Integer personType, Integer dataType) {
+        // 1. 参数校验
+        if (deptCode == null || deptCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("部门ID不能为空");
+        }
+
+        if (personType == null) {
+            throw new IllegalArgumentException("人员类型不能为空");
+        }
+
+        if (personType != 0) {
+            throw new IllegalArgumentException("暂不支持该人员类型，目前只支持全员（personType=0）");
+        }
+
+        if (dataType == null) {
+            throw new IllegalArgumentException("数据类型不能为空");
+        }
+
+        // 2. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        }
+
+        // 3. 根据数据类型查询不同的信息
+        List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
+
+        if (dataType == 2) {
+            // 认证数据：查询员工认证详细信息
+            Integer deptLevel = Integer.parseInt(deptInfo.getDeptLevel());
+            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevel(deptLevel, deptCode);
+        } else if (dataType == 1) {
+            // 任职数据：暂时返回空列表，等用户提供具体需求
+            employeeDetails = new ArrayList<>();
+        } else if (dataType == 0) {
+            // 基线数据：暂时返回空列表，等用户提供具体需求
+            employeeDetails = new ArrayList<>();
+        } else {
+            throw new IllegalArgumentException("不支持的数据类型：" + dataType);
+        }
+
+        // 4. 构建返回结果
+        EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
+        response.setEmployeeDetails(employeeDetails);
 
         return response;
     }

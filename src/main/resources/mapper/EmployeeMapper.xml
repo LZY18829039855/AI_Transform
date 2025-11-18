@@ -111,5 +111,82 @@
         AND account REGEXP '^[a-z]0[0-9]{7}$'
     </select>
 
+    <!-- 根据部门层级和部门ID查询员工认证详细信息（用于下钻） -->
+    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询department2_id -->
+    <select id="getEmployeeCertDetailsByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT DISTINCT
+            e.cn_name AS name,
+            e.account AS employeeNumber,
+            e.competence_category AS competenceCategory,
+            e.competence_subcategory AS competenceSubcategory,
+            e.departname1,
+            e.departname2,
+            e.departname3,
+            e.departname4,
+            e.departname5,
+            e.departname6,
+            e.departname7,
+            cert.cer_title AS certTitle,
+            cert.start_time AS certStartTime,
+            CASE 
+                WHEN exam.emp_num IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isPassedSubject2
+        FROM t_employee e
+        INNER JOIN (
+            SELECT DISTINCT
+                COALESCE(employee_number, w3_account) AS employee_number,
+                w3_account,
+                cer_title,
+                start_time
+            FROM dwr_t_cert_record_t
+            WHERE (status = 1 OR approved_status = 1)
+            AND (
+                -- 华为研究类能力认证（专业级，xxx）
+                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE exam_name IS NOT NULL
+            AND exam_name != ''
+            AND is_pass = 1
+            AND emp_num IS NOT NULL
+            AND emp_num != ''
+        ) exam ON (e.sn = exam.emp_num)
+        WHERE e.expired_date IS NULL
+        <choose>
+            <when test="deptLevel == 1">
+                AND e.department2_id = #{deptId}
+            </when>
+            <when test="deptLevel == 2">
+                AND e.department3_id = #{deptId}
+            </when>
+            <when test="deptLevel == 3">
+                AND e.department4_id = #{deptId}
+            </when>
+            <when test="deptLevel == 4">
+                AND e.department5_id = #{deptId}
+            </when>
+            <when test="deptLevel == 5">
+                AND e.department6_id = #{deptId}
+            </when>
+            <when test="deptLevel == 6">
+                AND e.department7_id = #{deptId}
+            </when>
+            <when test="deptLevel == 7">
+                <!-- 如果deptLevel为7，已经是最高层级，无法再查询下一层 -->
+                AND 1 = 0
+            </when>
+        </choose>
+        AND e.account IS NOT NULL
+        AND e.account != ''
+        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
+        ORDER BY e.account
+    </select>
+
 </mapper>
 
