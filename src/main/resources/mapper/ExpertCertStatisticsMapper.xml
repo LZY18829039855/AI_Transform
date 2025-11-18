@@ -70,8 +70,9 @@
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
             -- 华为研究类能力认证（专业级，xxx）
-            c.cer_title LIKE '华为研究类能力认证（专业级，%'
-            OR c.cer_title LIKE '%华为研究类能力认证（专业级，%'
+            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
         )
         UNION
         SELECT DISTINCT c.w3_account
@@ -85,8 +86,9 @@
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
             -- 华为研究类能力认证（专业级，xxx）
-            c.cer_title LIKE '华为研究类能力认证（专业级，%'
-            OR c.cer_title LIKE '%华为研究类能力认证（专业级，%'
+            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
         )
     </select>
 
