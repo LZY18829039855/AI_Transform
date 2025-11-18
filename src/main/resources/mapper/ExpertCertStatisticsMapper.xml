@@ -100,7 +100,7 @@
         </foreach>
         AND q.employee_number IS NOT NULL
         AND q.employee_number != ''
-        AND q.competence_subcategory_cn IN (
+        AND q.direction_cn_name IN (
             '数据科学与AI工程（ICT）',
             'AI算法及应用（ICT）',
             'AI软件工程与工具（ICT）',

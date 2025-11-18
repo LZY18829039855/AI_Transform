@@ -40,6 +40,11 @@ public class DepartmentCertStatisticsVO implements Serializable {
      */
     private BigDecimal certRate;
 
+    /**
+     * 任职率（百分比）
+     */
+    private BigDecimal qualifiedRate;
+
     public DepartmentCertStatisticsVO() {
     }
 
@@ -89,6 +94,14 @@ public class DepartmentCertStatisticsVO implements Serializable {
 
     public void setCertRate(BigDecimal certRate) {
         this.certRate = certRate;
+    }
+
+    public BigDecimal getQualifiedRate() {
+        return qualifiedRate;
+    }
+
+    public void setQualifiedRate(BigDecimal qualifiedRate) {
+        this.qualifiedRate = qualifiedRate;
     }
 }
 

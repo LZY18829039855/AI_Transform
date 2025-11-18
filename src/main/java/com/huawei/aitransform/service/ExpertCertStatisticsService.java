@@ -251,6 +251,7 @@ public class ExpertCertStatisticsService {
                 total.setCertifiedCount(0);
                 total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
             }
@@ -276,6 +277,7 @@ public class ExpertCertStatisticsService {
                 total.setCertifiedCount(0);
                 total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
             }
@@ -335,7 +337,16 @@ public class ExpertCertStatisticsService {
                         .multiply(new BigDecimal(100));
             }
 
-            // 4.5 构建部门统计对象
+            // 4.5 计算该部门的任职率
+            BigDecimal deptQualifiedRate = BigDecimal.ZERO;
+            if (deptTotalCount > 0) {
+                BigDecimal total = new BigDecimal(deptTotalCount);
+                BigDecimal qualified = new BigDecimal(deptQualifiedCount);
+                deptQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+            }
+
+            // 4.6 构建部门统计对象
             DepartmentCertStatisticsVO deptStat = new DepartmentCertStatisticsVO();
             deptStat.setDeptCode(dept.getDeptCode());
             deptStat.setDeptName(dept.getDeptName());
@@ -343,10 +354,11 @@ public class ExpertCertStatisticsService {
             deptStat.setCertifiedCount(deptCertifiedCount);
             deptStat.setQualifiedCount(deptQualifiedCount);
             deptStat.setCertRate(deptCertRate);
+            deptStat.setQualifiedRate(deptQualifiedRate);
 
             departmentStats.add(deptStat);
 
-            // 4.6 累加总计
+            // 4.7 累加总计
             totalCountSum += deptTotalCount;
             certifiedCountSum += deptCertifiedCount;
             qualifiedCountSum += deptQualifiedCount;
@@ -361,7 +373,16 @@ public class ExpertCertStatisticsService {
                     .multiply(new BigDecimal(100));
         }
 
-        // 6. 构建总计统计对象
+        // 6. 计算总计的任职率
+        BigDecimal totalQualifiedRate = BigDecimal.ZERO;
+        if (totalCountSum > 0) {
+            BigDecimal total = new BigDecimal(totalCountSum);
+            BigDecimal qualified = new BigDecimal(qualifiedCountSum);
+            totalQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
+
+        // 7. 构建总计统计对象
         DepartmentCertStatisticsVO totalStatistics = new DepartmentCertStatisticsVO();
         totalStatistics.setDeptCode("总计");
         totalStatistics.setDeptName("总计");
@@ -369,8 +390,9 @@ public class ExpertCertStatisticsService {
         totalStatistics.setCertifiedCount(certifiedCountSum);
         totalStatistics.setQualifiedCount(qualifiedCountSum);
         totalStatistics.setCertRate(totalCertRate);
+        totalStatistics.setQualifiedRate(totalQualifiedRate);
 
-        // 7. 构建返回结果
+        // 8. 构建返回结果
         EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
         response.setDepartmentStatistics(departmentStats);
         response.setTotalStatistics(totalStatistics);
@@ -405,6 +427,7 @@ public class ExpertCertStatisticsService {
                 total.setCertifiedCount(0);
                 total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
             }
@@ -452,12 +475,13 @@ public class ExpertCertStatisticsService {
             response.setCategoryStatistics(new ArrayList<>());
             CompetenceCategoryCertStatisticsVO total = new CompetenceCategoryCertStatisticsVO();
             total.setCompetenceCategory("总计");
-            total.setTotalCount(0);
-            total.setCertifiedCount(0);
-            total.setQualifiedCount(0);
-            total.setCertRate(BigDecimal.ZERO);
-            response.setTotalStatistics(total);
-            return response;
+                total.setTotalCount(0);
+                total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
+                total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
+                response.setTotalStatistics(total);
+                return response;
         }
 
         // 4. 提取所有员工工号
@@ -550,19 +574,30 @@ public class ExpertCertStatisticsService {
             categoryMap.put(category, categoryStat);
         }
 
-        // 7. 计算每个职位类的认证率
+        // 7. 计算每个职位类的认证率和任职率
         List<CompetenceCategoryCertStatisticsVO> categoryStats = new ArrayList<>();
         for (CompetenceCategoryCertStatisticsVO categoryStat : categoryMap.values()) {
             if (categoryStat.getTotalCount() != null && categoryStat.getTotalCount() > 0) {
                 if (categoryStat.getCertifiedCount() == null) {
                     categoryStat.setCertifiedCount(0);
                 }
-                BigDecimal rate = new BigDecimal(categoryStat.getCertifiedCount())
+                // 计算认证率
+                BigDecimal certRate = new BigDecimal(categoryStat.getCertifiedCount())
                         .divide(new BigDecimal(categoryStat.getTotalCount()), 4, RoundingMode.HALF_UP)
                         .multiply(new BigDecimal(100));
-                categoryStat.setCertRate(rate);
+                categoryStat.setCertRate(certRate);
+                
+                // 计算任职率
+                if (categoryStat.getQualifiedCount() == null) {
+                    categoryStat.setQualifiedCount(0);
+                }
+                BigDecimal qualifiedRate = new BigDecimal(categoryStat.getQualifiedCount())
+                        .divide(new BigDecimal(categoryStat.getTotalCount()), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                categoryStat.setQualifiedRate(qualifiedRate);
             } else {
                 categoryStat.setCertRate(BigDecimal.ZERO);
+                categoryStat.setQualifiedRate(BigDecimal.ZERO);
             }
             categoryStats.add(categoryStat);
         }
@@ -574,12 +609,20 @@ public class ExpertCertStatisticsService {
         totalStatistics.setCertifiedCount(certifiedCountSum);
         totalStatistics.setQualifiedCount(qualifiedCountSum);
         if (totalCountSum > 0) {
-            BigDecimal totalRate = new BigDecimal(certifiedCountSum)
+            // 计算总计认证率
+            BigDecimal totalCertRate = new BigDecimal(certifiedCountSum)
                     .divide(new BigDecimal(totalCountSum), 4, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100));
-            totalStatistics.setCertRate(totalRate);
+            totalStatistics.setCertRate(totalCertRate);
+            
+            // 计算总计任职率
+            BigDecimal totalQualifiedRate = new BigDecimal(qualifiedCountSum)
+                    .divide(new BigDecimal(totalCountSum), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setQualifiedRate(totalQualifiedRate);
         } else {
             totalStatistics.setCertRate(BigDecimal.ZERO);
+            totalStatistics.setQualifiedRate(BigDecimal.ZERO);
         }
 
         // 9. 构建返回结果
@@ -618,6 +661,7 @@ public class ExpertCertStatisticsService {
                 total.setCertifiedCount(0);
                 total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
             }
@@ -643,6 +687,7 @@ public class ExpertCertStatisticsService {
                 total.setCertifiedCount(0);
                 total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
+                total.setQualifiedRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
             }
@@ -786,19 +831,30 @@ public class ExpertCertStatisticsService {
             maturityMap.put(maturity, maturityStat);
         }
 
-        // 8. 计算每个成熟度的认证率
+        // 8. 计算每个成熟度的认证率和任职率
         List<MaturityCertStatisticsVO> maturityStats = new ArrayList<>();
         for (MaturityCertStatisticsVO maturityStat : maturityMap.values()) {
             if (maturityStat.getBaselineCount() != null && maturityStat.getBaselineCount() > 0) {
                 if (maturityStat.getCertifiedCount() == null) {
                     maturityStat.setCertifiedCount(0);
                 }
-                BigDecimal rate = new BigDecimal(maturityStat.getCertifiedCount())
+                // 计算认证率
+                BigDecimal certRate = new BigDecimal(maturityStat.getCertifiedCount())
                         .divide(new BigDecimal(maturityStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
                         .multiply(new BigDecimal(100));
-                maturityStat.setCertRate(rate);
+                maturityStat.setCertRate(certRate);
+                
+                // 计算任职率
+                if (maturityStat.getQualifiedCount() == null) {
+                    maturityStat.setQualifiedCount(0);
+                }
+                BigDecimal qualifiedRate = new BigDecimal(maturityStat.getQualifiedCount())
+                        .divide(new BigDecimal(maturityStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setQualifiedRate(qualifiedRate);
             } else {
                 maturityStat.setCertRate(BigDecimal.ZERO);
+                maturityStat.setQualifiedRate(BigDecimal.ZERO);
             }
             maturityStats.add(maturityStat);
         }
@@ -810,12 +866,20 @@ public class ExpertCertStatisticsService {
         totalStatistics.setCertifiedCount(totalCertifiedCount);
         totalStatistics.setQualifiedCount(totalQualifiedCount);
         if (totalBaselineCount > 0) {
-            BigDecimal totalRate = new BigDecimal(totalCertifiedCount)
+            // 计算总计认证率
+            BigDecimal totalCertRate = new BigDecimal(totalCertifiedCount)
                     .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100));
-            totalStatistics.setCertRate(totalRate);
+            totalStatistics.setCertRate(totalCertRate);
+            
+            // 计算总计任职率
+            BigDecimal totalQualifiedRate = new BigDecimal(totalQualifiedCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setQualifiedRate(totalQualifiedRate);
         } else {
             totalStatistics.setCertRate(BigDecimal.ZERO);
+            totalStatistics.setQualifiedRate(BigDecimal.ZERO);
         }
 
         // 10. 构建返回结果
