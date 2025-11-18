@@ -14,6 +14,7 @@ import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsVO;
+import com.huawei.aitransform.mapper.CadreMapper;
 import com.huawei.aitransform.mapper.DepartmentInfoMapper;
 import com.huawei.aitransform.mapper.DepartmentMaturityMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
@@ -46,6 +47,9 @@ public class ExpertCertStatisticsService {
 
     @Autowired
     private DepartmentMaturityMapper departmentMaturityMapper;
+
+    @Autowired
+    private CadreMapper cadreMapper;
 
     /**
      * 查询专家任职认证数据
@@ -231,10 +235,16 @@ public class ExpertCertStatisticsService {
     /**
      * 查询全员任职认证信息
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
-     * @param personType 人员类型（0-全员）
+     * @param personType 人员类型（0-全员，1-干部）
      * @return 认证和任职统计信息（包含各部门统计和总计，包含认证人数和任职人数）
      */
     public EmployeeCertStatisticsResponseVO getEmployeeCertStatistics(String deptCode, Integer personType) {
+        // 干部处理流程（personType=1）
+        if (personType != null && personType == 1) {
+            return getCadreCertStatistics(deptCode);
+        }
+
+        // 全员处理流程（personType=0）
         List<DepartmentInfoVO> targetDepts;
         Integer queryLevel;
 
@@ -395,6 +405,160 @@ public class ExpertCertStatisticsService {
         totalStatistics.setQualifiedRate(totalQualifiedRate);
 
         // 8. 构建返回结果
+        EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
+        response.setDepartmentStatistics(departmentStats);
+        response.setTotalStatistics(totalStatistics);
+
+        return response;
+    }
+
+    /**
+     * 查询干部任职认证信息
+     * @param deptCode 部门ID（部门编码）
+     * @return 认证和任职统计信息（包含各部门统计和总计，包含认证人数和任职人数）
+     */
+    private EmployeeCertStatisticsResponseVO getCadreCertStatistics(String deptCode) {
+        // 1. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        }
+
+        // 2. 查询下一级部门列表
+        List<DepartmentInfoVO> childDepts = departmentInfoMapper.getChildDepartments(deptCode);
+        if (childDepts == null || childDepts.isEmpty()) {
+            // 如果没有子部门，返回空统计
+            EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
+            response.setDepartmentStatistics(new ArrayList<>());
+            DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
+            total.setDeptCode("总计");
+            total.setDeptName("总计");
+            total.setTotalCount(0);
+            total.setCertifiedCount(0);
+            total.setQualifiedCount(0);
+            total.setCertRate(BigDecimal.ZERO);
+            total.setQualifiedRate(BigDecimal.ZERO);
+            response.setTotalStatistics(total);
+            return response;
+        }
+
+        // 3. 遍历每个下级部门，查询所有子部门并统计干部信息
+        List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
+        int totalCountSum = 0;
+        int certifiedCountSum = 0;
+        int qualifiedCountSum = 0;
+
+        for (DepartmentInfoVO childDept : childDepts) {
+            if (childDept.getDeptCode() == null || childDept.getDeptCode().trim().isEmpty()) {
+                continue;
+            }
+
+            // 3.1 查询该下级部门的所有子部门（包括所有层级的子部门）
+            List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(childDept.getDeptCode());
+            
+            // 构造部门编码列表（包括当前下级部门本身和所有子部门）
+            List<String> deptCodeList = new ArrayList<>();
+            deptCodeList.add(childDept.getDeptCode());
+            if (allSubDepts != null && !allSubDepts.isEmpty()) {
+                for (DepartmentInfoVO subDept : allSubDepts) {
+                    if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
+                        deptCodeList.add(subDept.getDeptCode());
+                    }
+                }
+            }
+
+            // 3.2 从干部表中查询属于这些部门的干部工号
+            List<String> cadreEmployeeNumbers = cadreMapper.getCadreEmployeeNumbersByDeptCodes(deptCodeList);
+            int deptTotalCount = (cadreEmployeeNumbers != null) ? cadreEmployeeNumbers.size() : 0;
+
+            // 3.3 查询该部门已通过认证的干部工号列表
+            int deptCertifiedCount = 0;
+            if (cadreEmployeeNumbers != null && !cadreEmployeeNumbers.isEmpty()) {
+                List<String> certifiedNumbers = getCertifiedEmployeeNumbers(cadreEmployeeNumbers);
+                deptCertifiedCount = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
+            }
+
+            // 3.4 查询该部门已获得任职的干部工号列表
+            int deptQualifiedCount = 0;
+            if (cadreEmployeeNumbers != null && !cadreEmployeeNumbers.isEmpty()) {
+                // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
+                // 例如：l00123456 -> 00123456
+                List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
+                for (String empNo : cadreEmployeeNumbers) {
+                    if (empNo != null && empNo.length() > 1) {
+                        employeeNumbersWithoutPrefix.add(empNo.substring(1));
+                    }
+                }
+                // 使用去除首字母的工号列表查询任职信息
+                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+                deptQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
+            }
+
+            // 3.5 计算该部门的认证率
+            BigDecimal deptCertRate = BigDecimal.ZERO;
+            if (deptTotalCount > 0) {
+                BigDecimal total = new BigDecimal(deptTotalCount);
+                BigDecimal certified = new BigDecimal(deptCertifiedCount);
+                deptCertRate = certified.divide(total, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+            }
+
+            // 3.6 计算该部门的任职率
+            BigDecimal deptQualifiedRate = BigDecimal.ZERO;
+            if (deptTotalCount > 0) {
+                BigDecimal total = new BigDecimal(deptTotalCount);
+                BigDecimal qualified = new BigDecimal(deptQualifiedCount);
+                deptQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+            }
+
+            // 3.7 构建部门统计对象
+            DepartmentCertStatisticsVO deptStat = new DepartmentCertStatisticsVO();
+            deptStat.setDeptCode(childDept.getDeptCode());
+            deptStat.setDeptName(childDept.getDeptName());
+            deptStat.setTotalCount(deptTotalCount);
+            deptStat.setCertifiedCount(deptCertifiedCount);
+            deptStat.setQualifiedCount(deptQualifiedCount);
+            deptStat.setCertRate(deptCertRate);
+            deptStat.setQualifiedRate(deptQualifiedRate);
+
+            departmentStats.add(deptStat);
+
+            // 3.8 累加总计
+            totalCountSum += deptTotalCount;
+            certifiedCountSum += deptCertifiedCount;
+            qualifiedCountSum += deptQualifiedCount;
+        }
+
+        // 4. 计算总计的认证率
+        BigDecimal totalCertRate = BigDecimal.ZERO;
+        if (totalCountSum > 0) {
+            BigDecimal total = new BigDecimal(totalCountSum);
+            BigDecimal certified = new BigDecimal(certifiedCountSum);
+            totalCertRate = certified.divide(total, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
+
+        // 5. 计算总计的任职率
+        BigDecimal totalQualifiedRate = BigDecimal.ZERO;
+        if (totalCountSum > 0) {
+            BigDecimal total = new BigDecimal(totalCountSum);
+            BigDecimal qualified = new BigDecimal(qualifiedCountSum);
+            totalQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
+
+        // 6. 构建总计统计对象
+        DepartmentCertStatisticsVO totalStatistics = new DepartmentCertStatisticsVO();
+        totalStatistics.setDeptCode("总计");
+        totalStatistics.setDeptName("总计");
+        totalStatistics.setTotalCount(totalCountSum);
+        totalStatistics.setCertifiedCount(certifiedCountSum);
+        totalStatistics.setQualifiedCount(qualifiedCountSum);
+        totalStatistics.setCertRate(totalCertRate);
+        totalStatistics.setQualifiedRate(totalQualifiedRate);
+
+        // 7. 构建返回结果
         EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
         response.setDepartmentStatistics(departmentStats);
         response.setTotalStatistics(totalStatistics);

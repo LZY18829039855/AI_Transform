@@ -84,5 +84,34 @@
         ORDER BY d6.dept_code
     </select>
 
+    <!-- 递归查询指定部门下的所有子部门（包括所有层级的子部门） -->
+    <!-- 使用多表JOIN方式实现，兼容MySQL 5.7及以下版本 -->
+    <!-- 通过多级JOIN找到所有子部门，然后检查其祖先路径中是否包含目标部门 -->
+    <select id="getAllSubDepartments" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT DISTINCT
+            d.dept_code AS deptCode,
+            d.dept_name AS deptName,
+            d.dept_level AS deptLevel,
+            d.parent_dept_code AS parentDeptCode
+        FROM department_info_hrms d
+        LEFT JOIN department_info_hrms d1 ON d.parent_dept_code = d1.dept_code
+        LEFT JOIN department_info_hrms d2 ON d1.parent_dept_code = d2.dept_code
+        LEFT JOIN department_info_hrms d3 ON d2.parent_dept_code = d3.dept_code
+        LEFT JOIN department_info_hrms d4 ON d3.parent_dept_code = d4.dept_code
+        LEFT JOIN department_info_hrms d5 ON d4.parent_dept_code = d5.dept_code
+        LEFT JOIN department_info_hrms d6 ON d5.parent_dept_code = d6.dept_code
+        WHERE (
+            d.parent_dept_code = #{deptCode}
+            OR d1.dept_code = #{deptCode}
+            OR d2.dept_code = #{deptCode}
+            OR d3.dept_code = #{deptCode}
+            OR d4.dept_code = #{deptCode}
+            OR d5.dept_code = #{deptCode}
+            OR d6.dept_code = #{deptCode}
+        )
+        AND DATE(d.update_time) = '2025-11-18'
+        ORDER BY d.dept_code
+    </select>
+
 </mapper>
 

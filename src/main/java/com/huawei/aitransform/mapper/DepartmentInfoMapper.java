@@ -45,5 +45,12 @@ public interface DepartmentInfoMapper {
      * @return 六级部门列表
      */
     List<DepartmentInfoVO> getAllLevel6DepartmentsUnderDept(@Param("deptCode") String deptCode);
+
+    /**
+     * 递归查询指定部门下的所有子部门（包括所有层级的子部门）
+     * @param deptCode 部门编码
+     * @return 所有子部门列表
+     */
+    List<DepartmentInfoVO> getAllSubDepartments(@Param("deptCode") String deptCode);
 }
 

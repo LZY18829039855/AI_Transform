@@ -156,7 +156,7 @@ public class ExpertCertStatisticsController {
     /**
      * 查询全员任职认证信息
      * @param deptCode 部门ID（部门编码）
-     * @param personType 人员类型（0-全员）
+     * @param personType 人员类型（0-全员，1-干部）
      * @return 认证和任职统计信息（包含各部门统计和总计，包含认证人数和任职人数）
      */
     @GetMapping("/employee-cert-statistics")
@@ -172,9 +172,9 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
-            // 目前只支持全员（personType=0）
-            if (personType != 0) {
-                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）"));
+            // 支持全员（personType=0）和干部（personType=1）
+            if (personType != 0 && personType != 1) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）和干部（personType=1）"));
             }
 
             EmployeeCertStatisticsResponseVO result = expertCertStatisticsService.getEmployeeCertStatistics(deptCode, personType);
