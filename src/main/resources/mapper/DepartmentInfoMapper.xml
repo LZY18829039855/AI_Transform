@@ -11,6 +11,7 @@
             dept_level AS deptLevel
         FROM department_info_hrms
         WHERE parent_dept_code = #{parentDeptCode}
+        AND DATE(update_time) = '2025-11-18'
         ORDER BY dept_code
     </select>
 
@@ -23,6 +24,7 @@
             parent_dept_code AS parentDeptCode
         FROM department_info_hrms
         WHERE dept_code = #{deptCode}
+        AND DATE(update_time) = '2025-11-18'
         LIMIT 1
     </select>
 
@@ -35,6 +37,7 @@
             parent_dept_code AS parentDeptCode
         FROM department_info_hrms
         WHERE dept_level = '4'
+        AND DATE(update_time) = '2025-11-18'
         ORDER BY dept_code
     </select>
 
@@ -49,6 +52,7 @@
         INNER JOIN department_info_hrms d3 ON d4.parent_dept_code = d3.dept_code AND d3.dept_level = '3'
         WHERE d4.dept_level = '4'
         AND d3.parent_dept_code = #{level2DeptCode}
+        AND DATE(d4.update_time) = '2025-11-18'
         ORDER BY d4.dept_code
     </select>
 
@@ -76,6 +80,7 @@
             OR d5.dept_code = #{deptCode}
             OR d6.parent_dept_code = #{deptCode}
         )
+        AND DATE(d6.update_time) = '2025-11-18'
         ORDER BY d6.dept_code
     </select>
 
