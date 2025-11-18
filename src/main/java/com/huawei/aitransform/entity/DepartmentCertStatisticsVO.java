@@ -31,6 +31,11 @@ public class DepartmentCertStatisticsVO implements Serializable {
     private Integer certifiedCount;
 
     /**
+     * 已任职人数
+     */
+    private Integer qualifiedCount;
+
+    /**
      * 认证率（百分比）
      */
     private BigDecimal certRate;
@@ -68,6 +73,14 @@ public class DepartmentCertStatisticsVO implements Serializable {
 
     public void setCertifiedCount(Integer certifiedCount) {
         this.certifiedCount = certifiedCount;
+    }
+
+    public Integer getQualifiedCount() {
+        return qualifiedCount;
+    }
+
+    public void setQualifiedCount(Integer qualifiedCount) {
+        this.qualifiedCount = qualifiedCount;
     }
 
     public BigDecimal getCertRate() {

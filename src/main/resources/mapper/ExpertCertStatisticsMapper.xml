@@ -90,5 +90,26 @@
         )
     </select>
 
+    <!-- 查询获得AI任职的员工工号列表 -->
+    <select id="getQualifiedEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT q.employee_number
+        FROM t_qualifications q
+        WHERE q.employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+        AND q.employee_number IS NOT NULL
+        AND q.employee_number != ''
+        AND q.competence_subcategory_cn IN (
+            '数据科学与AI工程（ICT）',
+            'AI算法及应用（ICT）',
+            'AI软件工程与工具（ICT）',
+            'AI系统测试（ICT）'
+        )
+        AND q.competence_from IS NOT NULL
+        AND q.competence_to IS NOT NULL
+        AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+    </select>
+
 </mapper>
 

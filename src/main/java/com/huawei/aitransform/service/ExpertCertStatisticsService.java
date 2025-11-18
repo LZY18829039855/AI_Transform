@@ -215,10 +215,22 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 根据工号列表查询获得AI任职的员工工号
+     * @param employeeNumbers 员工工号列表
+     * @return 获得AI任职的员工工号列表
+     */
+    public List<String> getQualifiedEmployeeNumbers(List<String> employeeNumbers) {
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return expertCertStatisticsMapper.getQualifiedEmployeeNumbers(employeeNumbers);
+    }
+
+    /**
      * 查询全员任职认证信息
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
      * @param personType 人员类型（0-全员）
-     * @return 认证统计信息（包含各部门统计和总计）
+     * @return 认证和任职统计信息（包含各部门统计和总计，包含认证人数和任职人数）
      */
     public EmployeeCertStatisticsResponseVO getEmployeeCertStatistics(String deptCode, Integer personType) {
         List<DepartmentInfoVO> targetDepts;
@@ -237,6 +249,7 @@ public class ExpertCertStatisticsService {
                 total.setDeptName("总计");
                 total.setTotalCount(0);
                 total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
@@ -261,6 +274,7 @@ public class ExpertCertStatisticsService {
                 total.setDeptName("总计");
                 total.setTotalCount(0);
                 total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
@@ -275,6 +289,7 @@ public class ExpertCertStatisticsService {
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
         int totalCountSum = 0;
         int certifiedCountSum = 0;
+        int qualifiedCountSum = 0;
 
         for (DepartmentInfoVO dept : targetDepts) {
             if (dept.getDeptCode() == null || dept.getDeptCode().trim().isEmpty()) {
@@ -295,7 +310,23 @@ public class ExpertCertStatisticsService {
                 deptCertifiedCount = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
             }
 
-            // 4.3 计算该部门的认证率
+            // 4.3 查询该部门已获得任职的员工工号列表
+            int deptQualifiedCount = 0;
+            if (employeeNumbers != null && !employeeNumbers.isEmpty()) {
+                // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
+                // 例如：l00123456 -> 00123456
+                List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
+                for (String empNo : employeeNumbers) {
+                    if (empNo != null && empNo.length() > 1) {
+                        employeeNumbersWithoutPrefix.add(empNo.substring(1));
+                    }
+                }
+                // 使用去除首字母的工号列表查询任职信息
+                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+                deptQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
+            }
+
+            // 4.4 计算该部门的认证率
             BigDecimal deptCertRate = BigDecimal.ZERO;
             if (deptTotalCount > 0) {
                 BigDecimal total = new BigDecimal(deptTotalCount);
@@ -304,19 +335,21 @@ public class ExpertCertStatisticsService {
                         .multiply(new BigDecimal(100));
             }
 
-            // 4.4 构建部门统计对象
+            // 4.5 构建部门统计对象
             DepartmentCertStatisticsVO deptStat = new DepartmentCertStatisticsVO();
             deptStat.setDeptCode(dept.getDeptCode());
             deptStat.setDeptName(dept.getDeptName());
             deptStat.setTotalCount(deptTotalCount);
             deptStat.setCertifiedCount(deptCertifiedCount);
+            deptStat.setQualifiedCount(deptQualifiedCount);
             deptStat.setCertRate(deptCertRate);
 
             departmentStats.add(deptStat);
 
-            // 4.5 累加总计
+            // 4.6 累加总计
             totalCountSum += deptTotalCount;
             certifiedCountSum += deptCertifiedCount;
+            qualifiedCountSum += deptQualifiedCount;
         }
 
         // 5. 计算总计的认证率
@@ -334,6 +367,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setDeptName("总计");
         totalStatistics.setTotalCount(totalCountSum);
         totalStatistics.setCertifiedCount(certifiedCountSum);
+        totalStatistics.setQualifiedCount(qualifiedCountSum);
         totalStatistics.setCertRate(totalCertRate);
 
         // 7. 构建返回结果
@@ -345,10 +379,10 @@ public class ExpertCertStatisticsService {
     }
 
     /**
-     * 按职位类统计部门下不同职位类人数中的认证人数
+     * 按职位类统计部门下不同职位类人数中的认证和任职人数
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
      * @param personType 人员类型（0-全员）
-     * @return 按职位类统计的认证信息
+     * @return 按职位类统计的认证和任职信息（包含认证人数和任职人数）
      */
     public CompetenceCategoryCertStatisticsResponseVO getCompetenceCategoryCertStatistics(String deptCode, Integer personType) {
         List<DepartmentInfoVO> targetDepts;
@@ -369,6 +403,7 @@ public class ExpertCertStatisticsService {
                 total.setCompetenceCategory("总计");
                 total.setTotalCount(0);
                 total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
@@ -419,6 +454,7 @@ public class ExpertCertStatisticsService {
             total.setCompetenceCategory("总计");
             total.setTotalCount(0);
             total.setCertifiedCount(0);
+            total.setQualifiedCount(0);
             total.setCertRate(BigDecimal.ZERO);
             response.setTotalStatistics(total);
             return response;
@@ -437,10 +473,43 @@ public class ExpertCertStatisticsService {
             certifiedNumbers = getCertifiedEmployeeNumbers(employeeNumbers);
         }
 
+        // 5.1 查询已获得任职的员工工号列表（去除首字母后查询）
+        List<String> qualifiedNumbers = new ArrayList<>();
+        if (!employeeNumbers.isEmpty()) {
+            // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
+            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
+            for (String empNo : employeeNumbers) {
+                if (empNo != null && empNo.length() > 1) {
+                    employeeNumbersWithoutPrefix.add(empNo.substring(1));
+                }
+            }
+            // 使用去除首字母的工号列表查询任职信息
+            List<String> qualifiedNumbersWithoutPrefix = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+            // 将返回的工号（不带首字母）转换回带首字母的格式，用于后续匹配
+            if (qualifiedNumbersWithoutPrefix != null) {
+                // 由于返回的是不带首字母的工号，需要与原始工号匹配
+                // 构建一个映射：不带首字母的工号 -> 带首字母的工号
+                Map<String, String> prefixMap = new HashMap<>();
+                for (String empNo : employeeNumbers) {
+                    if (empNo != null && empNo.length() > 1) {
+                        prefixMap.put(empNo.substring(1), empNo);
+                    }
+                }
+                // 将查询结果转换回带首字母的工号
+                for (String qualifiedNo : qualifiedNumbersWithoutPrefix) {
+                    String originalNo = prefixMap.get(qualifiedNo);
+                    if (originalNo != null) {
+                        qualifiedNumbers.add(originalNo);
+                    }
+                }
+            }
+        }
+
         // 6. 按职位类分组统计
         Map<String, CompetenceCategoryCertStatisticsVO> categoryMap = new HashMap<>();
         int totalCountSum = 0;
         int certifiedCountSum = 0;
+        int qualifiedCountSum = 0;
 
         for (EmployeeWithCategoryVO employee : allEmployees) {
             String category = employee.getCompetenceCategory();
@@ -469,6 +538,15 @@ public class ExpertCertStatisticsService {
                 certifiedCountSum++;
             }
 
+            // 检查是否已任职
+            if (employeeNumber != null && qualifiedNumbers.contains(employeeNumber)) {
+                if (categoryStat.getQualifiedCount() == null) {
+                    categoryStat.setQualifiedCount(0);
+                }
+                categoryStat.setQualifiedCount(categoryStat.getQualifiedCount() + 1);
+                qualifiedCountSum++;
+            }
+
             categoryMap.put(category, categoryStat);
         }
 
@@ -494,6 +572,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setCompetenceCategory("总计");
         totalStatistics.setTotalCount(totalCountSum);
         totalStatistics.setCertifiedCount(certifiedCountSum);
+        totalStatistics.setQualifiedCount(qualifiedCountSum);
         if (totalCountSum > 0) {
             BigDecimal totalRate = new BigDecimal(certifiedCountSum)
                     .divide(new BigDecimal(totalCountSum), 4, RoundingMode.HALF_UP)
@@ -514,10 +593,10 @@ public class ExpertCertStatisticsService {
     }
 
     /**
-     * 按组织成熟度统计通过认证的人数
+     * 按组织成熟度统计通过认证和任职的人数
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有六级部门
      * @param personType 人员类型（0-全员）
-     * @return 按成熟度统计的认证信息
+     * @return 按成熟度统计的认证和任职信息（包含认证人数和任职人数）
      */
     public MaturityCertStatisticsResponseVO getMaturityCertStatistics(String deptCode, Integer personType) {
         List<DepartmentInfoVO> level6Depts;
@@ -537,6 +616,7 @@ public class ExpertCertStatisticsService {
                 total.setMaturityLevel("总计");
                 total.setBaselineCount(0);
                 total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
@@ -561,6 +641,7 @@ public class ExpertCertStatisticsService {
                 total.setMaturityLevel("总计");
                 total.setBaselineCount(0);
                 total.setCertifiedCount(0);
+                total.setQualifiedCount(0);
                 total.setCertRate(BigDecimal.ZERO);
                 response.setTotalStatistics(total);
                 return response;
@@ -608,6 +689,7 @@ public class ExpertCertStatisticsService {
             total.setMaturityLevel("总计");
             total.setBaselineCount(0);
             total.setCertifiedCount(0);
+            total.setQualifiedCount(0);
             total.setCertRate(BigDecimal.ZERO);
             response.setTotalStatistics(total);
             return response;
@@ -616,10 +698,43 @@ public class ExpertCertStatisticsService {
         // 6. 查询已通过认证的员工工号列表（复用现有方法）
         List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
 
+        // 6.1 查询已获得任职的员工工号列表（去除首字母后查询）
+        List<String> qualifiedNumbers = new ArrayList<>();
+        if (!allEmployeeNumbers.isEmpty()) {
+            // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
+            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
+            for (String empNo : allEmployeeNumbers) {
+                if (empNo != null && empNo.length() > 1) {
+                    employeeNumbersWithoutPrefix.add(empNo.substring(1));
+                }
+            }
+            // 使用去除首字母的工号列表查询任职信息
+            List<String> qualifiedNumbersWithoutPrefix = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+            // 将返回的工号（不带首字母）转换回带首字母的格式，用于后续匹配
+            if (qualifiedNumbersWithoutPrefix != null) {
+                // 由于返回的是不带首字母的工号，需要与原始工号匹配
+                // 构建一个映射：不带首字母的工号 -> 带首字母的工号
+                Map<String, String> prefixMap = new HashMap<>();
+                for (String empNo : allEmployeeNumbers) {
+                    if (empNo != null && empNo.length() > 1) {
+                        prefixMap.put(empNo.substring(1), empNo);
+                    }
+                }
+                // 将查询结果转换回带首字母的工号
+                for (String qualifiedNo : qualifiedNumbersWithoutPrefix) {
+                    String originalNo = prefixMap.get(qualifiedNo);
+                    if (originalNo != null) {
+                        qualifiedNumbers.add(originalNo);
+                    }
+                }
+            }
+        }
+
         // 7. 按成熟度分组统计
         Map<String, MaturityCertStatisticsVO> maturityMap = new HashMap<>();
         int totalBaselineCount = 0;
         int totalCertifiedCount = 0;
+        int totalQualifiedCount = 0;
 
         for (Map.Entry<String, List<String>> entry : deptEmployeeMap.entrySet()) {
             String deptCode6 = entry.getKey();
@@ -655,6 +770,19 @@ public class ExpertCertStatisticsService {
             maturityStat.setCertifiedCount(maturityStat.getCertifiedCount() + certifiedCount);
             totalCertifiedCount += certifiedCount;
 
+            // 统计任职人数
+            int qualifiedCount = 0;
+            for (String employeeNumber : employees) {
+                if (employeeNumber != null && qualifiedNumbers.contains(employeeNumber)) {
+                    qualifiedCount++;
+                }
+            }
+            if (maturityStat.getQualifiedCount() == null) {
+                maturityStat.setQualifiedCount(0);
+            }
+            maturityStat.setQualifiedCount(maturityStat.getQualifiedCount() + qualifiedCount);
+            totalQualifiedCount += qualifiedCount;
+
             maturityMap.put(maturity, maturityStat);
         }
 
@@ -680,6 +808,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setMaturityLevel("总计");
         totalStatistics.setBaselineCount(totalBaselineCount);
         totalStatistics.setCertifiedCount(totalCertifiedCount);
+        totalStatistics.setQualifiedCount(totalQualifiedCount);
         if (totalBaselineCount > 0) {
             BigDecimal totalRate = new BigDecimal(totalCertifiedCount)
                     .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)

@@ -109,6 +109,27 @@ public class ExpertCertStatisticsController {
     }
 
     /**
+     * 通用接口：根据工号列表查询获得AI任职的员工工号
+     * @param request 包含员工工号列表的请求对象
+     * @return 获得AI任职的员工工号列表
+     */
+    @PostMapping("/check-qualification")
+    public ResponseEntity<Result<List<String>>> checkEmployeeQualification(
+            @RequestBody EmployeeCertCheckRequestVO request) {
+        try {
+            if (request == null || request.getEmployeeNumbers() == null || request.getEmployeeNumbers().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "员工工号列表不能为空"));
+            }
+
+            List<String> qualifiedNumbers = expertCertStatisticsService.getQualifiedEmployeeNumbers(
+                    request.getEmployeeNumbers());
+            return ResponseEntity.ok(Result.success("查询成功", qualifiedNumbers));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
      * 快速查询接口：查询单个员工是否通过认证（GET方式，方便测试）
      * @param employeeNumber 员工工号
      * @return 是否通过认证（true/false）
@@ -135,7 +156,7 @@ public class ExpertCertStatisticsController {
      * 查询全员任职认证信息
      * @param deptCode 部门ID（部门编码）
      * @param personType 人员类型（0-全员）
-     * @return 认证统计信息（包含各部门统计和总计）
+     * @return 认证和任职统计信息（包含各部门统计和总计，包含认证人数和任职人数）
      */
     @GetMapping("/employee-cert-statistics")
     public ResponseEntity<Result<EmployeeCertStatisticsResponseVO>> getEmployeeCertStatistics(
@@ -165,10 +186,10 @@ public class ExpertCertStatisticsController {
     }
 
     /**
-     * 按职位类统计部门下不同职位类人数中的认证人数
+     * 按职位类统计部门下不同职位类人数中的认证和任职人数
      * @param deptCode 部门ID（部门编码）
      * @param personType 人员类型（0-全员）
-     * @return 按职位类统计的认证信息
+     * @return 按职位类统计的认证和任职信息（包含认证人数和任职人数）
      */
     @GetMapping("/competence-category-cert-statistics")
     public ResponseEntity<Result<CompetenceCategoryCertStatisticsResponseVO>> getCompetenceCategoryCertStatistics(
@@ -198,10 +219,10 @@ public class ExpertCertStatisticsController {
     }
 
     /**
-     * 按组织成熟度统计通过认证的人数
+     * 按组织成熟度统计通过认证和任职的人数
      * @param deptCode 部门ID（部门编码）
      * @param personType 人员类型（0-全员）
-     * @return 按成熟度统计的认证信息
+     * @return 按成熟度统计的认证和任职信息（包含认证人数和任职人数）
      */
     @GetMapping("/maturity-cert-statistics")
     public ResponseEntity<Result<MaturityCertStatisticsResponseVO>> getMaturityCertStatistics(
