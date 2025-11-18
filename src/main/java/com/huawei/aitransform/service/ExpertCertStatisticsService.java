@@ -286,7 +286,7 @@ public class ExpertCertStatisticsService {
 
             // 3. 根据当前部门层级，确定查询的部门层级（下一层）
             Integer currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
-            queryLevel = currentLevel;
+            queryLevel = currentLevel + 1;
         }
 
         // 4. 遍历每个部门，分别统计

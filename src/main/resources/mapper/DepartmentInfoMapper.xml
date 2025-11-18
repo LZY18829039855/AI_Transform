@@ -3,11 +3,12 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.huawei.aitransform.mapper.DepartmentInfoMapper">
 
-    <!-- 根据父部门编码查询所有子部门（只返回部门ID和中文名称） -->
+    <!-- 根据父部门编码查询所有子部门（返回部门ID、中文名称和层级信息） -->
     <select id="getChildDepartments" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
         SELECT 
             dept_code AS deptCode,
-            dept_name AS deptName
+            dept_name AS deptName,
+            dept_level AS deptLevel
         FROM department_info_hrms
         WHERE parent_dept_code = #{parentDeptCode}
         ORDER BY dept_code
