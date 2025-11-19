@@ -499,19 +499,11 @@ public class ExpertCertStatisticsService {
                 deptCertifiedCount = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
             }
 
-            // 3.4 查询该部门已获得任职的干部工号列表
+            // 3.4 查询该部门已获得任职的干部工号列表（直接使用干部工号查询，不去除首字母）
             int deptQualifiedCount = 0;
             if (cadreEmployeeNumbers != null && !cadreEmployeeNumbers.isEmpty()) {
-                // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
-                // 例如：l00123456 -> 00123456
-                List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-                for (String empNo : cadreEmployeeNumbers) {
-                    if (empNo != null && empNo.length() > 1) {
-                        employeeNumbersWithoutPrefix.add(empNo.substring(1));
-                    }
-                }
-                // 使用去除首字母的工号列表查询任职信息
-                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+                // 直接使用干部工号查询任职信息，不去除首字母
+                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(cadreEmployeeNumbers);
                 deptQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
             }
 
