@@ -24,6 +24,11 @@ public class CadreInfoVO implements Serializable {
      */
     private String jobCategory;
 
+    /**
+     * AI成熟度（L1/L2/L3）
+     */
+    private String aiMaturity;
+
     public CadreInfoVO() {
     }
 
@@ -49,6 +54,14 @@ public class CadreInfoVO implements Serializable {
 
     public void setJobCategory(String jobCategory) {
         this.jobCategory = jobCategory;
+    }
+
+    public String getAiMaturity() {
+        return aiMaturity;
+    }
+
+    public void setAiMaturity(String aiMaturity) {
+        this.aiMaturity = aiMaturity;
     }
 }
 

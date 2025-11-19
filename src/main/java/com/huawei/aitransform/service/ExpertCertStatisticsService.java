@@ -1381,23 +1381,7 @@ public class ExpertCertStatisticsService {
             return response;
         }
 
-        // 4. 提取所有部门编码，查询AI成熟度信息
-        List<String> uniqueDeptCodes = allCadres.stream()
-                .map(CadreInfoVO::getDeptCode)
-                .filter(code -> code != null && !code.trim().isEmpty())
-                .distinct()
-                .collect(Collectors.toList());
-        
-        List<DepartmentMaturityVO> maturityList = departmentMaturityMapper.getDepartmentMaturities(uniqueDeptCodes);
-        // 构建部门编码到成熟度的映射
-        Map<String, String> deptMaturityMap = new HashMap<>();
-        for (DepartmentMaturityVO maturity : maturityList) {
-            if (maturity.getDeptCode() != null && maturity.getAiMaturity() != null) {
-                deptMaturityMap.put(maturity.getDeptCode(), maturity.getAiMaturity());
-            }
-        }
-
-        // 5. 提取所有干部工号，查询认证和科目二通过情况
+        // 4. 提取所有干部工号，查询认证和科目二通过情况
         List<String> allEmployeeNumbers = allCadres.stream()
                 .map(CadreInfoVO::getEmployeeNumber)
                 .filter(num -> num != null && !num.trim().isEmpty())
@@ -1450,8 +1434,8 @@ public class ExpertCertStatisticsService {
         int totalSubject2PassCount = 0;
 
         for (CadreInfoVO cadre : allCadres) {
-            String deptCodeForCadre = cadre.getDeptCode();
-            String aiMaturity = deptMaturityMap.getOrDefault(deptCodeForCadre, "未知");
+            // 直接从干部信息中获取AI成熟度（position_ai_maturity字段）
+            String aiMaturity = cadre.getAiMaturity();
             if (aiMaturity == null || aiMaturity.trim().isEmpty()) {
                 aiMaturity = "未知";
             }
