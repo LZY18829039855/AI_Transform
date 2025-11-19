@@ -312,19 +312,19 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部任职数据（按成熟度和职位类统计，仅L2和L3）
-     * @param deptId 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
      * @return 干部成熟度职位类任职统计信息
      */
     @GetMapping("/cadre-cert-statistics/by-maturity-and-job-category-qualified")
     public ResponseEntity<Result<CadreMaturityJobCategoryQualifiedStatisticsResponseVO>> getCadreMaturityJobCategoryQualifiedStatistics(
-            @RequestParam(value = "deptId", required = false) String deptId) {
+            @RequestParam(value = "deptCode", required = false) String deptCode) {
         try {
-            // 当deptId为"0"、空字符串或未提供时，使用默认值"030681"
-            if (deptId == null || deptId.trim().isEmpty() || "0".equals(deptId.trim())) {
-                deptId = "030681";
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
+                deptCode = "030681";
             }
 
-            CadreMaturityJobCategoryQualifiedStatisticsResponseVO result = expertCertStatisticsService.getCadreMaturityJobCategoryQualifiedStatistics(deptId);
+            CadreMaturityJobCategoryQualifiedStatisticsResponseVO result = expertCertStatisticsService.getCadreMaturityJobCategoryQualifiedStatistics(deptCode);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));

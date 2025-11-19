@@ -1432,15 +1432,15 @@ public class ExpertCertStatisticsService {
 
     /**
      * 查询干部任职数据（按成熟度和职位类统计，仅L2和L3）
-     * @param deptId 部门ID（部门编码），当为"0"时查询云核心网（030681）下的所有部门
+     * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网（030681）下的所有部门
      * @return 干部成熟度职位类任职统计响应
      */
-    public CadreMaturityJobCategoryQualifiedStatisticsResponseVO getCadreMaturityJobCategoryQualifiedStatistics(String deptId) {
-        String actualDeptCode = deptId;
+    public CadreMaturityJobCategoryQualifiedStatisticsResponseVO getCadreMaturityJobCategoryQualifiedStatistics(String deptCode) {
+        String actualDeptCode = deptCode;
         String deptName;
         
-        // 特殊处理：当 deptId 为 "0" 时，查询云核心网（030681）下的所有部门
-        if ("0".equals(deptId)) {
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网（030681）下的所有部门
+        if ("0".equals(deptCode)) {
             actualDeptCode = "030681";
             deptName = "云核心网";
         } else {
@@ -1478,7 +1478,7 @@ public class ExpertCertStatisticsService {
             // 如果没有干部，返回空统计
             CadreMaturityJobCategoryQualifiedStatisticsResponseVO response = 
                 new CadreMaturityJobCategoryQualifiedStatisticsResponseVO();
-            response.setDeptCode(deptId);
+            response.setDeptCode(deptCode);
             response.setDeptName(deptName);
             response.setMaturityStatistics(new ArrayList<>());
             CadreMaturityQualifiedStatisticsVO total = 
@@ -1679,7 +1679,7 @@ public class ExpertCertStatisticsService {
         // 9. 构建返回结果
         CadreMaturityJobCategoryQualifiedStatisticsResponseVO response = 
             new CadreMaturityJobCategoryQualifiedStatisticsResponseVO();
-        response.setDeptCode(deptId);
+        response.setDeptCode(deptCode);
         response.setDeptName(deptName);
         response.setMaturityStatistics(maturityStatistics);
         response.setTotalStatistics(totalStatistics);
