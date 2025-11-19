@@ -1,5 +1,6 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -17,5 +18,12 @@ public interface CadreMapper {
      * @return 干部工号列表
      */
     List<String> getCadreEmployeeNumbersByDeptCodes(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 根据部门编码列表查询干部工号和职位类
+     * @param deptCodes 部门编码列表
+     * @return 干部工号和职位类列表
+     */
+    List<EmployeeWithCategoryVO> getCadreEmployeesWithCategoryByDeptCodes(@Param("deptCodes") List<String> deptCodes);
 }
 

@@ -4,19 +4,38 @@
 <mapper namespace="com.huawei.aitransform.mapper.CadreMapper">
 
     <!-- 根据部门编码列表查询干部工号列表 -->
-    <!-- 只匹配最小部门编码（dept_code）字段 -->
+    <!-- 只匹配最小部门编码（mini_departname_id）字段 -->
     <select id="getCadreEmployeeNumbersByDeptCodes" resultType="java.lang.String">
-        SELECT DISTINCT employee_number
+        SELECT DISTINCT account
         FROM t_cadre
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
-                dept_code IN
+                mini_departname_id IN
                 <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                     #{deptCode}
                 </foreach>
             </if>
-            AND employee_number IS NOT NULL
-            AND employee_number != ''
+            AND account IS NOT NULL
+            AND account != ''
+        </where>
+    </select>
+
+    <!-- 根据部门编码列表查询干部工号和职位类 -->
+    <!-- 只匹配最小部门编码（mini_departname_id）字段 -->
+    <select id="getCadreEmployeesWithCategoryByDeptCodes" resultType="com.huawei.aitransform.entity.EmployeeWithCategoryVO">
+        SELECT DISTINCT
+            account AS employeeNumber,
+            COALESCE(cadre_competence_category, '未知') AS competenceCategory
+        FROM t_cadre
+        <where>
+            <if test="deptCodes != null and deptCodes.size() > 0">
+                mini_departname_id IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </if>
+            AND account IS NOT NULL
+            AND account != ''
         </where>
     </select>
 
