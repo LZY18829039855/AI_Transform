@@ -1335,22 +1335,38 @@ public class ExpertCertStatisticsService {
 
     /**
      * 查询干部任职认证数据（按成熟度和职位类统计）
-     * @param deptCode 部门ID（部门编码）
+     * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网（030681）下的所有部门
      * @return 干部成熟度职位类认证统计响应
      */
     public CadreMaturityJobCategoryCertStatisticsResponseVO getCadreMaturityJobCategoryCertStatistics(String deptCode) {
+        String actualDeptCode = deptCode;
+        String deptName;
+        
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网（030681）下的所有部门
+        if ("0".equals(deptCode)) {
+            actualDeptCode = "030681";
+            deptName = "云核心网";
+        } else {
+            deptName = null; // 稍后从数据库查询
+        }
+        
         // 1. 查询部门信息
-        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(actualDeptCode);
         if (deptInfo == null) {
-            throw new IllegalArgumentException("部门不存在：" + deptCode);
+            throw new IllegalArgumentException("部门不存在：" + actualDeptCode);
+        }
+        
+        // 如果deptName还没有设置，使用查询到的部门名称
+        if (deptName == null) {
+            deptName = deptInfo.getDeptName();
         }
 
         // 2. 查询该部门下的所有子部门（包括所有层级）
-        List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+        List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(actualDeptCode);
         
         // 构造部门编码列表（包括本部门本身和所有子部门）
         List<String> deptCodeList = new ArrayList<>();
-        deptCodeList.add(deptCode);
+        deptCodeList.add(actualDeptCode);
         if (allSubDepts != null && !allSubDepts.isEmpty()) {
             for (DepartmentInfoVO subDept : allSubDepts) {
                 if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
@@ -1366,7 +1382,7 @@ public class ExpertCertStatisticsService {
             CadreMaturityJobCategoryCertStatisticsResponseVO response = 
                 new CadreMaturityJobCategoryCertStatisticsResponseVO();
             response.setDeptCode(deptCode);
-            response.setDeptName(deptInfo.getDeptName());
+            response.setDeptName(deptName);
             response.setMaturityStatistics(new ArrayList<>());
             CadreMaturityCertStatisticsVO total = 
                 new CadreMaturityCertStatisticsVO();
@@ -1637,7 +1653,7 @@ public class ExpertCertStatisticsService {
         CadreMaturityJobCategoryCertStatisticsResponseVO response = 
             new CadreMaturityJobCategoryCertStatisticsResponseVO();
         response.setDeptCode(deptCode);
-        response.setDeptName(deptInfo.getDeptName());
+        response.setDeptName(deptName);
         response.setMaturityStatistics(maturityStatistics);
         response.setTotalStatistics(totalStatistics);
 
