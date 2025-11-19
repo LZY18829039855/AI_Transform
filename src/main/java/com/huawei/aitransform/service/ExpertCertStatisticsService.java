@@ -1,6 +1,10 @@
 package com.huawei.aitransform.service;
 
 import com.huawei.aitransform.constant.DepartmentConstants;
+import com.huawei.aitransform.entity.CadreInfoVO;
+import com.huawei.aitransform.entity.CadreJobCategoryCertStatisticsVO;
+import com.huawei.aitransform.entity.CadreMaturityCertStatisticsVO;
+import com.huawei.aitransform.entity.CadreMaturityJobCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
@@ -26,8 +30,10 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -230,6 +236,18 @@ public class ExpertCertStatisticsService {
             return new ArrayList<>();
         }
         return expertCertStatisticsMapper.getQualifiedEmployeeNumbers(employeeNumbers);
+    }
+
+    /**
+     * 根据工号列表查询已通过科目二考试的员工工号
+     * @param employeeNumbers 员工工号列表
+     * @return 已通过科目二的员工工号列表
+     */
+    public List<String> getSubject2PassedEmployeeNumbers(List<String> employeeNumbers) {
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return expertCertStatisticsMapper.getSubject2PassedEmployeeNumbers(employeeNumbers);
     }
 
     /**
@@ -1311,6 +1329,333 @@ public class ExpertCertStatisticsService {
         // 4. 构建返回结果
         EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
         response.setEmployeeDetails(employeeDetails);
+
+        return response;
+    }
+
+    /**
+     * 查询干部任职认证数据（按成熟度和职位类统计）
+     * @param deptCode 部门ID（部门编码）
+     * @return 干部成熟度职位类认证统计响应
+     */
+    public CadreMaturityJobCategoryCertStatisticsResponseVO getCadreMaturityJobCategoryCertStatistics(String deptCode) {
+        // 1. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        }
+
+        // 2. 查询该部门下的所有子部门（包括所有层级）
+        List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+        
+        // 构造部门编码列表（包括本部门本身和所有子部门）
+        List<String> deptCodeList = new ArrayList<>();
+        deptCodeList.add(deptCode);
+        if (allSubDepts != null && !allSubDepts.isEmpty()) {
+            for (DepartmentInfoVO subDept : allSubDepts) {
+                if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
+                    deptCodeList.add(subDept.getDeptCode());
+                }
+            }
+        }
+
+        // 3. 查询这些部门下的所有干部信息（工号、部门编码、职位类）
+        List<CadreInfoVO> allCadres = cadreMapper.getCadreInfoByDeptCodes(deptCodeList);
+        if (allCadres == null || allCadres.isEmpty()) {
+            // 如果没有干部，返回空统计
+            CadreMaturityJobCategoryCertStatisticsResponseVO response = 
+                new CadreMaturityJobCategoryCertStatisticsResponseVO();
+            response.setDeptCode(deptCode);
+            response.setDeptName(deptInfo.getDeptName());
+            response.setMaturityStatistics(new ArrayList<>());
+            CadreMaturityCertStatisticsVO total = 
+                new CadreMaturityCertStatisticsVO();
+            total.setMaturityLevel("总计");
+            total.setBaselineCount(0);
+            total.setCertifiedCount(0);
+            total.setSubject2PassCount(0);
+            total.setCertRate(BigDecimal.ZERO);
+            total.setSubject2PassRate(BigDecimal.ZERO);
+            total.setJobCategoryStatistics(null);
+            response.setTotalStatistics(total);
+            return response;
+        }
+
+        // 4. 提取所有部门编码，查询AI成熟度信息
+        List<String> uniqueDeptCodes = allCadres.stream()
+                .map(CadreInfoVO::getDeptCode)
+                .filter(code -> code != null && !code.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        
+        List<DepartmentMaturityVO> maturityList = departmentMaturityMapper.getDepartmentMaturities(uniqueDeptCodes);
+        // 构建部门编码到成熟度的映射
+        Map<String, String> deptMaturityMap = new HashMap<>();
+        for (DepartmentMaturityVO maturity : maturityList) {
+            if (maturity.getDeptCode() != null && maturity.getAiMaturity() != null) {
+                deptMaturityMap.put(maturity.getDeptCode(), maturity.getAiMaturity());
+            }
+        }
+
+        // 5. 提取所有干部工号，查询认证和科目二通过情况
+        List<String> allEmployeeNumbers = allCadres.stream()
+                .map(CadreInfoVO::getEmployeeNumber)
+                .filter(num -> num != null && !num.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+
+        // 5.1 查询已通过认证的干部工号列表
+        List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
+        Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+
+        // 5.2 查询已通过科目二的干部工号列表
+        // 注意：t_exam_record表中的emp_num字段可能是不带首字母的工号，需要处理
+        // 先尝试直接查询，如果工号格式匹配则使用，否则需要去除首字母后查询
+        List<String> subject2PassedNumbers = getSubject2PassedEmployeeNumbers(allEmployeeNumbers);
+        // 如果直接查询结果为空，尝试去除首字母后查询
+        if ((subject2PassedNumbers == null || subject2PassedNumbers.isEmpty()) && !allEmployeeNumbers.isEmpty()) {
+            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
+            Map<String, String> prefixMap = new HashMap<>();
+            for (String empNo : allEmployeeNumbers) {
+                if (empNo != null && empNo.length() > 1) {
+                    String withoutPrefix = empNo.substring(1);
+                    employeeNumbersWithoutPrefix.add(withoutPrefix);
+                    prefixMap.put(withoutPrefix, empNo);
+                }
+            }
+            List<String> subject2PassedWithoutPrefix = getSubject2PassedEmployeeNumbers(employeeNumbersWithoutPrefix);
+            if (subject2PassedWithoutPrefix != null && !subject2PassedWithoutPrefix.isEmpty()) {
+                subject2PassedNumbers = new ArrayList<>();
+                for (String passedNo : subject2PassedWithoutPrefix) {
+                    String originalNo = prefixMap.get(passedNo);
+                    if (originalNo != null) {
+                        subject2PassedNumbers.add(originalNo);
+                    }
+                }
+            }
+        }
+        Set<String> subject2PassedSet = new HashSet<>(subject2PassedNumbers != null ? subject2PassedNumbers : new ArrayList<>());
+
+        // 6. 按成熟度和职位类分组统计
+        // 结构：成熟度 -> 职位类 -> 统计信息
+        Map<String, Map<String, CadreJobCategoryCertStatisticsVO>> maturityJobCategoryMap = new HashMap<>();
+        
+        // 用于统计L2和L3的总基数（包含所有职位类）
+        Map<String, Integer> maturityTotalBaselineMap = new HashMap<>();
+        Map<String, Integer> maturityTotalCertifiedMap = new HashMap<>();
+        Map<String, Integer> maturityTotalSubject2PassMap = new HashMap<>();
+        
+        int totalBaselineCount = 0;
+        int totalCertifiedCount = 0;
+        int totalSubject2PassCount = 0;
+
+        for (CadreInfoVO cadre : allCadres) {
+            String deptCodeForCadre = cadre.getDeptCode();
+            String aiMaturity = deptMaturityMap.getOrDefault(deptCodeForCadre, "未知");
+            if (aiMaturity == null || aiMaturity.trim().isEmpty()) {
+                aiMaturity = "未知";
+            }
+
+            // 只统计L2和L3的成熟度
+            if (!"L2".equals(aiMaturity) && !"L3".equals(aiMaturity)) {
+                continue;
+            }
+
+            String jobCategory = cadre.getJobCategory();
+            if (jobCategory == null || jobCategory.trim().isEmpty()) {
+                jobCategory = "未知";
+            }
+
+            String employeeNumber = cadre.getEmployeeNumber();
+
+            // 统计成熟度的总基数（所有职位类）
+            maturityTotalBaselineMap.put(aiMaturity, maturityTotalBaselineMap.getOrDefault(aiMaturity, 0) + 1);
+            totalBaselineCount++;
+            
+            // 统计成熟度的总认证人数（所有职位类）
+            if (employeeNumber != null && certifiedSet.contains(employeeNumber)) {
+                maturityTotalCertifiedMap.put(aiMaturity, maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0) + 1);
+                totalCertifiedCount++;
+            }
+            
+            // 统计成熟度的总科目二通过人数（所有职位类）
+            if (employeeNumber != null && subject2PassedSet.contains(employeeNumber)) {
+                maturityTotalSubject2PassMap.put(aiMaturity, maturityTotalSubject2PassMap.getOrDefault(aiMaturity, 0) + 1);
+                totalSubject2PassCount++;
+            }
+
+            // 判断是否为软件类（职位类包含"软件"关键字）
+            boolean isSoftwareCategory = jobCategory != null && jobCategory.contains("软件");
+            
+            // L2只统计软件类，L3统计软件类和非软件类
+            boolean shouldInclude = false;
+            if ("L2".equals(aiMaturity)) {
+                // L2只统计软件类
+                shouldInclude = isSoftwareCategory;
+            } else if ("L3".equals(aiMaturity)) {
+                // L3统计软件类和非软件类（即所有职位类）
+                shouldInclude = true;
+            }
+
+            // 只有符合条件的职位类才加入到jobCategoryStatistics中
+            if (shouldInclude) {
+                // 获取或创建成熟度对应的职位类Map
+                Map<String, CadreJobCategoryCertStatisticsVO> jobCategoryMap = 
+                    maturityJobCategoryMap.getOrDefault(aiMaturity, new HashMap<>());
+
+                // 获取或创建职位类统计对象
+                CadreJobCategoryCertStatisticsVO jobCategoryStat = 
+                    jobCategoryMap.getOrDefault(jobCategory, new CadreJobCategoryCertStatisticsVO());
+                jobCategoryStat.setJobCategory(jobCategory);
+
+                // 累加基数人数（只统计符合条件的职位类）
+                if (jobCategoryStat.getBaselineCount() == null) {
+                    jobCategoryStat.setBaselineCount(0);
+                }
+                jobCategoryStat.setBaselineCount(jobCategoryStat.getBaselineCount() + 1);
+
+                // 检查是否已认证
+                if (employeeNumber != null && certifiedSet.contains(employeeNumber)) {
+                    if (jobCategoryStat.getCertifiedCount() == null) {
+                        jobCategoryStat.setCertifiedCount(0);
+                    }
+                    jobCategoryStat.setCertifiedCount(jobCategoryStat.getCertifiedCount() + 1);
+                }
+
+                // 检查是否已通过科目二
+                if (employeeNumber != null && subject2PassedSet.contains(employeeNumber)) {
+                    if (jobCategoryStat.getSubject2PassCount() == null) {
+                        jobCategoryStat.setSubject2PassCount(0);
+                    }
+                    jobCategoryStat.setSubject2PassCount(jobCategoryStat.getSubject2PassCount() + 1);
+                }
+
+                jobCategoryMap.put(jobCategory, jobCategoryStat);
+                maturityJobCategoryMap.put(aiMaturity, jobCategoryMap);
+            }
+        }
+
+        // 7. 计算每个职位类的认证率和科目二通过率，并构建成熟度统计对象
+        List<CadreMaturityCertStatisticsVO> maturityStatistics = new ArrayList<>();
+        
+        // 按L2、L3的顺序处理
+        for (String aiMaturity : new String[]{"L2", "L3"}) {
+            Map<String, CadreJobCategoryCertStatisticsVO> jobCategoryMap = maturityJobCategoryMap.get(aiMaturity);
+            if (jobCategoryMap == null) {
+                jobCategoryMap = new HashMap<>();
+            }
+
+            // 创建成熟度统计对象
+            CadreMaturityCertStatisticsVO maturityStat = 
+                new CadreMaturityCertStatisticsVO();
+            maturityStat.setMaturityLevel(aiMaturity);
+
+            // 使用所有职位类的总基数（从maturityTotalBaselineMap获取）
+            int maturityBaselineCount = maturityTotalBaselineMap.getOrDefault(aiMaturity, 0);
+            int maturityCertifiedCount = maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0);
+            int maturitySubject2PassCount = maturityTotalSubject2PassMap.getOrDefault(aiMaturity, 0);
+            
+            List<CadreJobCategoryCertStatisticsVO> jobCategoryStatistics = new ArrayList<>();
+
+            // 遍历该成熟度下的所有职位类（只包含符合条件的职位类）
+            for (CadreJobCategoryCertStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
+                // 计算职位类认证率（基于该职位类的基数）
+                if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
+                    if (jobCategoryStat.getCertifiedCount() == null) {
+                        jobCategoryStat.setCertifiedCount(0);
+                    }
+                    BigDecimal certRate = new BigDecimal(jobCategoryStat.getCertifiedCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
+                    jobCategoryStat.setCertRate(certRate);
+                } else {
+                    jobCategoryStat.setCertRate(BigDecimal.ZERO);
+                }
+
+                // 计算职位类科目二通过率（基于该职位类的基数）
+                if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
+                    if (jobCategoryStat.getSubject2PassCount() == null) {
+                        jobCategoryStat.setSubject2PassCount(0);
+                    }
+                    BigDecimal subject2PassRate = new BigDecimal(jobCategoryStat.getSubject2PassCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
+                    jobCategoryStat.setSubject2PassRate(subject2PassRate);
+                } else {
+                    jobCategoryStat.setSubject2PassRate(BigDecimal.ZERO);
+                }
+
+                jobCategoryStatistics.add(jobCategoryStat);
+            }
+
+            // 设置成熟度统计数据（使用所有职位类的总数）
+            maturityStat.setBaselineCount(maturityBaselineCount);
+            maturityStat.setCertifiedCount(maturityCertifiedCount);
+            maturityStat.setSubject2PassCount(maturitySubject2PassCount);
+            maturityStat.setJobCategoryStatistics(jobCategoryStatistics);
+
+            // 计算成熟度认证率（基于所有职位类的基数）
+            if (maturityBaselineCount > 0) {
+                BigDecimal certRate = new BigDecimal(maturityCertifiedCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setCertRate(certRate);
+            } else {
+                maturityStat.setCertRate(BigDecimal.ZERO);
+            }
+
+            // 计算成熟度科目二通过率（基于所有职位类的基数）
+            if (maturityBaselineCount > 0) {
+                BigDecimal subject2PassRate = new BigDecimal(maturitySubject2PassCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setSubject2PassRate(subject2PassRate);
+            } else {
+                maturityStat.setSubject2PassRate(BigDecimal.ZERO);
+            }
+
+            maturityStatistics.add(maturityStat);
+        }
+
+        // 8. 计算总计统计
+        // 总计只统计L2和L3的成熟度
+        // totalBaselineCount、totalCertifiedCount、totalSubject2PassCount已经在第6步中统计了（只包含L2和L3）
+
+        CadreMaturityCertStatisticsVO totalStatistics = 
+            new CadreMaturityCertStatisticsVO();
+        totalStatistics.setMaturityLevel("总计");
+        totalStatistics.setBaselineCount(totalBaselineCount);
+        totalStatistics.setCertifiedCount(totalCertifiedCount);
+        totalStatistics.setSubject2PassCount(totalSubject2PassCount);
+        totalStatistics.setJobCategoryStatistics(null);
+
+        // 计算总计认证率
+        if (totalBaselineCount > 0) {
+            BigDecimal totalCertRate = new BigDecimal(totalCertifiedCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setCertRate(totalCertRate);
+        } else {
+            totalStatistics.setCertRate(BigDecimal.ZERO);
+        }
+
+        // 计算总计科目二通过率
+        if (totalBaselineCount > 0) {
+            BigDecimal totalSubject2PassRate = new BigDecimal(totalSubject2PassCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setSubject2PassRate(totalSubject2PassRate);
+        } else {
+            totalStatistics.setSubject2PassRate(BigDecimal.ZERO);
+        }
+
+        // 9. 构建返回结果
+        CadreMaturityJobCategoryCertStatisticsResponseVO response = 
+            new CadreMaturityJobCategoryCertStatisticsResponseVO();
+        response.setDeptCode(deptCode);
+        response.setDeptName(deptInfo.getDeptName());
+        response.setMaturityStatistics(maturityStatistics);
+        response.setTotalStatistics(totalStatistics);
 
         return response;
     }

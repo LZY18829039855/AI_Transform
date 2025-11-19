@@ -39,5 +39,25 @@
         </where>
     </select>
 
+    <!-- 根据部门编码列表查询干部信息（工号、部门编码、职位类） -->
+    <!-- 只匹配最小部门编码（mini_departname_id）字段 -->
+    <select id="getCadreInfoByDeptCodes" resultType="com.huawei.aitransform.entity.CadreInfoVO">
+        SELECT DISTINCT
+            account AS employeeNumber,
+            mini_departname_id AS deptCode,
+            COALESCE(cadre_competence_category, '未知') AS jobCategory
+        FROM t_cadre
+        <where>
+            <if test="deptCodes != null and deptCodes.size() > 0">
+                mini_departname_id IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </if>
+            AND account IS NOT NULL
+            AND account != ''
+        </where>
+    </select>
+
 </mapper>
 

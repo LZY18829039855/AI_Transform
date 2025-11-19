@@ -40,5 +40,12 @@ public interface ExpertCertStatisticsMapper {
      * @return 获得AI任职的员工工号列表
      */
     List<String> getQualifiedEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 查询已通过科目二考试的员工工号列表
+     * @param employeeNumbers 员工工号列表
+     * @return 已通过科目二的工号列表
+     */
+    List<String> getSubject2PassedEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 

@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.entity.CadreMaturityJobCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
@@ -278,6 +279,28 @@ public class ExpertCertStatisticsController {
             }
 
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getEmployeeDrillDownInfo(deptCode, personType, dataType);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 查询干部任职认证数据（按成熟度和职位类统计）
+     * @param deptCode 部门ID（部门编码）
+     * @return 干部成熟度职位类认证统计信息
+     */
+    @GetMapping("/cadre-cert-statistics/by-maturity-and-job-category")
+    public ResponseEntity<Result<CadreMaturityJobCategoryCertStatisticsResponseVO>> getCadreMaturityJobCategoryCertStatistics(
+            @RequestParam(value = "deptCode", required = true) String deptCode) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            CadreMaturityJobCategoryCertStatisticsResponseVO result = expertCertStatisticsService.getCadreMaturityJobCategoryCertStatistics(deptCode);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));

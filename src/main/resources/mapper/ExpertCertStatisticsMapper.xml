@@ -113,5 +113,20 @@
         AND CURDATE() BETWEEN q.competence_from AND q.competence_to
     </select>
 
+    <!-- 查询已通过科目二考试的员工工号列表 -->
+    <select id="getSubject2PassedEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT exam.emp_num
+        FROM t_exam_record exam
+        WHERE exam.emp_num IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+        AND exam.emp_num IS NOT NULL
+        AND exam.emp_num != ''
+        AND exam.exam_name IS NOT NULL
+        AND exam.exam_name != ''
+        AND exam.is_pass = 1
+    </select>
+
 </mapper>
 
