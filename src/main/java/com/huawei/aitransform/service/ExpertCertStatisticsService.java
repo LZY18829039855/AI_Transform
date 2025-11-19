@@ -887,35 +887,10 @@ public class ExpertCertStatisticsService {
             certifiedNumbers = getCertifiedEmployeeNumbers(cadreEmployeeNumbers);
         }
 
-        // 5.1 查询已获得任职的干部工号列表（去除首字母后查询）
+        // 5.1 查询已获得任职的干部工号列表（直接使用干部工号查询）
         List<String> qualifiedNumbers = new ArrayList<>();
         if (!cadreEmployeeNumbers.isEmpty()) {
-            // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
-            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-            for (String empNo : cadreEmployeeNumbers) {
-                if (empNo != null && empNo.length() > 1) {
-                    employeeNumbersWithoutPrefix.add(empNo.substring(1));
-                }
-            }
-            // 使用去除首字母的工号列表查询任职信息
-            List<String> qualifiedNumbersWithoutPrefix = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
-            // 将返回的工号（不带首字母）转换回带首字母的格式，用于后续匹配
-            if (qualifiedNumbersWithoutPrefix != null) {
-                // 构建一个映射：不带首字母的工号 -> 带首字母的工号
-                Map<String, String> prefixMap = new HashMap<>();
-                for (String empNo : cadreEmployeeNumbers) {
-                    if (empNo != null && empNo.length() > 1) {
-                        prefixMap.put(empNo.substring(1), empNo);
-                    }
-                }
-                // 将查询结果转换回带首字母的工号
-                for (String qualifiedNo : qualifiedNumbersWithoutPrefix) {
-                    String originalNo = prefixMap.get(qualifiedNo);
-                    if (originalNo != null) {
-                        qualifiedNumbers.add(originalNo);
-                    }
-                }
-            }
+            qualifiedNumbers = getQualifiedEmployeeNumbers(cadreEmployeeNumbers);
         }
 
         // 6. 按职位类分组统计
@@ -1732,32 +1707,9 @@ public class ExpertCertStatisticsService {
                 .distinct()
                 .collect(Collectors.toList());
 
-        // 5. 查询已获得任职的干部工号列表
-        // 注意：t_qualifications表中的employee_number字段可能是不带首字母的工号，需要处理
-        // 先尝试直接查询，如果工号格式匹配则使用，否则需要去除首字母后查询
-        List<String> qualifiedNumbers = new ArrayList<>();
-        if (!allEmployeeNumbers.isEmpty()) {
-            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-            Map<String, String> prefixMap = new HashMap<>();
-            for (String empNo : allEmployeeNumbers) {
-                if (empNo != null && empNo.length() > 1) {
-                    String withoutPrefix = empNo.substring(1);
-                    employeeNumbersWithoutPrefix.add(withoutPrefix);
-                    prefixMap.put(withoutPrefix, empNo);
-                }
-            }
-            // 使用去除首字母的工号列表查询任职信息
-            List<String> qualifiedNumbersWithoutPrefix = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
-            if (qualifiedNumbersWithoutPrefix != null && !qualifiedNumbersWithoutPrefix.isEmpty()) {
-                for (String qualifiedNo : qualifiedNumbersWithoutPrefix) {
-                    String originalNo = prefixMap.get(qualifiedNo);
-                    if (originalNo != null) {
-                        qualifiedNumbers.add(originalNo);
-                    }
-                }
-            }
-        }
-        Set<String> qualifiedSet = new HashSet<>(qualifiedNumbers);
+        // 5. 查询已获得任职的干部工号列表（直接使用干部工号查询）
+        List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(allEmployeeNumbers);
+        Set<String> qualifiedSet = new HashSet<>(qualifiedNumbers != null ? qualifiedNumbers : new ArrayList<>());
 
         // 6. 按成熟度和职位类分组统计（仅统计L2和L3）
         // 结构：成熟度 -> 职位类 -> 统计信息
