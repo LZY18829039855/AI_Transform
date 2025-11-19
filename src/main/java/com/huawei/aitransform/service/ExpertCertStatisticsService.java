@@ -1320,6 +1320,15 @@ public class ExpertCertStatisticsService {
 
             // 遍历该成熟度下的所有职位类（只包含符合条件的职位类）
             for (CadreJobCategoryCertStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
+                // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
+                if ("L2".equals(aiMaturity)) {
+                    String jobCategory = jobCategoryStat.getJobCategory();
+                    if (jobCategory == null || !jobCategory.contains("软件")) {
+                        // L2非软件类数据不返回
+                        continue;
+                    }
+                }
+                
                 // 计算职位类认证率（基于该职位类的基数）
                 if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
                     if (jobCategoryStat.getCertifiedCount() == null) {
@@ -1603,6 +1612,15 @@ public class ExpertCertStatisticsService {
 
             // 遍历该成熟度下的所有职位类（只包含符合条件的职位类）
             for (CadreJobCategoryQualifiedStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
+                // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
+                if ("L2".equals(aiMaturity)) {
+                    String jobCategory = jobCategoryStat.getJobCategory();
+                    if (jobCategory == null || !jobCategory.contains("软件")) {
+                        // L2非软件类数据不返回
+                        continue;
+                    }
+                }
+                
                 // 计算职位类任职率（基于该职位类的基数）
                 if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
                     if (jobCategoryStat.getQualifiedCount() == null) {
