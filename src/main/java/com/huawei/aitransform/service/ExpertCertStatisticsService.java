@@ -1244,8 +1244,8 @@ public class ExpertCertStatisticsService {
                 totalSubject2PassCount++;
             }
 
-            // 判断是否为软件类（职位类包含"软件"关键字）
-            boolean isSoftwareCategory = jobCategory != null && jobCategory.contains("软件");
+            // 判断是否为软件类（职位类等于"软件类"）
+            boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
             
             // L2只返回软件类员工数据，L3返回软件类和非软件类员工数据
             // 注意：L2的总基数、总认证人数、总科目二通过人数已经在上面的统计中包含了所有职位类
@@ -1323,7 +1323,7 @@ public class ExpertCertStatisticsService {
                 // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
                 if ("L2".equals(aiMaturity)) {
                     String jobCategory = jobCategoryStat.getJobCategory();
-                    if (jobCategory == null || !jobCategory.contains("软件")) {
+                    if (jobCategory == null || jobCategory.equals("非软件类")) {
                         // L2非软件类数据不返回
                         continue;
                     }
@@ -1545,8 +1545,8 @@ public class ExpertCertStatisticsService {
                 totalQualifiedCount++;
             }
 
-            // 判断是否为软件类（职位类包含"软件"关键字）
-            boolean isSoftwareCategory = jobCategory != null && jobCategory.contains("软件");
+            // 判断是否为软件类（职位类等于"软件类"）
+            boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
             
             // L2只返回软件类员工数据，L3返回软件类和非软件类员工数据
             // 注意：L2的总基数、总任职人数已经在上面的统计中包含了所有职位类
@@ -1615,7 +1615,7 @@ public class ExpertCertStatisticsService {
                 // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
                 if ("L2".equals(aiMaturity)) {
                     String jobCategory = jobCategoryStat.getJobCategory();
-                    if (jobCategory == null || !jobCategory.contains("软件")) {
+                    if (jobCategory == null || jobCategory.equals("非软件类")) {
                         // L2非软件类数据不返回
                         continue;
                     }
