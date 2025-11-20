@@ -64,7 +64,7 @@
     <select id="getCadreCertDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.cn_name AS name,
-            e.account AS employeeNumber,
+            SUBSTRING(e.account, 2) AS employeeNumber,
             e.competence_category AS competenceCategory,
             e.competence_subcategory AS competenceSubcategory,
             e.departname2,
@@ -133,7 +133,7 @@
     <select id="getCadreQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.cn_name AS name,
-            e.account AS employeeNumber,
+            SUBSTRING(e.account, 2) AS employeeNumber,
             e.competence_category AS competenceCategory,
             e.competence_subcategory AS competenceSubcategory,
             e.departname2,
@@ -141,7 +141,6 @@
             e.departname4,
             e.departname5,
             e.departname6,
-            e.departname7,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
             q.competence_subcategory_cn AS competenceSubcategoryCn,

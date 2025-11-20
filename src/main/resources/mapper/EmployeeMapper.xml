@@ -116,7 +116,7 @@
     <select id="getEmployeeCertDetailsByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.cn_name AS name,
-            e.account AS employeeNumber,
+            SUBSTRING(e.account, 2) AS employeeNumber,
             e.competence_category AS competenceCategory,
             e.competence_subcategory AS competenceSubcategory,
             e.departname2,
@@ -124,7 +124,6 @@
             e.departname4,
             e.departname5,
             e.departname6,
-            e.departname7,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
