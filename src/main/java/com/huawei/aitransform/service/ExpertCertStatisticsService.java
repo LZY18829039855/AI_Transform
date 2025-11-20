@@ -1158,6 +1158,51 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 查询干部任职数据
+     * @param deptCode 部门ID（部门编码）
+     * @param aiMaturity 岗位AI成熟度
+     * @param jobCategory 职位类
+     * @return 员工详细信息列表
+     */
+    public EmployeeDrillDownResponseVO getCadreQualifiedDetailsByConditions(
+            String deptCode, String aiMaturity, String jobCategory) {
+        // 1. 参数校验
+        if (deptCode == null || deptCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("部门ID不能为空");
+        }
+
+        // 2. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        }
+
+        // 3. 查询该部门下的所有子部门（包括所有层级）
+        List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+        
+        // 构造部门编码列表（包括本部门本身和所有子部门）
+        List<String> deptCodeList = new ArrayList<>();
+        deptCodeList.add(deptCode);
+        if (allSubDepts != null && !allSubDepts.isEmpty()) {
+            for (DepartmentInfoVO subDept : allSubDepts) {
+                if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
+                    deptCodeList.add(subDept.getDeptCode());
+                }
+            }
+        }
+
+        // 4. 查询干部任职数据
+        List<EmployeeDetailVO> employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(
+                deptCodeList, aiMaturity, jobCategory);
+
+        // 5. 构建返回结果
+        EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
+        response.setEmployeeDetails(employeeDetails);
+
+        return response;
+    }
+
+    /**
      * 查询干部任职认证数据（按成熟度和职位类统计）
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网（030681）下的所有部门
      * @return 干部成熟度职位类认证统计响应

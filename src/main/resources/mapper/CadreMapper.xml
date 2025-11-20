@@ -141,6 +141,7 @@
             e.departname4,
             e.departname5,
             e.departname6,
+            e.departname7,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
             q.competence_subcategory_cn AS competenceSubcategoryCn,

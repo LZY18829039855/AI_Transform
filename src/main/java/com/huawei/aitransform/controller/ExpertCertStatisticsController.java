@@ -365,5 +365,32 @@ public class ExpertCertStatisticsController {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
     }
+
+    /**
+     * 查询干部任职数据
+     * @param deptCode 部门ID（部门编码）
+     * @param aiMaturity 岗位AI成熟度
+     * @param jobCategory 职位类
+     * @return 员工详细信息列表
+     */
+    @GetMapping("/cadre-qualified-details")
+    public ResponseEntity<Result<EmployeeDrillDownResponseVO>> getCadreQualifiedDetailsByConditions(
+            @RequestParam(value = "deptCode", required = true) String deptCode,
+            @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
+            @RequestParam(value = "jobCategory", required = false) String jobCategory) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            EmployeeDrillDownResponseVO result = expertCertStatisticsService.getCadreQualifiedDetailsByConditions(
+                    deptCode, aiMaturity, jobCategory);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
 }
 
