@@ -150,7 +150,8 @@
             q.competence_from AS competenceFrom,
             q.competence_to AS competenceTo,
             1 AS isCadre,
-            dept.dept_name AS miniDeptName
+            dept.dept_name AS miniDeptName,
+            c.cadre_type AS cadreType
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
         INNER JOIN t_qualifications q ON (c.account = q.employee_number)

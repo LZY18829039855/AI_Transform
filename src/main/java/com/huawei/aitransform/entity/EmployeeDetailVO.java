@@ -99,6 +99,51 @@ public class EmployeeDetailVO implements Serializable {
      */
     private String miniDeptName;
 
+    /**
+     * 干部类型（干部表的cadre_type字段）
+     */
+    private String cadreType;
+
+    /**
+     * 能力族（任职数据时使用）
+     */
+    private String competenceFamilyCn;
+
+    /**
+     * 能力类（任职数据时使用）
+     */
+    private String competenceCategoryCn;
+
+    /**
+     * 能力子类（任职数据时使用）
+     */
+    private String competenceSubcategoryCn;
+
+    /**
+     * 方向中文名称（任职数据时使用）
+     */
+    private String directionCnName;
+
+    /**
+     * 能力等级中文（任职数据时使用）
+     */
+    private String competenceRatingCn;
+
+    /**
+     * 能力级别中文（任职数据时使用）
+     */
+    private String competenceGradeCn;
+
+    /**
+     * 任职开始时间（任职数据时使用）
+     */
+    private Date competenceFrom;
+
+    /**
+     * 任职结束时间（任职数据时使用）
+     */
+    private Date competenceTo;
+
     public EmployeeDetailVO() {
     }
 
@@ -228,6 +273,78 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setMiniDeptName(String miniDeptName) {
         this.miniDeptName = miniDeptName;
+    }
+
+    public String getCadreType() {
+        return cadreType;
+    }
+
+    public void setCadreType(String cadreType) {
+        this.cadreType = cadreType;
+    }
+
+    public String getCompetenceFamilyCn() {
+        return competenceFamilyCn;
+    }
+
+    public void setCompetenceFamilyCn(String competenceFamilyCn) {
+        this.competenceFamilyCn = competenceFamilyCn;
+    }
+
+    public String getCompetenceCategoryCn() {
+        return competenceCategoryCn;
+    }
+
+    public void setCompetenceCategoryCn(String competenceCategoryCn) {
+        this.competenceCategoryCn = competenceCategoryCn;
+    }
+
+    public String getCompetenceSubcategoryCn() {
+        return competenceSubcategoryCn;
+    }
+
+    public void setCompetenceSubcategoryCn(String competenceSubcategoryCn) {
+        this.competenceSubcategoryCn = competenceSubcategoryCn;
+    }
+
+    public String getDirectionCnName() {
+        return directionCnName;
+    }
+
+    public void setDirectionCnName(String directionCnName) {
+        this.directionCnName = directionCnName;
+    }
+
+    public String getCompetenceRatingCn() {
+        return competenceRatingCn;
+    }
+
+    public void setCompetenceRatingCn(String competenceRatingCn) {
+        this.competenceRatingCn = competenceRatingCn;
+    }
+
+    public String getCompetenceGradeCn() {
+        return competenceGradeCn;
+    }
+
+    public void setCompetenceGradeCn(String competenceGradeCn) {
+        this.competenceGradeCn = competenceGradeCn;
+    }
+
+    public Date getCompetenceFrom() {
+        return competenceFrom;
+    }
+
+    public void setCompetenceFrom(Date competenceFrom) {
+        this.competenceFrom = competenceFrom;
+    }
+
+    public Date getCompetenceTo() {
+        return competenceTo;
+    }
+
+    public void setCompetenceTo(Date competenceTo) {
+        this.competenceTo = competenceTo;
     }
 }
 
