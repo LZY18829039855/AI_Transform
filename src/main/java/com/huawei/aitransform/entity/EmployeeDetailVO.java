@@ -1,5 +1,6 @@
 package com.huawei.aitransform.entity;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import java.io.Serializable;
 import java.util.Date;
@@ -7,6 +8,7 @@ import java.util.Date;
 /**
  * 员工详细信息VO
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
 public class EmployeeDetailVO implements Serializable {
 
     private static final long serialVersionUID = 1L;

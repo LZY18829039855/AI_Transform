@@ -141,7 +141,6 @@
             e.departname4,
             e.departname5,
             e.departname6,
-            e.departname7,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
             q.competence_subcategory_cn AS competenceSubcategoryCn,
@@ -150,10 +149,12 @@
             q.competence_grade_cn AS competenceGradeCn,
             q.competence_from AS competenceFrom,
             q.competence_to AS competenceTo,
-            1 AS isCadre
+            1 AS isCadre,
+            dept.dept_name AS miniDeptName
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
         INNER JOIN t_qualifications q ON (c.account = q.employee_number)
+        LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.expired_date IS NULL
         AND q.employee_number IS NOT NULL
         AND q.employee_number != ''
