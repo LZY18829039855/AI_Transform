@@ -1162,13 +1162,22 @@ public class ExpertCertStatisticsService {
      * @param deptCode 部门ID（部门编码）
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
+     * @param personType 人员类型（1-干部，当前只处理干部类型）
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getCadreQualifiedDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
+        }
+
+        if (personType == null) {
+            throw new IllegalArgumentException("人员类型不能为空");
+        }
+
+        if (personType != 1) {
+            throw new IllegalArgumentException("暂不支持该人员类型，当前只支持干部（personType=1）");
         }
 
         // 2. 查询部门信息
