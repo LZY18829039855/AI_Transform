@@ -130,7 +130,11 @@
             CASE 
                 WHEN exam.emp_num IS NOT NULL THEN 1 
                 ELSE 0 
-            END AS isPassedSubject2
+            END AS isPassedSubject2,
+            CASE 
+                WHEN c.account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isCadre
         FROM t_employee e
         INNER JOIN (
             SELECT DISTINCT
@@ -156,6 +160,7 @@
             AND emp_num IS NOT NULL
             AND emp_num != ''
         ) exam ON (e.sn = exam.emp_num)
+        LEFT JOIN t_cadre c ON (SUBSTRING(e.account, 2) = c.account)
         WHERE e.expired_date IS NULL
         <choose>
             <when test="deptLevel == 1">

@@ -82,6 +82,11 @@ public class EmployeeDetailVO implements Serializable {
      */
     private Integer isPassedSubject2;
 
+    /**
+     * 是否为干部（0-否，1-是）
+     */
+    private Integer isCadre;
+
     public EmployeeDetailVO() {
     }
 
@@ -187,6 +192,14 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setIsPassedSubject2(Integer isPassedSubject2) {
         this.isPassedSubject2 = isPassedSubject2;
+    }
+
+    public Integer getIsCadre() {
+        return isCadre;
+    }
+
+    public void setIsCadre(Integer isCadre) {
+        this.isCadre = isCadre;
     }
 }
 

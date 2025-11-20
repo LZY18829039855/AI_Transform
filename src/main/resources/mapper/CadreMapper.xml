@@ -60,5 +60,128 @@
         </where>
     </select>
 
+    <!-- 根据部门编码列表、AI成熟度和职位类查询干部认证详细信息 -->
+    <select id="getCadreCertDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT DISTINCT
+            e.cn_name AS name,
+            e.account AS employeeNumber,
+            e.competence_category AS competenceCategory,
+            e.competence_subcategory AS competenceSubcategory,
+            e.departname2,
+            e.departname3,
+            e.departname4,
+            e.departname5,
+            e.departname6,
+            e.departname7,
+            cert.cer_title AS certTitle,
+            cert.start_time AS certStartTime,
+            CASE 
+                WHEN exam.emp_num IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isPassedSubject2,
+            1 AS isCadre
+        FROM t_cadre c
+        INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
+        INNER JOIN (
+            SELECT DISTINCT
+                COALESCE(employee_number, w3_account) AS employee_number,
+                w3_account,
+                cer_title,
+                start_time
+            FROM dwr_t_cert_record_t
+            WHERE (status = 1 OR approved_status = 1)
+            AND (
+                -- 华为研究类能力认证（专业级，xxx）
+                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE exam_name IS NOT NULL
+            AND exam_name != ''
+            AND is_pass = 1
+            AND emp_num IS NOT NULL
+            AND emp_num != ''
+        ) exam ON (e.sn = exam.emp_num)
+        WHERE e.expired_date IS NULL
+        <if test="deptCodes != null and deptCodes.size() > 0">
+            AND c.mini_departname_id IN
+            <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                #{deptCode}
+            </foreach>
+        </if>
+        <if test="aiMaturity != null and aiMaturity != ''">
+            AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
+        </if>
+        <if test="jobCategory != null and jobCategory != ''">
+            AND COALESCE(c.cadre_competence_category, '未知') = #{jobCategory}
+        </if>
+        AND c.account IS NOT NULL
+        AND c.account != ''
+        AND e.account IS NOT NULL
+        AND e.account != ''
+        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
+        ORDER BY e.account
+    </select>
+
+    <!-- 根据部门编码列表、AI成熟度和职位类查询干部任职详细信息 -->
+    <select id="getCadreQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT DISTINCT
+            e.cn_name AS name,
+            e.account AS employeeNumber,
+            e.competence_category AS competenceCategory,
+            e.competence_subcategory AS competenceSubcategory,
+            e.departname2,
+            e.departname3,
+            e.departname4,
+            e.departname5,
+            e.departname6,
+            e.departname7,
+            q.competence_family_cn AS competenceFamilyCn,
+            q.competence_category_cn AS competenceCategoryCn,
+            q.competence_subcategory_cn AS competenceSubcategoryCn,
+            q.direction_cn_name AS directionCnName,
+            q.competence_rating_cn AS competenceRatingCn,
+            q.competence_grade_cn AS competenceGradeCn,
+            q.competence_from AS competenceFrom,
+            q.competence_to AS competenceTo,
+            1 AS isCadre
+        FROM t_cadre c
+        INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
+        INNER JOIN t_qualifications q ON (c.account = q.employee_number)
+        WHERE e.expired_date IS NULL
+        AND q.employee_number IS NOT NULL
+        AND q.employee_number != ''
+        AND q.direction_cn_name IN (
+            '数据科学与AI工程（ICT）',
+            'AI算法及应用（ICT）',
+            'AI软件工程与工具（ICT）',
+            'AI系统测试（ICT）'
+        )
+        AND q.competence_from IS NOT NULL
+        AND q.competence_to IS NOT NULL
+        <if test="deptCodes != null and deptCodes.size() > 0">
+            AND c.mini_departname_id IN
+            <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                #{deptCode}
+            </foreach>
+        </if>
+        <if test="aiMaturity != null and aiMaturity != ''">
+            AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
+        </if>
+        <if test="jobCategory != null and jobCategory != ''">
+            AND COALESCE(c.cadre_competence_category, '未知') = #{jobCategory}
+        </if>
+        AND c.account IS NOT NULL
+        AND c.account != ''
+        AND e.account IS NOT NULL
+        AND e.account != ''
+        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
+        ORDER BY e.account, q.competence_from
+    </select>
+
 </mapper>
 

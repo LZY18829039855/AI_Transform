@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.CadreInfoVO;
+import com.huawei.aitransform.entity.EmployeeDetailVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -33,5 +34,29 @@ public interface CadreMapper {
      * @return 干部信息列表
      */
     List<CadreInfoVO> getCadreInfoByDeptCodes(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 根据部门编码列表、AI成熟度和职位类查询干部认证详细信息
+     * @param deptCodes 部门编码列表
+     * @param aiMaturity AI成熟度
+     * @param jobCategory 职位类
+     * @return 干部认证详细信息列表
+     */
+    List<EmployeeDetailVO> getCadreCertDetailsByConditions(
+            @Param("deptCodes") List<String> deptCodes,
+            @Param("aiMaturity") String aiMaturity,
+            @Param("jobCategory") String jobCategory);
+
+    /**
+     * 根据部门编码列表、AI成熟度和职位类查询干部任职详细信息
+     * @param deptCodes 部门编码列表
+     * @param aiMaturity AI成熟度
+     * @param jobCategory 职位类
+     * @return 干部任职详细信息列表
+     */
+    List<EmployeeDetailVO> getCadreQualifiedDetailsByConditions(
+            @Param("deptCodes") List<String> deptCodes,
+            @Param("aiMaturity") String aiMaturity,
+            @Param("jobCategory") String jobCategory);
 }
 

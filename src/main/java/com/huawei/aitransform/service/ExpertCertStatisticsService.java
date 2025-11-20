@@ -1039,7 +1039,7 @@ public class ExpertCertStatisticsService {
      * 查询部门维度的下钻信息
      * @param deptCode 部门ID（部门编码）
      * @param personType 人员类型（0：全员数据）
-     * @param dataType 数据类型（0：基线，1：任职数据，2：认证数据）
+     * @param dataType 数据类型（1：任职数据，2：认证数据）
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getEmployeeDrillDownInfo(String deptCode, Integer personType, Integer dataType) {
@@ -1076,11 +1076,98 @@ public class ExpertCertStatisticsService {
         } else if (dataType == 1) {
             // 任职数据：暂时返回空列表，等用户提供具体需求
             employeeDetails = new ArrayList<>();
-        } else if (dataType == 0) {
-            // 基线数据：暂时返回空列表，等用户提供具体需求
-            employeeDetails = new ArrayList<>();
         } else {
-            throw new IllegalArgumentException("不支持的数据类型：" + dataType);
+            throw new IllegalArgumentException("不支持的数据类型：" + dataType + "，只支持1（任职数据）和2（认证数据）");
+        }
+
+        // 4. 构建返回结果
+        EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
+        response.setEmployeeDetails(employeeDetails);
+
+        return response;
+    }
+
+    /**
+     * 查询干部或专家任职认证类信息
+     * @param deptCode 部门ID（部门编码）
+     * @param aiMaturity 岗位AI成熟度
+     * @param jobCategory 职位类
+     * @param personType 人员类型（1-干部，2-专家）
+     * @param dataType 数据类型（1-任职数据，2-认证数据）
+     * @return 员工详细信息列表
+     */
+    public EmployeeDrillDownResponseVO getPersonCertDetailsByConditions(
+            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer dataType) {
+        // 1. 参数校验
+        if (deptCode == null || deptCode.trim().isEmpty()) {
+            throw new IllegalArgumentException("部门ID不能为空");
+        }
+
+        if (personType == null) {
+            throw new IllegalArgumentException("人员类型不能为空");
+        }
+
+        if (personType != 1 && personType != 2) {
+            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
+        }
+
+        if (dataType == null) {
+            throw new IllegalArgumentException("数据类型不能为空");
+        }
+
+        if (dataType != 1 && dataType != 2) {
+            throw new IllegalArgumentException("不支持的数据类型：" + dataType + "，只支持1（任职数据）和2（认证数据）");
+        }
+
+        // 2. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        }
+
+        // 3. 根据人员类型和数据类型查询不同的信息
+        List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
+
+        if (personType == 1) {
+            // 干部处理
+            // 查询该部门下的所有子部门（包括所有层级）
+            List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+            
+            // 构造部门编码列表（包括本部门本身和所有子部门）
+            List<String> deptCodeList = new ArrayList<>();
+            deptCodeList.add(deptCode);
+            if (allSubDepts != null && !allSubDepts.isEmpty()) {
+                for (DepartmentInfoVO subDept : allSubDepts) {
+                    if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
+                        deptCodeList.add(subDept.getDeptCode());
+                    }
+                }
+            }
+
+            if (dataType == 2) {
+                // 干部认证数据
+                employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
+            } else if (dataType == 1) {
+                // 干部任职数据
+                employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
+            }
+        } else if (personType == 2) {
+            // 专家处理
+            String deptName = null;
+            // 判断是三层还是四层部门
+            if ("3".equals(deptInfo.getDeptLevel())) {
+                deptName = deptInfo.getDeptName();
+            }
+
+            if (dataType == 2) {
+                // 专家认证数据
+                employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByConditions(
+                        deptCode, deptName, aiMaturity, jobCategory);
+            } else if (dataType == 1) {
+                // 专家任职数据
+                employeeDetails = expertCertStatisticsMapper.getExpertQualifiedDetailsByConditions(
+                        deptCode, deptName, aiMaturity, jobCategory);
+            }
         }
 
         // 4. 构建返回结果
