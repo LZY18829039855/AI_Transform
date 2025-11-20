@@ -87,6 +87,16 @@ public class EmployeeDetailVO implements Serializable {
      */
     private Integer isCadre;
 
+    /**
+     * 岗位AI成熟度
+     */
+    private String aiMaturity;
+
+    /**
+     * 最小部门名称（通过干部表的mini_departname_id查询）
+     */
+    private String miniDeptName;
+
     public EmployeeDetailVO() {
     }
 
@@ -200,6 +210,22 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setIsCadre(Integer isCadre) {
         this.isCadre = isCadre;
+    }
+
+    public String getAiMaturity() {
+        return aiMaturity;
+    }
+
+    public void setAiMaturity(String aiMaturity) {
+        this.aiMaturity = aiMaturity;
+    }
+
+    public String getMiniDeptName() {
+        return miniDeptName;
+    }
+
+    public void setMiniDeptName(String miniDeptName) {
+        this.miniDeptName = miniDeptName;
     }
 }
 

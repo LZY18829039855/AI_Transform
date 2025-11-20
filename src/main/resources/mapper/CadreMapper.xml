@@ -72,14 +72,15 @@
             e.departname4,
             e.departname5,
             e.departname6,
-            e.departname7,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
                 WHEN exam.emp_num IS NOT NULL THEN 1 
                 ELSE 0 
             END AS isPassedSubject2,
-            1 AS isCadre
+            1 AS isCadre,
+            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
+            dept.dept_name AS miniDeptName
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
         INNER JOIN (
@@ -106,6 +107,7 @@
             AND emp_num IS NOT NULL
             AND emp_num != ''
         ) exam ON (e.sn = exam.emp_num)
+        LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.expired_date IS NULL
         <if test="deptCodes != null and deptCodes.size() > 0">
             AND c.mini_departname_id IN

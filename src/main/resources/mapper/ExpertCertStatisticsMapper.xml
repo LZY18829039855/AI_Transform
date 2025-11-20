@@ -140,7 +140,6 @@
             e.departname4,
             e.departname5,
             e.departname6,
-            e.departname7,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
@@ -150,7 +149,9 @@
             CASE 
                 WHEN c.account IS NOT NULL THEN 1 
                 ELSE 0 
-            END AS isCadre
+            END AS isCadre,
+            COALESCE(exp.ai_maturity, '未知') AS aiMaturity,
+            NULL AS miniDeptName
         FROM expert_info exp
         INNER JOIN t_employee e ON (exp.employee_number = e.account)
         INNER JOIN (

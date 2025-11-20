@@ -1088,16 +1088,15 @@ public class ExpertCertStatisticsService {
     }
 
     /**
-     * 查询干部或专家任职认证类信息
+     * 查询干部或专家认证类信息（默认查询认证数据）
      * @param deptCode 部门ID（部门编码）
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
-     * @param dataType 数据类型（1-任职数据，2-认证数据）
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getPersonCertDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer dataType) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
@@ -1111,21 +1110,13 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
         }
 
-        if (dataType == null) {
-            throw new IllegalArgumentException("数据类型不能为空");
-        }
-
-        if (dataType != 1 && dataType != 2) {
-            throw new IllegalArgumentException("不支持的数据类型：" + dataType + "，只支持1（任职数据）和2（认证数据）");
-        }
-
         // 2. 查询部门信息
         DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
         if (deptInfo == null) {
             throw new IllegalArgumentException("部门不存在：" + deptCode);
         }
 
-        // 3. 根据人员类型和数据类型查询不同的信息
+        // 3. 根据人员类型查询认证数据（默认查询认证数据，dataType=2）
         List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
 
         if (personType == 1) {
@@ -1144,13 +1135,8 @@ public class ExpertCertStatisticsService {
                 }
             }
 
-            if (dataType == 2) {
-                // 干部认证数据
-                employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
-            } else if (dataType == 1) {
-                // 干部任职数据
-                employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
-            }
+            // 干部认证数据
+            employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
         } else if (personType == 2) {
             // 专家处理
             String deptName = null;
@@ -1159,15 +1145,9 @@ public class ExpertCertStatisticsService {
                 deptName = deptInfo.getDeptName();
             }
 
-            if (dataType == 2) {
-                // 专家认证数据
-                employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByConditions(
-                        deptCode, deptName, aiMaturity, jobCategory);
-            } else if (dataType == 1) {
-                // 专家任职数据
-                employeeDetails = expertCertStatisticsMapper.getExpertQualifiedDetailsByConditions(
-                        deptCode, deptName, aiMaturity, jobCategory);
-            }
+            // 专家认证数据
+            employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByConditions(
+                    deptCode, deptName, aiMaturity, jobCategory);
         }
 
         // 4. 构建返回结果

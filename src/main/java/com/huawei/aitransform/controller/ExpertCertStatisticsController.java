@@ -334,12 +334,11 @@ public class ExpertCertStatisticsController {
     }
 
     /**
-     * 查询干部或专家任职认证类信息
+     * 查询干部或专家认证类信息（默认查询认证数据）
      * @param deptCode 部门ID（部门编码）
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
-     * @param dataType 数据类型（1-任职数据，2-认证数据）
      * @return 员工详细信息列表
      */
     @GetMapping("/person-cert-details")
@@ -347,8 +346,7 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "deptCode", required = true) String deptCode,
             @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
-            @RequestParam(value = "personType", required = true) Integer personType,
-            @RequestParam(value = "dataType", required = true) Integer dataType) {
+            @RequestParam(value = "personType", required = true) Integer personType) {
         try {
             if (deptCode == null || deptCode.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
@@ -358,12 +356,8 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
-            if (dataType == null) {
-                return ResponseEntity.ok(Result.error(400, "数据类型不能为空"));
-            }
-
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getPersonCertDetailsByConditions(
-                    deptCode, aiMaturity, jobCategory, personType, dataType);
+                    deptCode, aiMaturity, jobCategory, personType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));
