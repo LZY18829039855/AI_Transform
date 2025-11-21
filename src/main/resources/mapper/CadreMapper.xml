@@ -130,65 +130,131 @@
     </select>
 
     <!-- 根据部门编码列表、AI成熟度和职位类查询干部任职详细信息 -->
-    <!-- 注意：此接口只返回AI任职相关的数据，如果没有AI任职数据，返回空 -->
+    <!-- queryType=1: 查询有AI相关任职的人员信息 -->
+    <!-- queryType=2: 查询符合条件的所有成员，即使没有AI任职信息也显示人员信息，AI任职信息为空 -->
+    <!-- 每人最多显示一条信息，如果有多条AI任职结果，选取任职级别最高的一条展示 -->
     <select id="getCadreQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
-        SELECT DISTINCT
-            e.cn_name AS name,
-            SUBSTRING(e.account, 2) AS employeeNumber,
-            e.competence_category AS competenceCategory,
-            e.competence_subcategory AS competenceSubcategory,
-            e.departname2,
-            e.departname3,
-            e.departname4,
-            e.departname5,
-            e.departname6,
-            q.competence_family_cn AS competenceFamilyCn,
-            q.competence_category_cn AS competenceCategoryCn,
-            q.competence_subcategory_cn AS competenceSubcategoryCn,
-            q.direction_cn_name AS directionCnName,
-            q.competence_rating_cn AS competenceRatingCn,
-            q.competence_grade_cn AS competenceGradeCn,
-            q.competence_from AS competenceFrom,
-            q.competence_to AS competenceTo,
-            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
-            1 AS isCadre,
-            dept.dept_name AS miniDeptName,
-            c.cadre_type AS cadreType
-        FROM t_cadre c
-        INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
-        <!-- 始终使用 INNER JOIN，确保只返回有AI任职记录的干部 -->
-        INNER JOIN t_qualifications q ON (c.account = q.employee_number)
-        LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
-        WHERE e.expired_date IS NULL
-        <!-- 始终过滤AI任职相关条件，确保只返回AI任职数据 -->
-        AND q.employee_number IS NOT NULL
-        AND q.employee_number != ''
-        AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
-        )
-        AND q.competence_from IS NOT NULL
-        AND q.competence_to IS NOT NULL
-        <if test="deptCodes != null and deptCodes.size() > 0">
-            AND c.mini_departname_id IN
-            <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
-                #{deptCode}
-            </foreach>
-        </if>
-        <if test="aiMaturity != null and aiMaturity != ''">
-            AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
-        </if>
-        <if test="jobCategory != null and jobCategory != ''">
-            AND COALESCE(c.cadre_competence_category, '未知') = #{jobCategory}
-        </if>
-        AND c.account IS NOT NULL
-        AND c.account != ''
-        AND e.account IS NOT NULL
-        AND e.account != ''
-        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        ORDER BY e.account, q.competence_from
+        SELECT 
+            base.name,
+            base.employeeNumber,
+            base.competenceCategory,
+            base.competenceSubcategory,
+            base.departname2,
+            base.departname3,
+            base.departname4,
+            base.departname5,
+            base.departname6,
+            base.competenceFamilyCn,
+            base.competenceCategoryCn,
+            base.competenceSubcategoryCn,
+            base.directionCnName,
+            base.competenceRatingCn,
+            base.competenceGradeCn,
+            base.competenceFrom,
+            base.competenceTo,
+            base.aiMaturity,
+            base.isCadre,
+            base.miniDeptName,
+            base.cadreType
+        FROM (
+            SELECT DISTINCT
+                e.cn_name AS name,
+                SUBSTRING(e.account, 2) AS employeeNumber,
+                e.competence_category AS competenceCategory,
+                e.competence_subcategory AS competenceSubcategory,
+                e.departname2,
+                e.departname3,
+                e.departname4,
+                e.departname5,
+                e.departname6,
+                q.competence_family_cn AS competenceFamilyCn,
+                q.competence_category_cn AS competenceCategoryCn,
+                q.competence_subcategory_cn AS competenceSubcategoryCn,
+                q.direction_cn_name AS directionCnName,
+                q.competence_rating_cn AS competenceRatingCn,
+                q.competence_grade_cn AS competenceGradeCn,
+                q.competence_from AS competenceFrom,
+                q.competence_to AS competenceTo,
+                COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
+                1 AS isCadre,
+                dept.dept_name AS miniDeptName,
+                c.cadre_type AS cadreType,
+                c.account AS account,
+                -- 使用ROW_NUMBER()为每个员工的AI任职记录按级别排序，级别高的排在前面
+                -- 级别判断：专家级 > 高级 > 中级 > 初级，或者 L5 > L4 > L3 > L2 > L1
+                -- 如果没有AI任职记录（q为NULL），则排在最后，但仍会取rn=1（因为只有一条记录）
+                ROW_NUMBER() OVER (
+                    PARTITION BY c.account 
+                    ORDER BY 
+                        CASE 
+                            WHEN q.competence_rating_cn IS NULL THEN 999
+                            WHEN q.competence_rating_cn LIKE '%专家%' OR q.competence_rating_cn LIKE '%L5%' THEN 1
+                            WHEN q.competence_rating_cn LIKE '%高级%' OR q.competence_rating_cn LIKE '%L4%' THEN 2
+                            WHEN q.competence_rating_cn LIKE '%中级%' OR q.competence_rating_cn LIKE '%L3%' THEN 3
+                            WHEN q.competence_rating_cn LIKE '%初级%' OR q.competence_rating_cn LIKE '%L2%' THEN 4
+                            WHEN q.competence_rating_cn LIKE '%L1%' THEN 5
+                            ELSE 6
+                        END,
+                        q.competence_from DESC
+                ) AS rn
+            FROM t_cadre c
+            INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
+            <choose>
+                <when test="queryType != null and queryType == 2">
+                    <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI任职也显示 -->
+                    LEFT JOIN t_qualifications q ON (
+                        c.account = q.employee_number
+                        AND q.employee_number IS NOT NULL
+                        AND q.employee_number != ''
+                        AND q.direction_cn_name IN (
+                            '数据科学与AI工程（ICT）',
+                            'AI算法及应用（ICT）',
+                            'AI软件工程与工具（ICT）',
+                            'AI系统测试（ICT）'
+                        )
+                        AND q.competence_from IS NOT NULL
+                        AND q.competence_to IS NOT NULL
+                    )
+                </when>
+                <otherwise>
+                    <!-- queryType=1: 使用 INNER JOIN，只返回有AI任职记录的干部 -->
+                    INNER JOIN t_qualifications q ON (
+                        c.account = q.employee_number
+                        AND q.employee_number IS NOT NULL
+                        AND q.employee_number != ''
+                        AND q.direction_cn_name IN (
+                            '数据科学与AI工程（ICT）',
+                            'AI算法及应用（ICT）',
+                            'AI软件工程与工具（ICT）',
+                            'AI系统测试（ICT）'
+                        )
+                        AND q.competence_from IS NOT NULL
+                        AND q.competence_to IS NOT NULL
+                    )
+                </otherwise>
+            </choose>
+            LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
+            WHERE e.expired_date IS NULL
+            <if test="deptCodes != null and deptCodes.size() > 0">
+                AND c.mini_departname_id IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </if>
+            <if test="aiMaturity != null and aiMaturity != ''">
+                AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
+            </if>
+            <if test="jobCategory != null and jobCategory != ''">
+                AND COALESCE(c.cadre_competence_category, '未知') = #{jobCategory}
+            </if>
+            AND c.account IS NOT NULL
+            AND c.account != ''
+            AND e.account IS NOT NULL
+            AND e.account != ''
+            AND e.account REGEXP '^[a-z]0[0-9]{7}$'
+        ) base
+        WHERE base.rn = 1
+        ORDER BY base.account
     </select>
 
 </mapper>
