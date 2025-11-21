@@ -336,9 +336,10 @@ public class ExpertCertStatisticsController {
     /**
      * 查询干部或专家认证类信息（默认查询认证数据）
      * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
-     * @param aiMaturity 岗位AI成熟度
+     * @param aiMaturity 岗位AI成熟度（L5代表查询L2和L3的数据）
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
+     * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数），仅对干部类型有效
      * @return 员工详细信息列表
      */
     @GetMapping("/person-cert-details")
@@ -346,7 +347,8 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "deptCode", required = true) String deptCode,
             @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
-            @RequestParam(value = "personType", required = true) Integer personType) {
+            @RequestParam(value = "personType", required = true) Integer personType,
+            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
             // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
@@ -357,8 +359,18 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
+            // 验证 queryType 参数
+            if (queryType != null && queryType != 1 && queryType != 2) {
+                return ResponseEntity.ok(Result.error(400, "查询类型参数错误，只支持1（任职人数）或2（基线人数）"));
+            }
+
+            // 如果未提供 queryType，默认为1（任职人数）
+            if (queryType == null) {
+                queryType = 1;
+            }
+
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getPersonCertDetailsByConditions(
-                    deptCode, aiMaturity, jobCategory, personType);
+                    deptCode, aiMaturity, jobCategory, personType, queryType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));

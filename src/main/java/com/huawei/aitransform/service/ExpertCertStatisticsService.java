@@ -1096,7 +1096,7 @@ public class ExpertCertStatisticsService {
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getPersonCertDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory, Integer personType) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
@@ -1108,6 +1108,14 @@ public class ExpertCertStatisticsService {
 
         if (personType != 1 && personType != 2) {
             throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
+        }
+
+        // 验证 queryType 参数
+        if (queryType == null) {
+            queryType = 1; // 默认为任职人数
+        }
+        if (queryType != 1 && queryType != 2) {
+            throw new IllegalArgumentException("查询类型参数错误，只支持1（任职人数）或2（基线人数）");
         }
 
         // 2. 查询部门信息
@@ -1135,8 +1143,8 @@ public class ExpertCertStatisticsService {
                 }
             }
 
-            // 干部认证数据
-            employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory);
+            // 干部认证数据（queryType参数暂时保留，但认证数据查询不使用）
+            employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory, queryType);
         } else if (personType == 2) {
             // 专家处理
             String deptName = null;

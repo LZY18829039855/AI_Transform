@@ -192,7 +192,15 @@
             </otherwise>
         </choose>
         <if test="aiMaturity != null and aiMaturity != ''">
-            AND COALESCE(exp.ai_maturity, '未知') = #{aiMaturity}
+            <choose>
+                <when test="'L5'.equals(aiMaturity)">
+                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
+                    AND exp.ai_maturity IN ('L2', 'L3')
+                </when>
+                <otherwise>
+                    AND COALESCE(exp.ai_maturity, '未知') = #{aiMaturity}
+                </otherwise>
+            </choose>
         </if>
         <if test="jobCategory != null and jobCategory != ''">
             AND COALESCE(exp.job_category, '未知') = #{jobCategory}

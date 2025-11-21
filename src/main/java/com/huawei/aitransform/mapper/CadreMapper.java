@@ -38,14 +38,16 @@ public interface CadreMapper {
     /**
      * 根据部门编码列表、AI成熟度和职位类查询干部认证详细信息
      * @param deptCodes 部门编码列表
-     * @param aiMaturity AI成熟度
+     * @param aiMaturity AI成熟度（L5代表查询L2和L3的数据）
      * @param jobCategory 职位类
+     * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1
      * @return 干部认证详细信息列表
      */
     List<EmployeeDetailVO> getCadreCertDetailsByConditions(
             @Param("deptCodes") List<String> deptCodes,
             @Param("aiMaturity") String aiMaturity,
-            @Param("jobCategory") String jobCategory);
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
 
     /**
      * 根据部门编码列表、AI成熟度和职位类查询干部任职详细信息
