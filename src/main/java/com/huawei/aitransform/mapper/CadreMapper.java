@@ -52,11 +52,13 @@ public interface CadreMapper {
      * @param deptCodes 部门编码列表
      * @param aiMaturity AI成熟度
      * @param jobCategory 职位类
+     * @param queryType 查询类型（1-任职人数，2-基线人数）
      * @return 干部任职详细信息列表
      */
     List<EmployeeDetailVO> getCadreQualifiedDetailsByConditions(
             @Param("deptCodes") List<String> deptCodes,
             @Param("aiMaturity") String aiMaturity,
-            @Param("jobCategory") String jobCategory);
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
 }
 

@@ -373,6 +373,7 @@ public class ExpertCertStatisticsController {
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，当前只处理干部类型）
+     * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数）
      * @return 员工详细信息列表
      */
     @GetMapping("/cadre-qualified-details")
@@ -380,7 +381,8 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "deptCode", required = true) String deptCode,
             @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
-            @RequestParam(value = "personType", required = true) Integer personType) {
+            @RequestParam(value = "personType", required = true) Integer personType,
+            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
             // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
@@ -391,8 +393,18 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
+            // 验证 queryType 参数
+            if (queryType != null && queryType != 1 && queryType != 2) {
+                return ResponseEntity.ok(Result.error(400, "查询类型参数错误，只支持1（任职人数）或2（基线人数）"));
+            }
+
+            // 如果未提供 queryType，默认为1（任职人数）
+            if (queryType == null) {
+                queryType = 1;
+            }
+
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getCadreQualifiedDetailsByConditions(
-                    deptCode, aiMaturity, jobCategory, personType);
+                    deptCode, aiMaturity, jobCategory, personType, queryType);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));

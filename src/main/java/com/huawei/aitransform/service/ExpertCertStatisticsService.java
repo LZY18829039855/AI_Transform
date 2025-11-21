@@ -1166,7 +1166,7 @@ public class ExpertCertStatisticsService {
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getCadreQualifiedDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory, Integer personType) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
@@ -1178,6 +1178,14 @@ public class ExpertCertStatisticsService {
 
         if (personType != 1) {
             throw new IllegalArgumentException("暂不支持该人员类型，当前只支持干部（personType=1）");
+        }
+
+        // 验证 queryType 参数
+        if (queryType == null) {
+            queryType = 1; // 默认为任职人数
+        }
+        if (queryType != 1 && queryType != 2) {
+            throw new IllegalArgumentException("查询类型参数错误，只支持1（任职人数）或2（基线人数）");
         }
 
         // 2. 查询部门信息
@@ -1202,7 +1210,7 @@ public class ExpertCertStatisticsService {
 
         // 4. 查询干部任职数据
         List<EmployeeDetailVO> employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(
-                deptCodeList, aiMaturity, jobCategory);
+                deptCodeList, aiMaturity, jobCategory, queryType);
 
         // 5. 构建返回结果
         EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();

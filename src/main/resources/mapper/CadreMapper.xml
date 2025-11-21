@@ -149,24 +149,37 @@
             q.competence_grade_cn AS competenceGradeCn,
             q.competence_from AS competenceFrom,
             q.competence_to AS competenceTo,
+            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
             1 AS isCadre,
             dept.dept_name AS miniDeptName,
             c.cadre_type AS cadreType
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
-        INNER JOIN t_qualifications q ON (c.account = q.employee_number)
+        <choose>
+            <when test="queryType != null and queryType == 2">
+                <!-- 基线人数：使用 LEFT JOIN，不过滤任职条件 -->
+                LEFT JOIN t_qualifications q ON (c.account = q.employee_number)
+            </when>
+            <otherwise>
+                <!-- 任职人数：使用 INNER JOIN，只查询有任职记录的干部 -->
+                INNER JOIN t_qualifications q ON (c.account = q.employee_number)
+            </otherwise>
+        </choose>
         LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.expired_date IS NULL
-        AND q.employee_number IS NOT NULL
-        AND q.employee_number != ''
-        AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
-        )
-        AND q.competence_from IS NOT NULL
-        AND q.competence_to IS NOT NULL
+        <if test="queryType == null or queryType == 1">
+            <!-- 任职人数：需要过滤任职相关条件 -->
+            AND q.employee_number IS NOT NULL
+            AND q.employee_number != ''
+            AND q.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND q.competence_from IS NOT NULL
+            AND q.competence_to IS NOT NULL
+        </if>
         <if test="deptCodes != null and deptCodes.size() > 0">
             AND c.mini_departname_id IN
             <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
@@ -184,7 +197,12 @@
         AND e.account IS NOT NULL
         AND e.account != ''
         AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        ORDER BY e.account, q.competence_from
+        <if test="queryType == null or queryType == 1">
+            ORDER BY e.account, q.competence_from
+        </if>
+        <if test="queryType != null and queryType == 2">
+            ORDER BY e.account
+        </if>
     </select>
 
 </mapper>
