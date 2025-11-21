@@ -255,7 +255,15 @@
             </foreach>
         </if>
         <if test="aiMaturity != null and aiMaturity != ''">
-            AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
+            <choose>
+                <when test="aiMaturity == '0'">
+                    <!-- 当aiMaturity为0时，查询L2和L3的数据 -->
+                    AND COALESCE(c.position_ai_maturity, '未知') IN ('L2', 'L3')
+                </when>
+                <otherwise>
+                    AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
+                </otherwise>
+            </choose>
         </if>
         <if test="jobCategory != null and jobCategory != ''">
             AND COALESCE(c.cadre_competence_category, '未知') = #{jobCategory}
