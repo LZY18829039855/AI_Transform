@@ -335,7 +335,7 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部或专家认证类信息（默认查询认证数据）
-     * @param deptCode 部门ID（部门编码）
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
@@ -348,8 +348,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
             @RequestParam(value = "personType", required = true) Integer personType) {
         try {
-            if (deptCode == null || deptCode.trim().isEmpty()) {
-                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
+                deptCode = "030681";
             }
 
             if (personType == null) {
@@ -381,8 +382,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
             @RequestParam(value = "personType", required = true) Integer personType) {
         try {
-            if (deptCode == null || deptCode.trim().isEmpty()) {
-                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
+                deptCode = "030681";
             }
 
             if (personType == null) {
