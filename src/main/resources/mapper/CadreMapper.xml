@@ -266,9 +266,9 @@
         </if>
         <if test="aiMaturity != null and aiMaturity != ''">
             <choose>
-                <when test="'0'.equals(aiMaturity)">
-                    <!-- 当aiMaturity为0时，查询L2和L3的数据 -->
-                    AND COALESCE(c.position_ai_maturity, '未知') IN ('L2', 'L3')
+                <when test="'L5'.equals(aiMaturity)">
+                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
+                    AND c.position_ai_maturity IN ('L2', 'L3')
                 </when>
                 <otherwise>
                     AND COALESCE(c.position_ai_maturity, '未知') = #{aiMaturity}
