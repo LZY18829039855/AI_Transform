@@ -12,5 +12,7 @@ COPY target/ai-transform-1.0.0.jar app.jar
 # 创建日志目录
 RUN mkdir -p /app/logs
 
+RUN chmod +r /app/app.jar
+
 # 启动应用
 ENTRYPOINT ["java", "-Xms512m", "-Xmx1024m", "-jar", "app.jar"]
