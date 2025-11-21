@@ -130,6 +130,7 @@
     </select>
 
     <!-- 根据部门编码列表、AI成熟度和职位类查询干部任职详细信息 -->
+    <!-- 注意：此接口只返回AI任职相关的数据，如果没有AI任职数据，返回空 -->
     <select id="getCadreQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.cn_name AS name,
@@ -155,31 +156,21 @@
             c.cadre_type AS cadreType
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
-        <choose>
-            <when test="queryType != null and queryType == 2">
-                <!-- 基线人数：使用 LEFT JOIN，不过滤任职条件 -->
-                LEFT JOIN t_qualifications q ON (c.account = q.employee_number)
-            </when>
-            <otherwise>
-                <!-- 任职人数：使用 INNER JOIN，只查询有任职记录的干部 -->
-                INNER JOIN t_qualifications q ON (c.account = q.employee_number)
-            </otherwise>
-        </choose>
+        <!-- 始终使用 INNER JOIN，确保只返回有AI任职记录的干部 -->
+        INNER JOIN t_qualifications q ON (c.account = q.employee_number)
         LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.expired_date IS NULL
-        <if test="queryType == null or queryType == 1">
-            <!-- 任职人数：需要过滤任职相关条件 -->
-            AND q.employee_number IS NOT NULL
-            AND q.employee_number != ''
-            AND q.direction_cn_name IN (
-                '数据科学与AI工程（ICT）',
-                'AI算法及应用（ICT）',
-                'AI软件工程与工具（ICT）',
-                'AI系统测试（ICT）'
-            )
-            AND q.competence_from IS NOT NULL
-            AND q.competence_to IS NOT NULL
-        </if>
+        <!-- 始终过滤AI任职相关条件，确保只返回AI任职数据 -->
+        AND q.employee_number IS NOT NULL
+        AND q.employee_number != ''
+        AND q.direction_cn_name IN (
+            '数据科学与AI工程（ICT）',
+            'AI算法及应用（ICT）',
+            'AI软件工程与工具（ICT）',
+            'AI系统测试（ICT）'
+        )
+        AND q.competence_from IS NOT NULL
+        AND q.competence_to IS NOT NULL
         <if test="deptCodes != null and deptCodes.size() > 0">
             AND c.mini_departname_id IN
             <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
@@ -197,12 +188,7 @@
         AND e.account IS NOT NULL
         AND e.account != ''
         AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        <if test="queryType == null or queryType == 1">
-            ORDER BY e.account, q.competence_from
-        </if>
-        <if test="queryType != null and queryType == 2">
-            ORDER BY e.account
-        </if>
+        ORDER BY e.account, q.competence_from
     </select>
 
 </mapper>
