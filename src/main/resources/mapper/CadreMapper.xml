@@ -190,12 +190,17 @@
                         AND q2.competence_to IS NOT NULL
                         ORDER BY 
                             CASE 
-                                WHEN q2.competence_rating_cn LIKE '%专家%' OR q2.competence_rating_cn LIKE '%L5%' THEN 1
-                                WHEN q2.competence_rating_cn LIKE '%高级%' OR q2.competence_rating_cn LIKE '%L4%' THEN 2
-                                WHEN q2.competence_rating_cn LIKE '%中级%' OR q2.competence_rating_cn LIKE '%L3%' THEN 3
-                                WHEN q2.competence_rating_cn LIKE '%初级%' OR q2.competence_rating_cn LIKE '%L2%' THEN 4
-                                WHEN q2.competence_rating_cn LIKE '%L1%' THEN 5
-                                ELSE 6
+                                -- 8级最高，依次到1级，初级最低
+                                WHEN q2.competence_rating_cn = '8级' THEN 1
+                                WHEN q2.competence_rating_cn = '7级' THEN 2
+                                WHEN q2.competence_rating_cn = '6级' THEN 3
+                                WHEN q2.competence_rating_cn = '5级' THEN 4
+                                WHEN q2.competence_rating_cn = '4级' THEN 5
+                                WHEN q2.competence_rating_cn = '3级' THEN 6
+                                WHEN q2.competence_rating_cn = '2级' THEN 7
+                                WHEN q2.competence_rating_cn = '1级' THEN 8
+                                WHEN q2.competence_rating_cn = '初级' THEN 9
+                                ELSE 10
                             END,
                             q2.competence_from DESC
                         LIMIT 1
@@ -233,12 +238,17 @@
                         AND q2.competence_to IS NOT NULL
                         ORDER BY 
                             CASE 
-                                WHEN q2.competence_rating_cn LIKE '%专家%' OR q2.competence_rating_cn LIKE '%L5%' THEN 1
-                                WHEN q2.competence_rating_cn LIKE '%高级%' OR q2.competence_rating_cn LIKE '%L4%' THEN 2
-                                WHEN q2.competence_rating_cn LIKE '%中级%' OR q2.competence_rating_cn LIKE '%L3%' THEN 3
-                                WHEN q2.competence_rating_cn LIKE '%初级%' OR q2.competence_rating_cn LIKE '%L2%' THEN 4
-                                WHEN q2.competence_rating_cn LIKE '%L1%' THEN 5
-                                ELSE 6
+                                -- 8级最高，依次到1级，初级最低
+                                WHEN q2.competence_rating_cn = '8级' THEN 1
+                                WHEN q2.competence_rating_cn = '7级' THEN 2
+                                WHEN q2.competence_rating_cn = '6级' THEN 3
+                                WHEN q2.competence_rating_cn = '5级' THEN 4
+                                WHEN q2.competence_rating_cn = '4级' THEN 5
+                                WHEN q2.competence_rating_cn = '3级' THEN 6
+                                WHEN q2.competence_rating_cn = '2级' THEN 7
+                                WHEN q2.competence_rating_cn = '1级' THEN 8
+                                WHEN q2.competence_rating_cn = '初级' THEN 9
+                                ELSE 10
                             END,
                             q2.competence_from DESC
                         LIMIT 1
@@ -256,7 +266,7 @@
         </if>
         <if test="aiMaturity != null and aiMaturity != ''">
             <choose>
-                <when test="aiMaturity == '0'">
+                <when test="'0'.equals(aiMaturity)">
                     <!-- 当aiMaturity为0时，查询L2和L3的数据 -->
                     AND COALESCE(c.position_ai_maturity, '未知') IN ('L2', 'L3')
                 </when>
