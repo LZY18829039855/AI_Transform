@@ -424,5 +424,28 @@ public class ExpertCertStatisticsController {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
     }
+
+    /**
+     * 更新L2、L3干部的AI任职达标情况
+     * 任职要求：
+     * - L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
+     * - L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
+     * 如果满足要求，将干部表中的is_qualifications_standard字段更新为1
+     * @return 更新结果信息（包含更新的干部数量）
+     */
+    @PostMapping("/update-cadre-qualification-standard")
+    public ResponseEntity<Result<Object>> updateCadreQualificationStandard() {
+        try {
+            java.util.Map<String, Object> result = expertCertStatisticsService.updateCadreQualificationStandard();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
 }
 

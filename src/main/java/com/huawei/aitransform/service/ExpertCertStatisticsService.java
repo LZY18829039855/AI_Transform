@@ -8,6 +8,7 @@ import com.huawei.aitransform.entity.CadreMaturityCertStatisticsVO;
 import com.huawei.aitransform.entity.CadreMaturityJobCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CadreMaturityJobCategoryQualifiedStatisticsResponseVO;
 import com.huawei.aitransform.entity.CadreMaturityQualifiedStatisticsVO;
+import com.huawei.aitransform.entity.CadreQualificationVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
@@ -1822,6 +1823,127 @@ public class ExpertCertStatisticsService {
         response.setTotalStatistics(totalStatistics);
 
         return response;
+    }
+
+    /**
+     * 更新L2、L3干部的AI任职达标情况
+     * 任职要求：
+     * - L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
+     * - L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
+     * 如果满足要求，将干部表中的is_qualifications_standard字段更新为1
+     * @return 更新结果信息（包含更新的干部数量）
+     */
+    public Map<String, Object> updateCadreQualificationStandard() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. 查询所有L2、L3干部及其最高AI任职级别
+            List<CadreQualificationVO> cadreList = cadreMapper.getL2L3CadreWithHighestQualification();
+            
+            if (cadreList == null || cadreList.isEmpty()) {
+                result.put("success", true);
+                result.put("message", "未找到L2、L3干部数据");
+                result.put("totalCount", 0);
+                result.put("qualifiedCount", 0);
+                result.put("unqualifiedCount", 0);
+                return result;
+            }
+            
+            // 2. 收集所有L2、L3干部的工号（用于重置）
+            List<String> allL2L3EmployeeNumbers = new ArrayList<>();
+            // 3. 收集达标的干部工号
+            List<String> qualifiedEmployeeNumbers = new ArrayList<>();
+            
+            int l2QualifiedCount = 0;
+            int l3QualifiedCount = 0;
+            int l2UnqualifiedCount = 0;
+            int l3UnqualifiedCount = 0;
+            
+            // 4. 遍历每个干部，判断是否达标
+            for (CadreQualificationVO cadre : cadreList) {
+                String employeeNumber = cadre.getEmployeeNumber();
+                String aiMaturity = cadre.getAiMaturity();
+                String highestQualificationLevel = cadre.getHighestQualificationLevel();
+                
+                if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
+                    continue;
+                }
+                
+                allL2L3EmployeeNumbers.add(employeeNumber);
+                
+                // 判断是否达标
+                boolean isQualified = false;
+                
+                if ("L3".equals(aiMaturity)) {
+                    // L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
+                    if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
+                        if ("5级".equals(highestQualificationLevel) 
+                                || "6级".equals(highestQualificationLevel)
+                                || "7级".equals(highestQualificationLevel)
+                                || "8级".equals(highestQualificationLevel)) {
+                            isQualified = true;
+                            l3QualifiedCount++;
+                        } else {
+                            l3UnqualifiedCount++;
+                        }
+                    } else {
+                        // 没有任职记录，不达标
+                        l3UnqualifiedCount++;
+                    }
+                } else if ("L2".equals(aiMaturity)) {
+                    // L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
+                    if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
+                        if ("4级".equals(highestQualificationLevel)
+                                || "5级".equals(highestQualificationLevel)
+                                || "6级".equals(highestQualificationLevel)
+                                || "7级".equals(highestQualificationLevel)
+                                || "8级".equals(highestQualificationLevel)) {
+                            isQualified = true;
+                            l2QualifiedCount++;
+                        } else {
+                            l2UnqualifiedCount++;
+                        }
+                    } else {
+                        // 没有任职记录，不达标
+                        l2UnqualifiedCount++;
+                    }
+                }
+                
+                if (isQualified) {
+                    qualifiedEmployeeNumbers.add(employeeNumber);
+                }
+            }
+            
+            // 5. 先重置所有L2、L3干部的is_qualifications_standard字段为0
+            if (!allL2L3EmployeeNumbers.isEmpty()) {
+                cadreMapper.batchResetQualificationStandard(allL2L3EmployeeNumbers);
+            }
+            
+            // 6. 批量更新达标的干部is_qualifications_standard字段为1
+            int updatedCount = 0;
+            if (!qualifiedEmployeeNumbers.isEmpty()) {
+                updatedCount = cadreMapper.batchUpdateQualificationStandard(qualifiedEmployeeNumbers);
+            }
+            
+            // 7. 构建返回结果
+            result.put("success", true);
+            result.put("message", "更新成功");
+            result.put("totalCount", allL2L3EmployeeNumbers.size());
+            result.put("qualifiedCount", qualifiedEmployeeNumbers.size());
+            result.put("unqualifiedCount", allL2L3EmployeeNumbers.size() - qualifiedEmployeeNumbers.size());
+            result.put("updatedCount", updatedCount);
+            result.put("l2QualifiedCount", l2QualifiedCount);
+            result.put("l2UnqualifiedCount", l2UnqualifiedCount);
+            result.put("l3QualifiedCount", l3QualifiedCount);
+            result.put("l3UnqualifiedCount", l3UnqualifiedCount);
+            
+            return result;
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "更新失败：" + e.getMessage());
+            result.put("error", e.getClass().getName());
+            return result;
+        }
     }
 
 }

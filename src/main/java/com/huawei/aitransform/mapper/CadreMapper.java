@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.CadreInfoVO;
+import com.huawei.aitransform.entity.CadreQualificationVO;
 import com.huawei.aitransform.entity.EmployeeDetailVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -62,5 +63,25 @@ public interface CadreMapper {
             @Param("aiMaturity") String aiMaturity,
             @Param("jobCategory") String jobCategory,
             @Param("queryType") Integer queryType);
+
+    /**
+     * 查询所有L2、L3干部及其最高AI任职级别
+     * @return 干部任职信息列表
+     */
+    List<CadreQualificationVO> getL2L3CadreWithHighestQualification();
+
+    /**
+     * 批量更新干部的is_qualifications_standard字段
+     * @param employeeNumbers 需要更新为达标的干部工号列表
+     * @return 更新的记录数
+     */
+    int batchUpdateQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量将干部的is_qualifications_standard字段重置为0
+     * @param employeeNumbers 需要重置的干部工号列表
+     * @return 更新的记录数
+     */
+    int batchResetQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 

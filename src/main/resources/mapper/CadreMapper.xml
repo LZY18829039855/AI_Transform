@@ -318,5 +318,86 @@
         ORDER BY e.account
     </select>
 
+    <!-- 查询所有L2、L3干部及其最高AI任职级别 -->
+    <select id="getL2L3CadreWithHighestQualification" resultType="com.huawei.aitransform.entity.CadreQualificationVO">
+        SELECT 
+            c.account AS employeeNumber,
+            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
+            q.competence_rating_cn AS highestQualificationLevel
+        FROM t_cadre c
+        LEFT JOIN (
+            SELECT 
+                q1.employee_number,
+                q1.competence_rating_cn
+            FROM t_qualifications q1
+            WHERE q1.employee_number IS NOT NULL
+            AND q1.employee_number != ''
+            AND q1.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND q1.competence_from IS NOT NULL
+            AND q1.competence_to IS NOT NULL
+            AND q1.competence_from = (
+                -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                SELECT q2.competence_from
+                FROM t_qualifications q2
+                WHERE q2.employee_number = q1.employee_number
+                AND q2.employee_number IS NOT NULL
+                AND q2.employee_number != ''
+                AND q2.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                AND q2.competence_from IS NOT NULL
+                AND q2.competence_to IS NOT NULL
+                ORDER BY 
+                    CASE 
+                        -- 8级最高，依次到1级，初级最低
+                        WHEN q2.competence_rating_cn = '8级' THEN 1
+                        WHEN q2.competence_rating_cn = '7级' THEN 2
+                        WHEN q2.competence_rating_cn = '6级' THEN 3
+                        WHEN q2.competence_rating_cn = '5级' THEN 4
+                        WHEN q2.competence_rating_cn = '4级' THEN 5
+                        WHEN q2.competence_rating_cn = '3级' THEN 6
+                        WHEN q2.competence_rating_cn = '2级' THEN 7
+                        WHEN q2.competence_rating_cn = '1级' THEN 8
+                        WHEN q2.competence_rating_cn = '初级' THEN 9
+                        ELSE 10
+                    END,
+                    q2.competence_from DESC
+                LIMIT 1
+            )
+        ) q ON (c.account = q.employee_number)
+        WHERE c.position_ai_maturity IN ('L2', 'L3')
+        AND c.account IS NOT NULL
+        AND c.account != ''
+        ORDER BY c.account
+    </select>
+
+    <!-- 批量更新干部的is_qualifications_standard字段为1 -->
+    <update id="batchUpdateQualificationStandard">
+        UPDATE t_cadre
+        SET is_qualifications_standard = 1
+        WHERE account IN
+        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
+            #{employeeNumber}
+        </foreach>
+    </update>
+
+    <!-- 批量将干部的is_qualifications_standard字段重置为0 -->
+    <update id="batchResetQualificationStandard">
+        UPDATE t_cadre
+        SET is_qualifications_standard = 0
+        WHERE account IN
+        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
+            #{employeeNumber}
+        </foreach>
+    </update>
+
 </mapper>
 
