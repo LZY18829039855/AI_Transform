@@ -1155,7 +1155,7 @@ public class ExpertCertStatisticsService {
 
             // 专家认证数据
             employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByConditions(
-                    deptCode, deptName, aiMaturity, jobCategory);
+                    deptCode, deptName, aiMaturity, jobCategory, queryType);
         }
 
         // 4. 构建返回结果

@@ -154,21 +154,44 @@
             NULL AS miniDeptName
         FROM expert_info exp
         INNER JOIN t_employee e ON (exp.employee_number = e.account)
-        INNER JOIN (
-            SELECT DISTINCT
-                COALESCE(employee_number, w3_account) AS employee_number,
-                w3_account,
-                cer_title,
-                start_time
-            FROM dwr_t_cert_record_t
-            WHERE (status = 1 OR approved_status = 1)
-            AND (
-                -- 华为研究类能力认证（专业级，xxx）
-                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
-            )
-        ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+        <choose>
+            <when test="queryType != null and queryType == 2">
+                <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
+                LEFT JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        -- 华为研究类能力认证（专业级，xxx）
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+            </when>
+            <otherwise>
+                <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
+                INNER JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        -- 华为研究类能力认证（专业级，xxx）
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+            </otherwise>
+        </choose>
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
