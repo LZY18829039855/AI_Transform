@@ -188,7 +188,8 @@
             COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
             1 AS isCadre,
             dept.dept_name AS miniDeptName,
-            c.cadre_type AS cadreType
+            c.cadre_type AS cadreType,
+            COALESCE(c.is_qualifications_standard, 0) AS isQualificationsStandard
         FROM t_cadre c
         INNER JOIN t_employee e ON (SUBSTRING(e.account, 2) = c.account)
         <choose>

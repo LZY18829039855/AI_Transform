@@ -144,6 +144,11 @@ public class EmployeeDetailVO implements Serializable {
      */
     private Date competenceTo;
 
+    /**
+     * 是否按要求任职达标（1-达标，0-不达标）
+     */
+    private Integer isQualificationsStandard;
+
     public EmployeeDetailVO() {
     }
 
@@ -345,6 +350,14 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setCompetenceTo(Date competenceTo) {
         this.competenceTo = competenceTo;
+    }
+
+    public Integer getIsQualificationsStandard() {
+        return isQualificationsStandard;
+    }
+
+    public void setIsQualificationsStandard(Integer isQualificationsStandard) {
+        this.isQualificationsStandard = isQualificationsStandard;
     }
 }
 
