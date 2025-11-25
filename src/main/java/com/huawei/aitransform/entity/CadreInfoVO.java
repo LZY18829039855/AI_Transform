@@ -29,6 +29,11 @@ public class CadreInfoVO implements Serializable {
      */
     private String aiMaturity;
 
+    /**
+     * 是否按要求任职达标（1-达标，0-不达标）
+     */
+    private Integer isQualificationsStandard;
+
     public CadreInfoVO() {
     }
 
@@ -62,6 +67,14 @@ public class CadreInfoVO implements Serializable {
 
     public void setAiMaturity(String aiMaturity) {
         this.aiMaturity = aiMaturity;
+    }
+
+    public Integer getIsQualificationsStandard() {
+        return isQualificationsStandard;
+    }
+
+    public void setIsQualificationsStandard(Integer isQualificationsStandard) {
+        this.isQualificationsStandard = isQualificationsStandard;
     }
 }
 

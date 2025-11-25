@@ -32,6 +32,16 @@ public class CadreMaturityQualifiedStatisticsVO implements Serializable {
     private BigDecimal qualifiedRate;
 
     /**
+     * 按要求AI任职人数（is_qualifications_standard=1的人数）
+     */
+    private Integer qualifiedByRequirementCount;
+
+    /**
+     * 按要求AI任职人数占比（百分比，保留4位小数）
+     */
+    private BigDecimal qualifiedByRequirementRate;
+
+    /**
      * 该成熟度下各职位类的统计列表
      */
     private List<CadreJobCategoryQualifiedStatisticsVO> jobCategoryStatistics;
@@ -77,6 +87,22 @@ public class CadreMaturityQualifiedStatisticsVO implements Serializable {
 
     public void setJobCategoryStatistics(List<CadreJobCategoryQualifiedStatisticsVO> jobCategoryStatistics) {
         this.jobCategoryStatistics = jobCategoryStatistics;
+    }
+
+    public Integer getQualifiedByRequirementCount() {
+        return qualifiedByRequirementCount;
+    }
+
+    public void setQualifiedByRequirementCount(Integer qualifiedByRequirementCount) {
+        this.qualifiedByRequirementCount = qualifiedByRequirementCount;
+    }
+
+    public BigDecimal getQualifiedByRequirementRate() {
+        return qualifiedByRequirementRate;
+    }
+
+    public void setQualifiedByRequirementRate(BigDecimal qualifiedByRequirementRate) {
+        this.qualifiedByRequirementRate = qualifiedByRequirementRate;
     }
 }
 
