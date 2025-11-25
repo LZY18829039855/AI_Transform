@@ -326,7 +326,7 @@
             q.competence_rating_cn AS highestQualificationLevel,
             COALESCE(c.cadre_competence_category, '未知') AS jobCategory,
             CASE 
-                WHEN cert.employee_number IS NOT NULL THEN 1 
+                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
                 ELSE 0 
             END AS hasProfessionalCert,
             CASE 
@@ -385,7 +385,8 @@
         ) q ON (c.account = q.employee_number)
         LEFT JOIN (
             SELECT DISTINCT
-                COALESCE(employee_number, w3_account) AS employee_number
+                employee_number,
+                w3_account
             FROM dwr_t_cert_record_t
             WHERE (status = 1 OR approved_status = 1)
             AND (
