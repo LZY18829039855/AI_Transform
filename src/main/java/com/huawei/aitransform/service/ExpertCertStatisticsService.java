@@ -1826,11 +1826,19 @@ public class ExpertCertStatisticsService {
     }
 
     /**
-     * 更新L2、L3干部的AI任职达标情况
+     * 更新L2、L3干部的AI任职达标情况和认证达标情况
+     * 
      * 任职要求：
      * - L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
      * - L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
      * 如果满足要求，将干部表中的is_qualifications_standard字段更新为1
+     * 
+     * 认证要求：
+     * - 软件类的L2L3干部需要有专业级证书，才算达标，刷新表is_cert_standard字段为1
+     * - L2L3的非软件类，需要通过工作级科目二或者专业级科目二，即t_exam_record表中存在exam_code为
+     *   （EXCN022303075ZA20，EXCN022303075ZA2E，EXCN022303075ZA2A）且is_pass为1的数据，
+     *   如果满足，将is_cert_standard设为1
+     * 
      * @return 更新结果信息（包含更新的干部数量）
      */
     public Map<String, Object> updateCadreQualificationStandard() {
@@ -1851,19 +1859,28 @@ public class ExpertCertStatisticsService {
             
             // 2. 收集所有L2、L3干部的工号（用于重置）
             List<String> allL2L3EmployeeNumbers = new ArrayList<>();
-            // 3. 收集达标的干部工号
+            // 3. 收集任职达标的干部工号
             List<String> qualifiedEmployeeNumbers = new ArrayList<>();
+            // 4. 收集认证达标的干部工号
+            List<String> certQualifiedEmployeeNumbers = new ArrayList<>();
             
             int l2QualifiedCount = 0;
             int l3QualifiedCount = 0;
             int l2UnqualifiedCount = 0;
             int l3UnqualifiedCount = 0;
+            int l2CertQualifiedCount = 0;
+            int l3CertQualifiedCount = 0;
+            int l2CertUnqualifiedCount = 0;
+            int l3CertUnqualifiedCount = 0;
             
-            // 4. 遍历每个干部，判断是否达标
+            // 5. 遍历每个干部，判断是否达标
             for (CadreQualificationVO cadre : cadreList) {
                 String employeeNumber = cadre.getEmployeeNumber();
                 String aiMaturity = cadre.getAiMaturity();
                 String highestQualificationLevel = cadre.getHighestQualificationLevel();
+                String jobCategory = cadre.getJobCategory();
+                Integer hasProfessionalCert = cadre.getHasProfessionalCert();
+                Integer hasPassedSubject2 = cadre.getHasPassedSubject2();
                 
                 if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
                     continue;
@@ -1871,7 +1888,7 @@ public class ExpertCertStatisticsService {
                 
                 allL2L3EmployeeNumbers.add(employeeNumber);
                 
-                // 判断是否达标
+                // 判断任职是否达标
                 boolean isQualified = false;
                 
                 if ("L3".equals(aiMaturity)) {
@@ -1912,30 +1929,93 @@ public class ExpertCertStatisticsService {
                 if (isQualified) {
                     qualifiedEmployeeNumbers.add(employeeNumber);
                 }
+                
+                // 判断认证是否达标
+                boolean isCertQualified = false;
+                boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
+                
+                if (isSoftwareCategory) {
+                    // 软件类的L2L3干部需要有专业级证书，才算达标
+                    if (hasProfessionalCert != null && hasProfessionalCert == 1) {
+                        isCertQualified = true;
+                        if ("L2".equals(aiMaturity)) {
+                            l2CertQualifiedCount++;
+                        } else if ("L3".equals(aiMaturity)) {
+                            l3CertQualifiedCount++;
+                        }
+                    } else {
+                        if ("L2".equals(aiMaturity)) {
+                            l2CertUnqualifiedCount++;
+                        } else if ("L3".equals(aiMaturity)) {
+                            l3CertUnqualifiedCount++;
+                        }
+                    }
+                } else {
+                    // L2L3的非软件类，需要通过工作级科目二或者专业级科目二
+                    // 即t_exam_record表中存在exam_code为（EXCN022303075ZA20，EXCN022303075ZA2E，EXCN022303075ZA2A）且is_pass为1的数据
+                    if (hasPassedSubject2 != null && hasPassedSubject2 == 1) {
+                        isCertQualified = true;
+                        if ("L2".equals(aiMaturity)) {
+                            l2CertQualifiedCount++;
+                        } else if ("L3".equals(aiMaturity)) {
+                            l3CertQualifiedCount++;
+                        }
+                    } else {
+                        if ("L2".equals(aiMaturity)) {
+                            l2CertUnqualifiedCount++;
+                        } else if ("L3".equals(aiMaturity)) {
+                            l3CertUnqualifiedCount++;
+                        }
+                    }
+                }
+                
+                if (isCertQualified) {
+                    certQualifiedEmployeeNumbers.add(employeeNumber);
+                }
             }
             
-            // 5. 先重置所有L2、L3干部的is_qualifications_standard字段为0
+            // 6. 先重置所有L2、L3干部的is_qualifications_standard字段为0
             if (!allL2L3EmployeeNumbers.isEmpty()) {
                 cadreMapper.batchResetQualificationStandard(allL2L3EmployeeNumbers);
             }
             
-            // 6. 批量更新达标的干部is_qualifications_standard字段为1
-            int updatedCount = 0;
+            // 7. 批量更新任职达标的干部is_qualifications_standard字段为1
+            int updatedQualificationCount = 0;
             if (!qualifiedEmployeeNumbers.isEmpty()) {
-                updatedCount = cadreMapper.batchUpdateQualificationStandard(qualifiedEmployeeNumbers);
+                updatedQualificationCount = cadreMapper.batchUpdateQualificationStandard(qualifiedEmployeeNumbers);
             }
             
-            // 7. 构建返回结果
+            // 8. 先重置所有L2、L3干部的is_cert_standard字段为0
+            if (!allL2L3EmployeeNumbers.isEmpty()) {
+                cadreMapper.batchResetCertStandard(allL2L3EmployeeNumbers);
+            }
+            
+            // 9. 批量更新认证达标的干部is_cert_standard字段为1
+            int updatedCertCount = 0;
+            if (!certQualifiedEmployeeNumbers.isEmpty()) {
+                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedEmployeeNumbers);
+            }
+            
+            // 10. 构建返回结果
             result.put("success", true);
             result.put("message", "更新成功");
             result.put("totalCount", allL2L3EmployeeNumbers.size());
+            // 任职达标统计
             result.put("qualifiedCount", qualifiedEmployeeNumbers.size());
             result.put("unqualifiedCount", allL2L3EmployeeNumbers.size() - qualifiedEmployeeNumbers.size());
-            result.put("updatedCount", updatedCount);
+            result.put("updatedQualificationCount", updatedQualificationCount);
             result.put("l2QualifiedCount", l2QualifiedCount);
             result.put("l2UnqualifiedCount", l2UnqualifiedCount);
             result.put("l3QualifiedCount", l3QualifiedCount);
             result.put("l3UnqualifiedCount", l3UnqualifiedCount);
+            // 认证达标统计
+            result.put("certQualifiedCount", certQualifiedEmployeeNumbers.size());
+            result.put("certUnqualifiedCount", allL2L3EmployeeNumbers.size() - certQualifiedEmployeeNumbers.size());
+            result.put("updatedCertCount", updatedCertCount);
+            result.put("l2CertQualifiedCount", l2CertQualifiedCount);
+            result.put("l2CertUnqualifiedCount", l2CertUnqualifiedCount);
+            result.put("l3CertQualifiedCount", l3CertQualifiedCount);
+            result.put("l3CertUnqualifiedCount", l3CertUnqualifiedCount);
             
             return result;
         } catch (Exception e) {

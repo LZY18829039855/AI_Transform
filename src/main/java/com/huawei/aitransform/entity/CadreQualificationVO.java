@@ -20,6 +20,21 @@ public class CadreQualificationVO {
      */
     private String highestQualificationLevel;
 
+    /**
+     * 职位类（如：软件类、非软件类）
+     */
+    private String jobCategory;
+
+    /**
+     * 是否有专业级证书（1-有，0-无）
+     */
+    private Integer hasProfessionalCert;
+
+    /**
+     * 是否通过科目二（1-通过，0-未通过）
+     */
+    private Integer hasPassedSubject2;
+
     public String getEmployeeNumber() {
         return employeeNumber;
     }
@@ -42,6 +57,30 @@ public class CadreQualificationVO {
 
     public void setHighestQualificationLevel(String highestQualificationLevel) {
         this.highestQualificationLevel = highestQualificationLevel;
+    }
+
+    public String getJobCategory() {
+        return jobCategory;
+    }
+
+    public void setJobCategory(String jobCategory) {
+        this.jobCategory = jobCategory;
+    }
+
+    public Integer getHasProfessionalCert() {
+        return hasProfessionalCert;
+    }
+
+    public void setHasProfessionalCert(Integer hasProfessionalCert) {
+        this.hasProfessionalCert = hasProfessionalCert;
+    }
+
+    public Integer getHasPassedSubject2() {
+        return hasPassedSubject2;
+    }
+
+    public void setHasPassedSubject2(Integer hasPassedSubject2) {
+        this.hasPassedSubject2 = hasPassedSubject2;
     }
 }
 

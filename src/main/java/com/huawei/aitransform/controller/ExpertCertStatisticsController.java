@@ -426,14 +426,22 @@ public class ExpertCertStatisticsController {
     }
 
     /**
-     * 更新L2、L3干部的AI任职达标情况
+     * 更新L2、L3干部的AI任职达标情况和认证达标情况
+     * 
      * 任职要求：
      * - L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
      * - L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
      * 如果满足要求，将干部表中的is_qualifications_standard字段更新为1
+     * 
+     * 认证要求：
+     * - 软件类的L2L3干部需要有专业级证书，才算达标，刷新表is_cert_standard字段为1
+     * - L2L3的非软件类，需要通过工作级科目二或者专业级科目二，即t_exam_record表中存在exam_code为
+     *   （EXCN022303075ZA20，EXCN022303075ZA2E，EXCN022303075ZA2A）且is_pass为1的数据，
+     *   如果满足，将is_cert_standard设为1
+     * 
      * @return 更新结果信息（包含更新的干部数量）
      */
-    @PostMapping("/update-cadre-qualification-standard")
+    @PostMapping("/update-cadre-standard")
     public ResponseEntity<Result<Object>> updateCadreQualificationStandard() {
         try {
             java.util.Map<String, Object> result = expertCertStatisticsService.updateCadreQualificationStandard();

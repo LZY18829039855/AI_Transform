@@ -83,5 +83,19 @@ public interface CadreMapper {
      * @return 更新的记录数
      */
     int batchResetQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量更新干部的is_cert_standard字段为1
+     * @param employeeNumbers 需要更新为达标的干部工号列表
+     * @return 更新的记录数
+     */
+    int batchUpdateCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量将干部的is_cert_standard字段重置为0
+     * @param employeeNumbers 需要重置的干部工号列表
+     * @return 更新的记录数
+     */
+    int batchResetCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 
