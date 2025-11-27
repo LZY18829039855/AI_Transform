@@ -349,16 +349,7 @@ public class ExpertCertStatisticsService {
             // 4.3 查询该部门已获得任职的员工工号列表
             int deptQualifiedCount = 0;
             if (employeeNumbers != null && !employeeNumbers.isEmpty()) {
-                // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
-                // 例如：l00123456 -> 00123456
-                List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-                for (String empNo : employeeNumbers) {
-                    if (empNo != null && empNo.length() > 1) {
-                        employeeNumbersWithoutPrefix.add(empNo.substring(1));
-                    }
-                }
-                // 使用去除首字母的工号列表查询任职信息
-                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
+                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbers);
                 deptQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
             }
 
@@ -887,35 +878,12 @@ public class ExpertCertStatisticsService {
         // 6. 查询已通过认证的员工工号列表（复用现有方法）
         List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
 
-        // 6.1 查询已获得任职的员工工号列表（去除首字母后查询）
+        // 6.1 查询已获得任职的员工工号列表
         List<String> qualifiedNumbers = new ArrayList<>();
         if (!allEmployeeNumbers.isEmpty()) {
-            // 将带首字母的工号转换为不带首字母的工号（去除第一个字符）
-            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-            for (String empNo : allEmployeeNumbers) {
-                if (empNo != null && empNo.length() > 1) {
-                    employeeNumbersWithoutPrefix.add(empNo.substring(1));
-                }
-            }
-            // 使用去除首字母的工号列表查询任职信息
-            List<String> qualifiedNumbersWithoutPrefix = getQualifiedEmployeeNumbers(employeeNumbersWithoutPrefix);
-            // 将返回的工号（不带首字母）转换回带首字母的格式，用于后续匹配
-            if (qualifiedNumbersWithoutPrefix != null) {
-                // 由于返回的是不带首字母的工号，需要与原始工号匹配
-                // 构建一个映射：不带首字母的工号 -> 带首字母的工号
-                Map<String, String> prefixMap = new HashMap<>();
-                for (String empNo : allEmployeeNumbers) {
-                    if (empNo != null && empNo.length() > 1) {
-                        prefixMap.put(empNo.substring(1), empNo);
-                    }
-                }
-                // 将查询结果转换回带首字母的工号
-                for (String qualifiedNo : qualifiedNumbersWithoutPrefix) {
-                    String originalNo = prefixMap.get(qualifiedNo);
-                    if (originalNo != null) {
-                        qualifiedNumbers.add(originalNo);
-                    }
-                }
+            List<String> qualifiedNumbersResult = getQualifiedEmployeeNumbers(allEmployeeNumbers);
+            if (qualifiedNumbersResult != null) {
+                qualifiedNumbers.addAll(qualifiedNumbersResult);
             }
         }
 
@@ -1304,31 +1272,7 @@ public class ExpertCertStatisticsService {
         Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
 
         // 5.2 查询已通过科目二的干部工号列表
-        // 注意：t_exam_record表中的emp_num字段可能是不带首字母的工号，需要处理
-        // 先尝试直接查询，如果工号格式匹配则使用，否则需要去除首字母后查询
         List<String> subject2PassedNumbers = getSubject2PassedEmployeeNumbers(allEmployeeNumbers);
-        // 如果直接查询结果为空，尝试去除首字母后查询
-        if ((subject2PassedNumbers == null || subject2PassedNumbers.isEmpty()) && !allEmployeeNumbers.isEmpty()) {
-            List<String> employeeNumbersWithoutPrefix = new ArrayList<>();
-            Map<String, String> prefixMap = new HashMap<>();
-            for (String empNo : allEmployeeNumbers) {
-                if (empNo != null && empNo.length() > 1) {
-                    String withoutPrefix = empNo.substring(1);
-                    employeeNumbersWithoutPrefix.add(withoutPrefix);
-                    prefixMap.put(withoutPrefix, empNo);
-                }
-            }
-            List<String> subject2PassedWithoutPrefix = getSubject2PassedEmployeeNumbers(employeeNumbersWithoutPrefix);
-            if (subject2PassedWithoutPrefix != null && !subject2PassedWithoutPrefix.isEmpty()) {
-                subject2PassedNumbers = new ArrayList<>();
-                for (String passedNo : subject2PassedWithoutPrefix) {
-                    String originalNo = prefixMap.get(passedNo);
-                    if (originalNo != null) {
-                        subject2PassedNumbers.add(originalNo);
-                    }
-                }
-            }
-        }
         Set<String> subject2PassedSet = new HashSet<>(subject2PassedNumbers != null ? subject2PassedNumbers : new ArrayList<>());
 
         // 6. 按成熟度和职位类分组统计
