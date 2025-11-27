@@ -75,14 +75,14 @@
             OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
         )
         UNION
-        SELECT DISTINCT c.w3_account
+        SELECT DISTINCT c.employee_number
         FROM dwr_t_cert_record_t c
-        WHERE c.w3_account IN
+        WHERE c.employee_number IN
         <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
             #{empNo}
         </foreach>
-        AND c.w3_account IS NOT NULL 
-        AND c.w3_account != ''
+        AND c.employee_number IS NOT NULL 
+        AND c.employee_number != ''
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
             -- 华为研究类能力认证（专业级，xxx）
