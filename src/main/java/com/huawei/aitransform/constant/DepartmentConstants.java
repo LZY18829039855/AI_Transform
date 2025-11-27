@@ -12,6 +12,11 @@ public class DepartmentConstants {
     public static final String CLOUD_CORE_NETWORK_DEPT_CODE = "031562";
 
     /**
+     * 研发管理部部门ID
+     */
+    public static final String R_D_MANAGEMENT_DEPT_CODE = "030681";
+
+    /**
      * 私有构造函数，防止实例化
      */
     private DepartmentConstants() {

@@ -11,6 +11,7 @@ import com.huawei.aitransform.entity.EmployeeDrillDownResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -203,6 +204,11 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
 
+            // 当deptCode为"0"时，使用研发管理部部门ID
+            if ("0".equals(deptCode.trim())) {
+                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+            }
+
             if (personType == null) {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
@@ -234,6 +240,11 @@ public class ExpertCertStatisticsController {
         try {
             if (deptCode == null || deptCode.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            // 当deptCode为"0"时，使用研发管理部部门ID
+            if ("0".equals(deptCode.trim())) {
+                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
             }
 
             if (personType == null) {
@@ -312,16 +323,16 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部任职数据（按成熟度和职位类统计，仅L2和L3）
-     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询研发管理部部门ID
      * @return 干部成熟度职位类任职统计信息
      */
     @GetMapping("/cadre-cert-statistics/by-maturity-and-job-category-qualified")
     public ResponseEntity<Result<CadreMaturityJobCategoryQualifiedStatisticsResponseVO>> getCadreMaturityJobCategoryQualifiedStatistics(
             @RequestParam(value = "deptCode", required = false) String deptCode) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = "030681";
+                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
             }
 
             CadreMaturityJobCategoryQualifiedStatisticsResponseVO result = expertCertStatisticsService.getCadreMaturityJobCategoryQualifiedStatistics(deptCode);
@@ -335,7 +346,7 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部或专家认证类信息（默认查询认证数据）
-     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网部门ID（030681）
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询研发管理部部门ID
      * @param aiMaturity 岗位AI成熟度（L5代表查询L2和L3的数据）
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
@@ -350,9 +361,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = "030681";
+                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
             }
 
             if (personType == null) {
@@ -396,9 +407,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值"030681"
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = "030681";
+                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
             }
 
             if (personType == null) {
