@@ -114,11 +114,11 @@
         SELECT DISTINCT
             e.last_name AS name,
             e.employee_number AS employeeNumber,
-            e.firstdept,
-            e.seconddept,
-            e.thirddept,
-            e.fourthdept,
-            e.fifthdept,
+            e.firstdept AS departname2,
+            e.seconddept AS departname3,
+            e.thirddept AS departname4,
+            e.fourthdept AS departname5,
+            e.fifthdept AS departname6,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
