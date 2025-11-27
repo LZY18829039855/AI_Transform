@@ -4,44 +4,44 @@
 <mapper namespace="com.huawei.aitransform.mapper.EmployeeMapper">
 
     <!-- 根据部门层级和部门ID列表查询员工工号列表 -->
-    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询department2_id -->
+    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询firstdeptcode -->
     <select id="getEmployeeNumbersByDeptLevel" resultType="java.lang.String">
-        SELECT DISTINCT account
-        FROM t_employee
-        WHERE expired_date IS NULL
+        SELECT DISTINCT employee_number
+        FROM t_employee_sync
+        WHERE period_id = 20251126
         <choose>
             <when test="deptLevel == 1">
-                AND department2_id IN
+                AND firstdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 2">
-                AND department3_id IN
+                AND seconddeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 3">
-                AND department4_id IN
+                AND thirddeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 4">
-                AND department5_id IN
+                AND fourthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 5">
-                AND department6_id IN
+                AND fifthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 6">
-                AND department7_id IN
+                AND sixthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
@@ -51,52 +51,50 @@
                 AND 1 = 0
             </when>
         </choose>
-        AND account IS NOT NULL
-        AND account != ''
-        AND account REGEXP '^[a-z]0[0-9]{7}$'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
     </select>
 
     <!-- 根据部门层级和部门ID列表查询员工工号和职位类 -->
-    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询department2_id -->
+    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询firstdeptcode -->
     <select id="getEmployeesWithCategoryByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeWithCategoryVO">
         SELECT DISTINCT 
-            account AS employeeNumber,
-            COALESCE(competence_category, '未知') AS competenceCategory
-        FROM t_employee
-        WHERE expired_date IS NULL
+            employee_number AS employeeNumber
+        FROM t_employee_sync
+        WHERE period_id = 20251126
         <choose>
             <when test="deptLevel == 1">
-                AND department2_id IN
+                AND firstdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 2">
-                AND department3_id IN
+                AND seconddeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 3">
-                AND department4_id IN
+                AND thirddeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 4">
-                AND department5_id IN
+                AND fourthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 5">
-                AND department6_id IN
+                AND fifthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
             </when>
             <when test="deptLevel == 6">
-                AND department7_id IN
+                AND sixthdeptcode IN
                 <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
                     #{deptId}
                 </foreach>
@@ -106,24 +104,21 @@
                 AND 1 = 0
             </when>
         </choose>
-        AND account IS NOT NULL
-        AND account != ''
-        AND account REGEXP '^[a-z]0[0-9]{7}$'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
     </select>
 
     <!-- 根据部门层级和部门ID查询员工认证详细信息（用于下钻） -->
-    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询department2_id -->
+    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询firstdeptcode -->
     <select id="getEmployeeCertDetailsByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
-            e.cn_name AS name,
-            SUBSTRING(e.account, 2) AS employeeNumber,
-            e.competence_category AS competenceCategory,
-            e.competence_subcategory AS competenceSubcategory,
-            e.departname2,
-            e.departname3,
-            e.departname4,
-            e.departname5,
-            e.departname6,
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.firstdept,
+            e.seconddept,
+            e.thirddept,
+            e.fourthdept,
+            e.fifthdept,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
@@ -134,7 +129,7 @@
                 WHEN c.account IS NOT NULL THEN 1 
                 ELSE 0 
             END AS isCadre
-        FROM t_employee e
+        FROM t_employee_sync e
         INNER JOIN (
             SELECT DISTINCT
                 COALESCE(employee_number, w3_account) AS employee_number,
@@ -149,7 +144,7 @@
                 OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                 OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
             )
-        ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
@@ -158,37 +153,36 @@
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
-        ) exam ON (e.sn = exam.emp_num)
-        LEFT JOIN t_cadre c ON (SUBSTRING(e.account, 2) = c.account)
-        WHERE e.expired_date IS NULL
+        ) exam ON (e.employee_number = exam.emp_num)
+        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        WHERE e.period_id = 20251126
         <choose>
             <when test="deptLevel == 1">
-                AND e.department2_id = #{deptId}
+                AND e.firstdeptcode = #{deptId}
             </when>
             <when test="deptLevel == 2">
-                AND e.department3_id = #{deptId}
+                AND e.seconddeptcode = #{deptId}
             </when>
             <when test="deptLevel == 3">
-                AND e.department4_id = #{deptId}
+                AND e.thirddeptcode = #{deptId}
             </when>
             <when test="deptLevel == 4">
-                AND e.department5_id = #{deptId}
+                AND e.fourthdeptcode = #{deptId}
             </when>
             <when test="deptLevel == 5">
-                AND e.department6_id = #{deptId}
+                AND e.fifthdeptcode = #{deptId}
             </when>
             <when test="deptLevel == 6">
-                AND e.department7_id = #{deptId}
+                AND e.sixthdeptcode = #{deptId}
             </when>
             <when test="deptLevel == 7">
                 <!-- 如果deptLevel为7，已经是最高层级，无法再查询下一层 -->
                 AND 1 = 0
             </when>
         </choose>
-        AND e.account IS NOT NULL
-        AND e.account != ''
-        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        ORDER BY e.account
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        ORDER BY e.employee_number
     </select>
 
 </mapper>

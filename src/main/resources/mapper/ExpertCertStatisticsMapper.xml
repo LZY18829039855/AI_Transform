@@ -131,15 +131,13 @@
     <!-- 根据部门编码、AI成熟度和职位类查询专家认证详细信息 -->
     <select id="getExpertCertDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
-            e.cn_name AS name,
-            SUBSTRING(e.account, 2) AS employeeNumber,
-            e.competence_category AS competenceCategory,
-            e.competence_subcategory AS competenceSubcategory,
-            e.departname2,
-            e.departname3,
-            e.departname4,
-            e.departname5,
-            e.departname6,
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.firstdept,
+            e.seconddept,
+            e.thirddept,
+            e.fourthdept,
+            e.fifthdept,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
@@ -153,7 +151,7 @@
             COALESCE(exp.ai_maturity, '未知') AS aiMaturity,
             NULL AS miniDeptName
         FROM expert_info exp
-        INNER JOIN t_employee e ON (exp.employee_number = e.account)
+        INNER JOIN t_employee_sync e ON (exp.employee_number = e.employee_number)
         <choose>
             <when test="queryType != null and queryType == 2">
                 <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
@@ -171,7 +169,7 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </when>
             <otherwise>
                 <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
@@ -189,7 +187,7 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.account = cert.employee_number OR e.account = cert.w3_account)
+                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </otherwise>
         </choose>
         LEFT JOIN (
@@ -200,9 +198,9 @@
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
-        ) exam ON (e.sn = exam.emp_num)
-        LEFT JOIN t_cadre c ON (SUBSTRING(e.account, 2) = c.account)
-        WHERE e.expired_date IS NULL
+        ) exam ON (e.employee_number = exam.emp_num)
+        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        WHERE e.period_id = 20251126
         AND exp.on_duty_status = 1
         AND exp.employee_number IS NOT NULL
         AND exp.employee_number != ''
@@ -228,24 +226,21 @@
         <if test="jobCategory != null and jobCategory != ''">
             AND COALESCE(exp.job_category, '未知') = #{jobCategory}
         </if>
-        AND e.account IS NOT NULL
-        AND e.account != ''
-        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        ORDER BY e.account
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        ORDER BY e.employee_number
     </select>
 
     <!-- 根据部门编码、AI成熟度和职位类查询专家任职详细信息 -->
     <select id="getExpertQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
-            e.cn_name AS name,
-            SUBSTRING(e.account, 2) AS employeeNumber,
-            e.competence_category AS competenceCategory,
-            e.competence_subcategory AS competenceSubcategory,
-            e.departname2,
-            e.departname3,
-            e.departname4,
-            e.departname5,
-            e.departname6,
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.firstdept,
+            e.seconddept,
+            e.thirddept,
+            e.fourthdept,
+            e.fifthdept,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
             q.competence_subcategory_cn AS competenceSubcategoryCn,
@@ -259,10 +254,10 @@
                 ELSE 0 
             END AS isCadre
         FROM expert_info exp
-        INNER JOIN t_employee e ON (exp.employee_number = e.account)
-        INNER JOIN t_qualifications q ON (SUBSTRING(e.account, 2) = q.employee_number)
-        LEFT JOIN t_cadre c ON (SUBSTRING(e.account, 2) = c.account)
-        WHERE e.expired_date IS NULL
+        INNER JOIN t_employee_sync e ON (exp.employee_number = e.employee_number)
+        INNER JOIN t_qualifications q ON (e.employee_number = q.employee_number)
+        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        WHERE e.period_id = 20251126
         AND exp.on_duty_status = 1
         AND exp.employee_number IS NOT NULL
         AND exp.employee_number != ''
@@ -290,10 +285,9 @@
         <if test="jobCategory != null and jobCategory != ''">
             AND COALESCE(exp.job_category, '未知') = #{jobCategory}
         </if>
-        AND e.account IS NOT NULL
-        AND e.account != ''
-        AND e.account REGEXP '^[a-z]0[0-9]{7}$'
-        ORDER BY e.account, q.competence_from
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        ORDER BY e.employee_number, q.competence_from
     </select>
 
 </mapper>
