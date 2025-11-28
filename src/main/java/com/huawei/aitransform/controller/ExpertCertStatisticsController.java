@@ -204,9 +204,9 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
 
-            // 当deptCode为"0"时，使用研发管理部部门ID
+            // 当deptCode为"0"时，使用云核心网产品线部门ID
             if ("0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
             if (personType == null) {

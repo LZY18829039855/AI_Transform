@@ -42,5 +42,15 @@ public interface EmployeeMapper {
     List<EmployeeDetailVO> getEmployeeCertDetailsByDeptLevel(
             @Param("deptLevel") Integer deptLevel,
             @Param("deptId") String deptId);
+
+    /**
+     * 根据部门层级和部门编码列表查询员工工号和职位族信息
+     * @param deptLevel 部门层级（1-7），根据部门本身的层级查询对应字段
+     * @param deptCodes 部门编码列表
+     * @return 员工工号和职位族列表（包含job_category字段，格式：职位族-职位类-职位子类）
+     */
+    List<EmployeeWithCategoryVO> getEmployeesWithJobCategoryByDeptCodes(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptCodes") List<String> deptCodes);
 }
 

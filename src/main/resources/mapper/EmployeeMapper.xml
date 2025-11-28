@@ -185,5 +185,58 @@
         ORDER BY e.employee_number
     </select>
 
+    <!-- 根据部门层级和部门编码列表查询员工工号和职位族信息 -->
+    <!-- 注意：根据部门本身的层级查询对应字段，如deptLevel=3时查询thirddeptcode -->
+    <select id="getEmployeesWithJobCategoryByDeptCodes" resultType="com.huawei.aitransform.entity.EmployeeWithCategoryVO">
+        SELECT DISTINCT 
+            employee_number AS employeeNumber,
+            job_category AS competenceCategory
+        FROM t_employee_sync
+        WHERE period_id = 20251126
+        <choose>
+            <when test="deptLevel == 1">
+                AND firstdeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 2">
+                AND seconddeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 3">
+                AND thirddeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 4">
+                AND fourthdeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 5">
+                AND fifthdeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 6">
+                AND sixthdeptcode IN
+                <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
+                    #{deptCode}
+                </foreach>
+            </when>
+            <when test="deptLevel == 7">
+                AND 1 = 0
+            </when>
+        </choose>
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
+    </select>
+
 </mapper>
 
