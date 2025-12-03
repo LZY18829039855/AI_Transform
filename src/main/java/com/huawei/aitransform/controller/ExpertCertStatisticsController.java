@@ -345,7 +345,7 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部或专家认证类信息（默认查询认证数据）
-     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询研发管理部部门ID
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网产品线部门ID
      * @param aiMaturity 岗位AI成熟度（L5代表查询L2和L3的数据）
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，2-专家）
@@ -360,9 +360,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值云核心网产品线部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
             if (personType == null) {
@@ -391,7 +391,7 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部任职数据
-     * @param deptCode 部门ID（部门编码）
+     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网产品线部门ID
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，当前只处理干部类型）
@@ -406,9 +406,9 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
+            // 当deptCode为"0"、空字符串或未提供时，使用默认值云核心网产品线部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
             if (personType == null) {
