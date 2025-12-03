@@ -1389,9 +1389,9 @@ public class ExpertCertStatisticsService {
         String actualDeptCode = deptCode;
         String deptName;
         
-        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网（030681）下的所有部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线下的所有部门
         if ("0".equals(deptCode)) {
-            actualDeptCode = "030681";
+            actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             deptName = "云核心网";
         } else {
             deptName = null; // 稍后从数据库查询
@@ -1705,9 +1705,9 @@ public class ExpertCertStatisticsService {
         String actualDeptCode = deptCode;
         String deptName;
         
-        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网（030681）下的所有部门
+        // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线下的所有部门
         if ("0".equals(deptCode)) {
-            actualDeptCode = "030681";
+            actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             deptName = "云核心网";
         } else {
             deptName = null; // 稍后从数据库查询

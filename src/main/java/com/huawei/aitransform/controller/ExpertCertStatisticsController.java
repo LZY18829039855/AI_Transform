@@ -323,16 +323,15 @@ public class ExpertCertStatisticsController {
 
     /**
      * 查询干部任职数据（按成熟度和职位类统计，仅L2和L3）
-     * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询研发管理部部门ID
+     * @param deptCode 部门ID（部门编码），当为"0"时，Service层会处理
      * @return 干部成熟度职位类任职统计信息
      */
     @GetMapping("/cadre-cert-statistics/by-maturity-and-job-category-qualified")
     public ResponseEntity<Result<CadreMaturityJobCategoryQualifiedStatisticsResponseVO>> getCadreMaturityJobCategoryQualifiedStatistics(
             @RequestParam(value = "deptCode", required = false) String deptCode) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值研发管理部部门ID
-            if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
 
             CadreMaturityJobCategoryQualifiedStatisticsResponseVO result = expertCertStatisticsService.getCadreMaturityJobCategoryQualifiedStatistics(deptCode);
