@@ -15,5 +15,18 @@
         ORDER BY id
     </select>
 
+    <!-- 根据工号查询有效用户（is_deleted不为删除状态） -->
+    <select id="selectValidUserByAccount" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT 
+            id,
+            account,
+            is_admin AS isAdmin,
+            is_deleted AS isDeleted
+        FROM user_config
+        WHERE account = #{account}
+          AND (is_deleted IS NULL OR is_deleted = '' OR is_deleted = '0' OR is_deleted = 'N' OR is_deleted = 'false')
+        LIMIT 1
+    </select>
+
 </mapper>
 

@@ -47,5 +47,19 @@ public class UserConfigService {
 
         return new UserConfigPermissionResponseVO(adminAccounts, nonAdminAccounts);
     }
+
+    /**
+     * 验证指定工号是否为有效用户
+     * @param account 工号
+     * @return true表示是有效用户，false表示不是有效用户或不存在
+     */
+    public boolean isValidUser(String account) {
+        if (account == null || account.trim().isEmpty()) {
+            return false;
+        }
+        
+        UserConfigVO user = userConfigMapper.selectValidUserByAccount(account.trim());
+        return user != null;
+    }
 }
 

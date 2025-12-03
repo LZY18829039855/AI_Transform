@@ -16,5 +16,12 @@ public interface UserConfigMapper {
      * @return 有效用户列表
      */
     List<UserConfigVO> selectValidUsers();
+
+    /**
+     * 根据工号查询有效用户（is_deleted不为删除状态）
+     * @param account 工号
+     * @return 用户信息，如果不存在或无效则返回null
+     */
+    UserConfigVO selectValidUserByAccount(String account);
 }
 
