@@ -18,8 +18,12 @@ import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.EmployeeDetailVO;
 import com.huawei.aitransform.entity.EmployeeDrillDownResponseVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
+import com.huawei.aitransform.entity.ExpertAiCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
+import com.huawei.aitransform.entity.ExpertInfoVO;
+import com.huawei.aitransform.entity.ExpertJobCategoryCertStatisticsVO;
+import com.huawei.aitransform.entity.ExpertMaturityCertStatisticsVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsVO;
 import com.huawei.aitransform.mapper.CadreMapper;
@@ -27,6 +31,7 @@ import com.huawei.aitransform.mapper.DepartmentInfoMapper;
 import com.huawei.aitransform.mapper.DepartmentMaturityMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.mapper.ExpertCertStatisticsMapper;
+import com.huawei.aitransform.mapper.ExpertMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -60,6 +65,9 @@ public class ExpertCertStatisticsService {
 
     @Autowired
     private CadreMapper cadreMapper;
+
+    @Autowired
+    private ExpertMapper expertMapper;
 
     /**
      * 查询专家任职认证数据
@@ -2196,6 +2204,236 @@ public class ExpertCertStatisticsService {
             result.put("message", "更新失败：" + e.getMessage());
             result.put("error", e.getClass().getName());
             return result;
+        }
+    }
+
+    /**
+     * 查询专家AI认证数据
+     * @param deptCode 部门ID（部门编码），当为"0"时，自动赋值为"云核心网产品线"部门ID
+     * @return 专家AI认证统计结果
+     */
+    public ExpertAiCertStatisticsResponseVO getExpertAiCertStatistics(String deptCode) {
+        String actualDeptCode = deptCode;
+        String deptName;
+        
+        // 1. 参数处理：当deptCode为"0"时，使用云核心网产品线部门ID
+        if ("0".equals(deptCode)) {
+            actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+            deptName = "云核心网";
+        } else {
+            deptName = null; // 稍后从数据库查询
+        }
+        
+        // 2. 查询部门信息
+        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(actualDeptCode);
+        if (deptInfo == null) {
+            throw new IllegalArgumentException("部门不存在：" + actualDeptCode);
+        }
+        
+        // 如果deptName还没有设置，使用查询到的部门名称
+        if (deptName == null) {
+            deptName = deptInfo.getDeptName();
+        }
+        
+        // 获取部门层级，用于后续的部门过滤
+        String deptLevelStr = deptInfo.getDeptLevel();
+        Integer deptLevel = Integer.parseInt(deptLevelStr); // 转换为Integer类型，用于SQL判断
+        
+        // 3. 调用Mapper方法查询专家数据
+        List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+        
+        if (expertList == null || expertList.isEmpty()) {
+            // 如果没有专家数据，返回空统计
+            ExpertAiCertStatisticsResponseVO response = new ExpertAiCertStatisticsResponseVO();
+            response.setDeptCode(deptCode);
+            response.setDeptName(deptName);
+            response.setMaturityStatistics(new ArrayList<>());
+            ExpertMaturityCertStatisticsVO total = new ExpertMaturityCertStatisticsVO();
+            total.setMaturityLevel("总计");
+            total.setBaselineCount(0);
+            total.setCertifiedCount(0);
+            total.setCertRate(BigDecimal.ZERO);
+            total.setJobCategoryStatistics(null);
+            response.setTotalStatistics(total);
+            return response;
+        }
+        
+        // 4. 提取所有专家工号，查询认证状态
+        List<String> allEmployeeNumbers = expertList.stream()
+                .map(ExpertInfoVO::getEmployeeNumber)
+                .filter(num -> num != null && !num.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        
+        // 查询已通过认证的专家工号列表
+        List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
+        Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+        
+        // 5. 按成熟度和职位类分组统计
+        // 结构：成熟度 -> 职位类 -> 统计信息
+        Map<String, Map<String, ExpertJobCategoryCertStatisticsVO>> maturityJobCategoryMap = new HashMap<>();
+        
+        // 用于统计L2和L3的总基数（包含所有职位类）
+        Map<String, Integer> maturityTotalBaselineMap = new HashMap<>();
+        Map<String, Integer> maturityTotalCertifiedMap = new HashMap<>();
+        
+        int totalBaselineCount = 0;
+        int totalCertifiedCount = 0;
+        
+        for (ExpertInfoVO expert : expertList) {
+            String aiMaturity = expert.getAiMaturity();
+            if (aiMaturity == null || !aiMaturity.matches("L[23]")) {
+                continue; // 只处理L2和L3
+            }
+            
+            // 提取职位类
+            String jobCategory = extractJobCategory(expert.getJobCategory());
+            
+            String employeeNumber = expert.getEmployeeNumber();
+            
+            // 统计成熟度的总基数（所有职位类）
+            maturityTotalBaselineMap.put(aiMaturity, 
+                maturityTotalBaselineMap.getOrDefault(aiMaturity, 0) + 1);
+            totalBaselineCount++;
+            
+            // 统计成熟度的总认证人数（所有职位类）
+            if (employeeNumber != null && certifiedSet.contains(employeeNumber)) {
+                maturityTotalCertifiedMap.put(aiMaturity, 
+                    maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0) + 1);
+                totalCertifiedCount++;
+            }
+            
+            // 获取或创建成熟度对应的职位类Map
+            Map<String, ExpertJobCategoryCertStatisticsVO> jobCategoryMap = 
+                maturityJobCategoryMap.getOrDefault(aiMaturity, new HashMap<>());
+            
+            // 获取或创建职位类统计对象
+            ExpertJobCategoryCertStatisticsVO jobCategoryStat = 
+                jobCategoryMap.getOrDefault(jobCategory, new ExpertJobCategoryCertStatisticsVO());
+            jobCategoryStat.setJobCategory(jobCategory);
+            
+            // 累加基数人数
+            if (jobCategoryStat.getBaselineCount() == null) {
+                jobCategoryStat.setBaselineCount(0);
+            }
+            jobCategoryStat.setBaselineCount(jobCategoryStat.getBaselineCount() + 1);
+            
+            // 检查是否已认证
+            if (employeeNumber != null && certifiedSet.contains(employeeNumber)) {
+                if (jobCategoryStat.getCertifiedCount() == null) {
+                    jobCategoryStat.setCertifiedCount(0);
+                }
+                jobCategoryStat.setCertifiedCount(jobCategoryStat.getCertifiedCount() + 1);
+            }
+            
+            jobCategoryMap.put(jobCategory, jobCategoryStat);
+            maturityJobCategoryMap.put(aiMaturity, jobCategoryMap);
+        }
+        
+        // 6. 计算每个职位类的认证率，并构建成熟度统计对象
+        List<ExpertMaturityCertStatisticsVO> maturityStatistics = new ArrayList<>();
+        
+        // 按L2、L3的顺序处理
+        for (String aiMaturity : new String[]{"L2", "L3"}) {
+            Map<String, ExpertJobCategoryCertStatisticsVO> jobCategoryMap = 
+                maturityJobCategoryMap.get(aiMaturity);
+            if (jobCategoryMap == null) {
+                jobCategoryMap = new HashMap<>();
+            }
+            
+            // 创建成熟度统计对象
+            ExpertMaturityCertStatisticsVO maturityStat = new ExpertMaturityCertStatisticsVO();
+            maturityStat.setMaturityLevel(aiMaturity);
+            
+            // 使用所有职位类的总基数
+            int maturityBaselineCount = maturityTotalBaselineMap.getOrDefault(aiMaturity, 0);
+            int maturityCertifiedCount = maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0);
+            
+            List<ExpertJobCategoryCertStatisticsVO> jobCategoryStatistics = new ArrayList<>();
+            
+            // 遍历该成熟度下的所有职位类
+            for (ExpertJobCategoryCertStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
+                // 计算职位类认证率
+                if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
+                    if (jobCategoryStat.getCertifiedCount() == null) {
+                        jobCategoryStat.setCertifiedCount(0);
+                    }
+                    BigDecimal certRate = new BigDecimal(jobCategoryStat.getCertifiedCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
+                    jobCategoryStat.setCertRate(certRate);
+                } else {
+                    jobCategoryStat.setCertRate(BigDecimal.ZERO);
+                }
+                
+                jobCategoryStatistics.add(jobCategoryStat);
+            }
+            
+            // 设置成熟度统计数据
+            maturityStat.setBaselineCount(maturityBaselineCount);
+            maturityStat.setCertifiedCount(maturityCertifiedCount);
+            maturityStat.setJobCategoryStatistics(jobCategoryStatistics);
+            
+            // 计算成熟度认证率
+            if (maturityBaselineCount > 0) {
+                BigDecimal certRate = new BigDecimal(maturityCertifiedCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setCertRate(certRate);
+            } else {
+                maturityStat.setCertRate(BigDecimal.ZERO);
+            }
+            
+            maturityStatistics.add(maturityStat);
+        }
+        
+        // 7. 计算总计统计
+        ExpertMaturityCertStatisticsVO totalStatistics = new ExpertMaturityCertStatisticsVO();
+        totalStatistics.setMaturityLevel("总计");
+        totalStatistics.setBaselineCount(totalBaselineCount);
+        totalStatistics.setCertifiedCount(totalCertifiedCount);
+        totalStatistics.setJobCategoryStatistics(null);
+        
+        // 计算总计认证率
+        if (totalBaselineCount > 0) {
+            BigDecimal totalCertRate = new BigDecimal(totalCertifiedCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setCertRate(totalCertRate);
+        } else {
+            totalStatistics.setCertRate(BigDecimal.ZERO);
+        }
+        
+        // 8. 构建返回结果
+        ExpertAiCertStatisticsResponseVO response = new ExpertAiCertStatisticsResponseVO();
+        response.setDeptCode(deptCode);
+        response.setDeptName(deptName);
+        response.setMaturityStatistics(maturityStatistics);
+        response.setTotalStatistics(totalStatistics);
+        
+        return response;
+    }
+    
+    /**
+     * 从职位族字符串中提取职位类
+     * 格式：职位族-职位类-职位子类，需要提取中间的职位类
+     * @param jobCategory 职位族字符串
+     * @return 职位类，如果格式不正确则返回"未知"
+     */
+    private String extractJobCategory(String jobCategory) {
+        if (jobCategory == null || jobCategory.trim().isEmpty()) {
+            return "未知";
+        }
+        
+        String[] parts = jobCategory.split("-");
+        if (parts.length >= 2) {
+            // 提取中间的职位类（第二个部分）
+            return parts[1].trim();
+        } else if (parts.length == 1) {
+            // 如果只有一个部分，直接返回
+            return parts[0].trim();
+        } else {
+            return "未知";
         }
     }
 

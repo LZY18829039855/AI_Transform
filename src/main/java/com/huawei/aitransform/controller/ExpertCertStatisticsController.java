@@ -8,6 +8,7 @@ import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeCertCheckRequestVO;
 import com.huawei.aitransform.entity.EmployeeCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.EmployeeDrillDownResponseVO;
+import com.huawei.aitransform.entity.ExpertAiCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.ExpertCertStatisticsVO;
 import com.huawei.aitransform.entity.MaturityCertStatisticsResponseVO;
@@ -461,6 +462,28 @@ public class ExpertCertStatisticsController {
             } else {
                 return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
             }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 查询专家AI认证数据
+     * @param deptCode 部门ID（部门编码），当值为"0"时，自动赋值为"云核心网产品线"部门ID
+     * @return 专家AI认证统计结果
+     */
+    @GetMapping("/expert-ai-cert-statistics")
+    public ResponseEntity<Result<ExpertAiCertStatisticsResponseVO>> getExpertAiCertStatistics(
+            @RequestParam(value = "deptCode", required = true) String deptCode) {
+        try {
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            ExpertAiCertStatisticsResponseVO result = expertCertStatisticsService.getExpertAiCertStatistics(deptCode);
+            return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }

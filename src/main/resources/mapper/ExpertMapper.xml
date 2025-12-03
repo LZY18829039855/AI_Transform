@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.ExpertMapper">
+
+    <!-- 根据部门编码和部门层级查询L2/L3专家信息（关联t_employee_sync表获取job_category） -->
+    <select id="getExpertInfoByDeptCode" resultType="com.huawei.aitransform.entity.ExpertInfoVO">
+        SELECT DISTINCT
+            exp.account AS employeeNumber,
+            exp.position_ai_maturity AS aiMaturity,
+            e.job_category AS jobCategory
+        FROM t_expert exp
+        INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
+        WHERE e.period_id = 20251126
+        AND exp.position_ai_maturity IN ('L2', 'L3')
+        AND exp.account IS NOT NULL
+        AND exp.account != ''
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <if test="deptCode != null and deptCode != ''">
+            <choose>
+                <!-- 根据部门层级使用对应的部门字段进行过滤 -->
+                <when test="deptLevel == 1">
+                    AND e.firstdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 2">
+                    AND e.seconddeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 3">
+                    AND e.thirddeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 4">
+                    AND e.fourthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 5">
+                    AND e.fifthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 6">
+                    AND e.sixthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 7">
+                    <!-- 如果deptLevel为7，已经是最高层级，无法再查询 -->
+                    AND 1 = 0
+                </when>
+            </choose>
+        </if>
+    </select>
+
+</mapper>
+
