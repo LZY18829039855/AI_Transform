@@ -41,12 +41,8 @@ public class UserConfigController {
                 Cookie[] cookies = request.getCookies();
                 if (cookies != null) {
                     for (Cookie cookie : cookies) {
-                        // 尝试常见的cookie名称
-                        if ("account".equals(cookie.getName()) || 
-                            "employeeId".equals(cookie.getName()) || 
-                            "employee_id".equals(cookie.getName()) ||
-                            "userId".equals(cookie.getName()) ||
-                            "user_id".equals(cookie.getName())) {
+                        // 只判断cookie名称为account
+                        if ("account".equals(cookie.getName())) {
                             account = cookie.getValue();
                             break;
                         }
