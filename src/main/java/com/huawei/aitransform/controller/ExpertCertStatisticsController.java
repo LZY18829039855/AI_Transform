@@ -244,11 +244,6 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
 
-            // 当deptCode为"0"时，使用研发管理部部门ID
-            if ("0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
-            }
-
             if (personType == null) {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
