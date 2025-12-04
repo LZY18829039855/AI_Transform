@@ -343,6 +343,12 @@ public class ExpertCertStatisticsService {
                 continue;
             }
 
+            // 过滤掉不需要展示的部门：C Lab（模块）和云核心网产品组合与生命周期管理部
+            String deptName = dept.getDeptName();
+            if (deptName != null && (deptName.equals("C Lab（模块）") || deptName.equals("云核心网产品组合与生命周期管理部"))) {
+                continue;
+            }
+
             // 4.1 查询该部门下的员工工号列表
             List<String> deptIdList = new ArrayList<>();
             deptIdList.add(dept.getDeptCode());
@@ -497,6 +503,12 @@ public class ExpertCertStatisticsService {
 
         for (DepartmentInfoVO childDept : childDepts) {
             if (childDept.getDeptCode() == null || childDept.getDeptCode().trim().isEmpty()) {
+                continue;
+            }
+
+            // 过滤掉不需要展示的部门：C Lab（模块）和云核心网产品组合与生命周期管理部
+            String deptName = childDept.getDeptName();
+            if (deptName != null && (deptName.equals("C Lab（模块）") || deptName.equals("云核心网产品组合与生命周期管理部"))) {
                 continue;
             }
 
@@ -1526,39 +1538,33 @@ public class ExpertCertStatisticsService {
             String employeeNumber = cadre.getEmployeeNumber();
 
             // 统计成熟度的总基数（所有职位类）
-            // 注意：对于L2成熟度，总基数需要统计软件类以及非软件类员工
+            // 注意：对于L2和L3成熟度，总基数需要统计软件类以及非软件类员工
             maturityTotalBaselineMap.put(aiMaturity, maturityTotalBaselineMap.getOrDefault(aiMaturity, 0) + 1);
             totalBaselineCount++;
             
             // 统计成熟度的总认证人数（所有职位类）
-            // 注意：对于L2成熟度，总认证人数需要统计软件类以及非软件类员工
+            // 注意：对于L2和L3成熟度，总认证人数需要统计软件类以及非软件类员工
             if (employeeNumber != null && certifiedSet.contains(employeeNumber)) {
                 maturityTotalCertifiedMap.put(aiMaturity, maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0) + 1);
                 totalCertifiedCount++;
             }
             
             // 统计成熟度的总科目二通过人数（所有职位类）
-            // 注意：对于L2成熟度，总科目二通过人数需要统计软件类以及非软件类员工
+            // 注意：对于L2和L3成熟度，总科目二通过人数需要统计软件类以及非软件类员工
             if (employeeNumber != null && subject2PassedSet.contains(employeeNumber)) {
                 maturityTotalSubject2PassMap.put(aiMaturity, maturityTotalSubject2PassMap.getOrDefault(aiMaturity, 0) + 1);
                 totalSubject2PassCount++;
             }
 
-            // 判断是否为软件类（职位类等于"软件类"）
-            boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
-            
-            // L2只返回软件类员工数据，L3返回软件类和非软件类员工数据
-            // 注意：L2的总基数、总认证人数、总科目二通过人数已经在上面的统计中包含了所有职位类
+            // L2和L3都返回软件类和非软件类员工数据（即所有职位类）
+            // 注意：L2和L3的总基数、总认证人数、总科目二通过人数已经在上面的统计中包含了所有职位类
             boolean shouldInclude = false;
-            if ("L2".equals(aiMaturity)) {
-                // L2只返回软件类员工，不返回其他类型的数据
-                shouldInclude = isSoftwareCategory;
-            } else if ("L3".equals(aiMaturity)) {
-                // L3返回软件类和非软件类（即所有职位类）
+            if ("L2".equals(aiMaturity) || "L3".equals(aiMaturity)) {
+                // L2和L3都返回所有职位类（软件类和非软件类）
                 shouldInclude = true;
             }
 
-            // 只有符合条件的职位类才加入到jobCategoryStatistics中（L2只包含软件类）
+            // 只有符合条件的职位类才加入到jobCategoryStatistics中（L2和L3都包含所有职位类）
             if (shouldInclude) {
                 // 获取或创建成熟度对应的职位类Map
                 Map<String, CadreJobCategoryCertStatisticsVO> jobCategoryMap = 
@@ -1618,16 +1624,9 @@ public class ExpertCertStatisticsService {
             
             List<CadreJobCategoryCertStatisticsVO> jobCategoryStatistics = new ArrayList<>();
 
-            // 遍历该成熟度下的所有职位类（只包含符合条件的职位类）
+            // 遍历该成熟度下的所有职位类（包含所有职位类）
             for (CadreJobCategoryCertStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
-                // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
-                if ("L2".equals(aiMaturity)) {
-                    String jobCategory = jobCategoryStat.getJobCategory();
-                    if (jobCategory == null || jobCategory.equals("非软件类")) {
-                        // L2非软件类数据不返回
-                        continue;
-                    }
-                }
+                // L2和L3都返回所有职位类（软件类和非软件类）
                 
                 // 计算职位类认证率（基于该职位类的基数）
                 if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
@@ -2099,9 +2098,10 @@ public class ExpertCertStatisticsService {
                 boolean isQualified = false;
                 
                 if ("L3".equals(aiMaturity)) {
-                    // L3干部的AI任职需要达到4+（不包括四级），即5级、6级、7级、8级
+                    // L3干部的AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
                     if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
-                        if ("5级".equals(highestQualificationLevel) 
+                        if ("4级".equals(highestQualificationLevel)
+                                || "5级".equals(highestQualificationLevel) 
                                 || "6级".equals(highestQualificationLevel)
                                 || "7级".equals(highestQualificationLevel)
                                 || "8级".equals(highestQualificationLevel)) {
@@ -2115,9 +2115,10 @@ public class ExpertCertStatisticsService {
                         l3UnqualifiedCount++;
                     }
                 } else if ("L2".equals(aiMaturity)) {
-                    // L2专家的AI任职需要达到3+（不包括3级），即4级、5级、6级、7级、8级
+                    // L2专家的AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
                     if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
-                        if ("4级".equals(highestQualificationLevel)
+                        if ("3级".equals(highestQualificationLevel)
+                                || "4级".equals(highestQualificationLevel)
                                 || "5级".equals(highestQualificationLevel)
                                 || "6级".equals(highestQualificationLevel)
                                 || "7级".equals(highestQualificationLevel)
