@@ -149,6 +149,11 @@ public class EmployeeDetailVO implements Serializable {
      */
     private Integer isQualificationsStandard;
 
+    /**
+     * 是否认证达标（1-达标，0-不达标）
+     */
+    private Integer isCertStandard;
+
     public EmployeeDetailVO() {
     }
 
@@ -358,6 +363,14 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setIsQualificationsStandard(Integer isQualificationsStandard) {
         this.isQualificationsStandard = isQualificationsStandard;
+    }
+
+    public Integer getIsCertStandard() {
+        return isCertStandard;
+    }
+
+    public void setIsCertStandard(Integer isCertStandard) {
+        this.isCertStandard = isCertStandard;
     }
 }
 

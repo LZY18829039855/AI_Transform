@@ -2239,7 +2239,7 @@ public class ExpertCertStatisticsService {
      * 
      * 认证达标规则：
      * - 所有干部（软件类和非软件类）如果持有AI专业级证书，视为认证达标
-     * - 非软件类干部如果通过了专业级科目二考试（exam_code = 'EXCN022303075ZA2E'），视为认证达标
+     * - 非软件类干部如果通过了专业级科目二考试（exam_code为'EXCN022303075ZA20'、'EXCN022303075ZA2E'或'EXCN022303075ZA2A'之一），视为认证达标
      * 如果满足任一条件，将干部表中的is_cert_standard字段更新为1
      * 
      * @return 更新结果信息（包含更新的干部数量）
