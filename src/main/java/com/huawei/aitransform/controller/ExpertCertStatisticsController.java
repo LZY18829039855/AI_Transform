@@ -464,6 +464,31 @@ public class ExpertCertStatisticsController {
     }
 
     /**
+     * 更新L2、L3干部的AI认证达标情况
+     * 
+     * 认证达标规则：
+     * - 所有干部（软件类和非软件类）如果持有AI专业级证书，视为认证达标
+     * - 非软件类干部如果通过了专业级科目二考试（exam_code = 'EXCN022303075ZA2E'），视为认证达标
+     * 如果满足任一条件，将干部表中的is_cert_standard字段更新为1
+     * 
+     * @return 更新结果信息（包含更新的干部数量）
+     */
+    @PostMapping("/update-cadre-cert-standard")
+    public ResponseEntity<Result<Object>> updateCadreCertStandard() {
+        try {
+            java.util.Map<String, Object> result = expertCertStatisticsService.updateCadreCertStandard();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
      * 查询专家AI认证数据
      * @param deptCode 部门ID（部门编码），当值为"0"时，自动赋值为"云核心网产品线"部门ID
      * @return 专家AI认证统计结果

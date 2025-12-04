@@ -35,6 +35,11 @@ public class CadreQualificationVO {
      */
     private Integer hasPassedSubject2;
 
+    /**
+     * 是否通过专业级科目二（1-通过，0-未通过）
+     */
+    private Integer hasPassedProfessionalSubject2;
+
     public String getEmployeeNumber() {
         return employeeNumber;
     }
@@ -81,6 +86,14 @@ public class CadreQualificationVO {
 
     public void setHasPassedSubject2(Integer hasPassedSubject2) {
         this.hasPassedSubject2 = hasPassedSubject2;
+    }
+
+    public Integer getHasPassedProfessionalSubject2() {
+        return hasPassedProfessionalSubject2;
+    }
+
+    public void setHasPassedProfessionalSubject2(Integer hasPassedProfessionalSubject2) {
+        this.hasPassedProfessionalSubject2 = hasPassedProfessionalSubject2;
     }
 }
 

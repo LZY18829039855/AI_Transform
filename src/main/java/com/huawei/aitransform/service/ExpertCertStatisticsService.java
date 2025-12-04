@@ -2235,6 +2235,130 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 更新L2、L3干部的AI认证达标情况
+     * 
+     * 认证达标规则：
+     * - 所有干部（软件类和非软件类）如果持有AI专业级证书，视为认证达标
+     * - 非软件类干部如果通过了专业级科目二考试（exam_code = 'EXCN022303075ZA2E'），视为认证达标
+     * 如果满足任一条件，将干部表中的is_cert_standard字段更新为1
+     * 
+     * @return 更新结果信息（包含更新的干部数量）
+     */
+    public Map<String, Object> updateCadreCertStandard() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. 查询所有L2、L3干部及其专业级证书和专业级科目二通过情况
+            List<CadreQualificationVO> cadreList = cadreMapper.getL2L3CadreWithCertInfo();
+            
+            if (cadreList == null || cadreList.isEmpty()) {
+                result.put("success", true);
+                result.put("message", "未找到L2、L3干部数据");
+                result.put("totalCount", 0);
+                result.put("certQualifiedCount", 0);
+                result.put("certUnqualifiedCount", 0);
+                result.put("updatedCertCount", 0);
+                result.put("l2CertQualifiedCount", 0);
+                result.put("l2CertUnqualifiedCount", 0);
+                result.put("l3CertQualifiedCount", 0);
+                result.put("l3CertUnqualifiedCount", 0);
+                return result;
+            }
+            
+            // 2. 收集所有L2、L3干部的工号（用于重置）
+            List<String> allL2L3EmployeeNumbers = new ArrayList<>();
+            // 3. 收集认证达标的干部工号
+            List<String> certQualifiedEmployeeNumbers = new ArrayList<>();
+            
+            int l2CertQualifiedCount = 0;
+            int l3CertQualifiedCount = 0;
+            int l2CertUnqualifiedCount = 0;
+            int l3CertUnqualifiedCount = 0;
+            
+            // 4. 遍历每个干部，判断是否达标
+            for (CadreQualificationVO cadre : cadreList) {
+                String employeeNumber = cadre.getEmployeeNumber();
+                String aiMaturity = cadre.getAiMaturity();
+                String jobCategory = cadre.getJobCategory();
+                Integer hasProfessionalCert = cadre.getHasProfessionalCert();
+                Integer hasPassedProfessionalSubject2 = cadre.getHasPassedProfessionalSubject2();
+                
+                if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
+                    continue;
+                }
+                
+                // 只处理L2和L3的成熟度
+                if (!"L2".equals(aiMaturity) && !"L3".equals(aiMaturity)) {
+                    continue;
+                }
+                
+                allL2L3EmployeeNumbers.add(employeeNumber);
+                
+                // 判断认证是否达标
+                boolean isCertQualified = false;
+                
+                // 规则1：所有干部持有AI专业级证书，视为达标
+                if (hasProfessionalCert != null && hasProfessionalCert == 1) {
+                    isCertQualified = true;
+                }
+                
+                // 规则2：非软件类干部通过专业级科目二考试，视为达标
+                if (!isCertQualified) {
+                    boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
+                    if (!isSoftwareCategory && hasPassedProfessionalSubject2 != null && hasPassedProfessionalSubject2 == 1) {
+                        isCertQualified = true;
+                    }
+                }
+                
+                if (isCertQualified) {
+                    certQualifiedEmployeeNumbers.add(employeeNumber);
+                    if ("L2".equals(aiMaturity)) {
+                        l2CertQualifiedCount++;
+                    } else if ("L3".equals(aiMaturity)) {
+                        l3CertQualifiedCount++;
+                    }
+                } else {
+                    if ("L2".equals(aiMaturity)) {
+                        l2CertUnqualifiedCount++;
+                    } else if ("L3".equals(aiMaturity)) {
+                        l3CertUnqualifiedCount++;
+                    }
+                }
+            }
+            
+            // 5. 先重置所有L2、L3干部的is_cert_standard字段为0
+            if (!allL2L3EmployeeNumbers.isEmpty()) {
+                cadreMapper.batchResetCertStandard(allL2L3EmployeeNumbers);
+            }
+            
+            // 6. 批量更新认证达标的干部is_cert_standard字段为1
+            int updatedCertCount = 0;
+            if (!certQualifiedEmployeeNumbers.isEmpty()) {
+                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedEmployeeNumbers);
+            }
+            
+            // 7. 构建返回结果
+            result.put("success", true);
+            result.put("message", "更新成功");
+            result.put("totalCount", allL2L3EmployeeNumbers.size());
+            result.put("certQualifiedCount", certQualifiedEmployeeNumbers.size());
+            result.put("certUnqualifiedCount", allL2L3EmployeeNumbers.size() - certQualifiedEmployeeNumbers.size());
+            result.put("updatedCertCount", updatedCertCount);
+            result.put("l2CertQualifiedCount", l2CertQualifiedCount);
+            result.put("l2CertUnqualifiedCount", l2CertUnqualifiedCount);
+            result.put("l3CertQualifiedCount", l3CertQualifiedCount);
+            result.put("l3CertUnqualifiedCount", l3CertUnqualifiedCount);
+            
+            return result;
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "更新失败：" + e.getMessage());
+            result.put("error", e.getClass().getName());
+            return result;
+        }
+    }
+
+    /**
      * 查询专家AI认证数据
      * @param deptCode 部门ID（部门编码），当为"0"时，自动赋值为"云核心网产品线"部门ID
      * @return 专家AI认证统计结果

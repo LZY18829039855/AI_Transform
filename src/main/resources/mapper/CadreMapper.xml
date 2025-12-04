@@ -449,5 +449,49 @@
         </foreach>
     </update>
 
+    <!-- 查询所有L2、L3干部及其专业级证书和专业级科目二通过情况 -->
+    <select id="getL2L3CadreWithCertInfo" resultType="com.huawei.aitransform.entity.CadreQualificationVO">
+        SELECT 
+            c.account AS employeeNumber,
+            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
+            COALESCE(c.cadre_competence_category, '未知') AS jobCategory,
+            CASE 
+                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasProfessionalCert,
+            CASE 
+                WHEN exam.emp_num IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasPassedProfessionalSubject2
+        FROM t_cadre c
+        INNER JOIN t_employee_sync e ON (e.employee_number = c.account)
+        LEFT JOIN (
+            SELECT DISTINCT
+                employee_number,
+                w3_account
+            FROM dwr_t_cert_record_t
+            WHERE (status = 1 OR approved_status = 1)
+            AND (
+                -- 华为研究类能力认证（专业级，xxx）
+                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE exam_code = 'EXCN022303075ZA2E'
+            AND is_pass = 1
+            AND emp_num IS NOT NULL
+            AND emp_num != ''
+        ) exam ON (e.employee_number = exam.emp_num)
+        WHERE c.position_ai_maturity IN ('L2', 'L3')
+        AND c.account IS NOT NULL
+        AND c.account != ''
+        AND e.period_id = 20251126
+        ORDER BY c.account
+    </select>
+
 </mapper>
 

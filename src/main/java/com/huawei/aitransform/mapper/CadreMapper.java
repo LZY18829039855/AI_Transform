@@ -97,5 +97,11 @@ public interface CadreMapper {
      * @return 更新的记录数
      */
     int batchResetCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 查询所有L2、L3干部及其专业级证书和专业级科目二通过情况
+     * @return 干部认证信息列表
+     */
+    List<CadreQualificationVO> getL2L3CadreWithCertInfo();
 }
 
