@@ -1514,10 +1514,12 @@ public class ExpertCertStatisticsService {
         Map<String, Integer> maturityTotalBaselineMap = new HashMap<>();
         Map<String, Integer> maturityTotalCertifiedMap = new HashMap<>();
         Map<String, Integer> maturityTotalSubject2PassMap = new HashMap<>();
+        Map<String, Integer> maturityTotalCertStandardMap = new HashMap<>();
         
         int totalBaselineCount = 0;
         int totalCertifiedCount = 0;
         int totalSubject2PassCount = 0;
+        int totalCertStandardCount = 0;
 
         for (CadreInfoVO cadre : allCadres) {
             // 直接从干部信息中获取AI成熟度（position_ai_maturity字段）
@@ -1555,6 +1557,13 @@ public class ExpertCertStatisticsService {
             if (employeeNumber != null && subject2PassedSet.contains(employeeNumber)) {
                 maturityTotalSubject2PassMap.put(aiMaturity, maturityTotalSubject2PassMap.getOrDefault(aiMaturity, 0) + 1);
                 totalSubject2PassCount++;
+            }
+            
+            // 统计成熟度的总持证人数（所有职位类）
+            // 注意：根据is_cert_standard字段统计，1代表持证
+            if (cadre.getIsCertStandard() != null && cadre.getIsCertStandard() == 1) {
+                maturityTotalCertStandardMap.put(aiMaturity, maturityTotalCertStandardMap.getOrDefault(aiMaturity, 0) + 1);
+                totalCertStandardCount++;
             }
 
             // L2和L3都返回软件类和非软件类员工数据（即所有职位类）
@@ -1598,6 +1607,14 @@ public class ExpertCertStatisticsService {
                     jobCategoryStat.setSubject2PassCount(jobCategoryStat.getSubject2PassCount() + 1);
                 }
 
+                // 检查是否持证达标（根据is_cert_standard字段，1代表持证）
+                if (cadre.getIsCertStandard() != null && cadre.getIsCertStandard() == 1) {
+                    if (jobCategoryStat.getCertStandardCount() == null) {
+                        jobCategoryStat.setCertStandardCount(0);
+                    }
+                    jobCategoryStat.setCertStandardCount(jobCategoryStat.getCertStandardCount() + 1);
+                }
+
                 jobCategoryMap.put(jobCategory, jobCategoryStat);
                 maturityJobCategoryMap.put(aiMaturity, jobCategoryMap);
             }
@@ -1622,6 +1639,7 @@ public class ExpertCertStatisticsService {
             int maturityBaselineCount = maturityTotalBaselineMap.getOrDefault(aiMaturity, 0);
             int maturityCertifiedCount = maturityTotalCertifiedMap.getOrDefault(aiMaturity, 0);
             int maturitySubject2PassCount = maturityTotalSubject2PassMap.getOrDefault(aiMaturity, 0);
+            int maturityCertStandardCount = maturityTotalCertStandardMap.getOrDefault(aiMaturity, 0);
             
             List<CadreJobCategoryCertStatisticsVO> jobCategoryStatistics = new ArrayList<>();
 
@@ -1655,6 +1673,19 @@ public class ExpertCertStatisticsService {
                     jobCategoryStat.setSubject2PassRate(BigDecimal.ZERO);
                 }
 
+                // 计算职位类持证率（基于该职位类的基数）
+                if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
+                    if (jobCategoryStat.getCertStandardCount() == null) {
+                        jobCategoryStat.setCertStandardCount(0);
+                    }
+                    BigDecimal certStandardRate = new BigDecimal(jobCategoryStat.getCertStandardCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
+                    jobCategoryStat.setCertStandardRate(certStandardRate);
+                } else {
+                    jobCategoryStat.setCertStandardRate(BigDecimal.ZERO);
+                }
+
                 jobCategoryStatistics.add(jobCategoryStat);
             }
 
@@ -1662,6 +1693,7 @@ public class ExpertCertStatisticsService {
             maturityStat.setBaselineCount(maturityBaselineCount);
             maturityStat.setCertifiedCount(maturityCertifiedCount);
             maturityStat.setSubject2PassCount(maturitySubject2PassCount);
+            maturityStat.setCertStandardCount(maturityCertStandardCount);
             maturityStat.setJobCategoryStatistics(jobCategoryStatistics);
 
             // 计算成熟度认证率（基于所有职位类的基数）
@@ -1684,6 +1716,16 @@ public class ExpertCertStatisticsService {
                 maturityStat.setSubject2PassRate(BigDecimal.ZERO);
             }
 
+            // 计算成熟度持证率（基于所有职位类的基数）
+            if (maturityBaselineCount > 0) {
+                BigDecimal certStandardRate = new BigDecimal(maturityCertStandardCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setCertStandardRate(certStandardRate);
+            } else {
+                maturityStat.setCertStandardRate(BigDecimal.ZERO);
+            }
+
             maturityStatistics.add(maturityStat);
         }
 
@@ -1697,6 +1739,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setBaselineCount(totalBaselineCount);
         totalStatistics.setCertifiedCount(totalCertifiedCount);
         totalStatistics.setSubject2PassCount(totalSubject2PassCount);
+        totalStatistics.setCertStandardCount(totalCertStandardCount);
         totalStatistics.setJobCategoryStatistics(null);
 
         // 计算总计认证率
@@ -1717,6 +1760,16 @@ public class ExpertCertStatisticsService {
             totalStatistics.setSubject2PassRate(totalSubject2PassRate);
         } else {
             totalStatistics.setSubject2PassRate(BigDecimal.ZERO);
+        }
+
+        // 计算总计持证率
+        if (totalBaselineCount > 0) {
+            BigDecimal totalCertStandardRate = new BigDecimal(totalCertStandardCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setCertStandardRate(totalCertStandardRate);
+        } else {
+            totalStatistics.setCertStandardRate(BigDecimal.ZERO);
         }
 
         // 9. 构建返回结果

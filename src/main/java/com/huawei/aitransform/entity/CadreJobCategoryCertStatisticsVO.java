@@ -40,6 +40,16 @@ public class CadreJobCategoryCertStatisticsVO implements Serializable {
      */
     private BigDecimal subject2PassRate;
 
+    /**
+     * 按要求持证人数（根据is_cert_standard字段统计，1代表持证）
+     */
+    private Integer certStandardCount;
+
+    /**
+     * 按要求持证率（百分比，保留4位小数）
+     */
+    private BigDecimal certStandardRate;
+
     public CadreJobCategoryCertStatisticsVO() {
     }
 
@@ -89,6 +99,22 @@ public class CadreJobCategoryCertStatisticsVO implements Serializable {
 
     public void setSubject2PassRate(BigDecimal subject2PassRate) {
         this.subject2PassRate = subject2PassRate;
+    }
+
+    public Integer getCertStandardCount() {
+        return certStandardCount;
+    }
+
+    public void setCertStandardCount(Integer certStandardCount) {
+        this.certStandardCount = certStandardCount;
+    }
+
+    public BigDecimal getCertStandardRate() {
+        return certStandardRate;
+    }
+
+    public void setCertStandardRate(BigDecimal certStandardRate) {
+        this.certStandardRate = certStandardRate;
     }
 }
 

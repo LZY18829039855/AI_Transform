@@ -47,7 +47,8 @@
             mini_departname_id AS deptCode,
             COALESCE(cadre_competence_category, '未知') AS jobCategory,
             COALESCE(position_ai_maturity, '未知') AS aiMaturity,
-            COALESCE(is_qualifications_standard, 0) AS isQualificationsStandard
+            COALESCE(is_qualifications_standard, 0) AS isQualificationsStandard,
+            COALESCE(is_cert_standard, 0) AS isCertStandard
         FROM t_cadre
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">

@@ -34,6 +34,11 @@ public class CadreInfoVO implements Serializable {
      */
     private Integer isQualificationsStandard;
 
+    /**
+     * 是否按要求持证达标（1-达标，0-不达标）
+     */
+    private Integer isCertStandard;
+
     public CadreInfoVO() {
     }
 
@@ -75,6 +80,14 @@ public class CadreInfoVO implements Serializable {
 
     public void setIsQualificationsStandard(Integer isQualificationsStandard) {
         this.isQualificationsStandard = isQualificationsStandard;
+    }
+
+    public Integer getIsCertStandard() {
+        return isCertStandard;
+    }
+
+    public void setIsCertStandard(Integer isCertStandard) {
+        this.isCertStandard = isCertStandard;
     }
 }
 
