@@ -79,6 +79,7 @@
                 ELSE 0 
             END AS isPassedSubject2,
             1 AS isCadre,
+            COALESCE(c.is_cert_standard, 0) AS isCertStandard,
             COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
             dept.dept_name AS miniDeptName,
             c.cadre_type AS cadreType
