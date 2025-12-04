@@ -24,6 +24,11 @@ public class ExpertInfoVO implements Serializable {
      */
     private String jobCategory;
 
+    /**
+     * 是否按要求任职达标（1-达标，0-不达标）
+     */
+    private Integer isQualificationsStandard;
+
     public ExpertInfoVO() {
     }
 
@@ -49,6 +54,14 @@ public class ExpertInfoVO implements Serializable {
 
     public void setJobCategory(String jobCategory) {
         this.jobCategory = jobCategory;
+    }
+
+    public Integer getIsQualificationsStandard() {
+        return isQualificationsStandard;
+    }
+
+    public void setIsQualificationsStandard(Integer isQualificationsStandard) {
+        this.isQualificationsStandard = isQualificationsStandard;
     }
 }
 

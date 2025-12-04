@@ -8,7 +8,8 @@
         SELECT DISTINCT
             exp.account AS employeeNumber,
             exp.position_ai_maturity AS aiMaturity,
-            e.job_category AS jobCategory
+            e.job_category AS jobCategory,
+            COALESCE(exp.is_qualifications_standard, 0) AS isQualificationsStandard
         FROM t_expert exp
         INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
         WHERE e.period_id = 20251126

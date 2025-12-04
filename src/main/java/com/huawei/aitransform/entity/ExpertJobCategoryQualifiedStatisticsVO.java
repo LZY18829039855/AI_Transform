@@ -30,6 +30,16 @@ public class ExpertJobCategoryQualifiedStatisticsVO implements Serializable {
      */
     private BigDecimal qualifiedRate;
 
+    /**
+     * 按要求AI任职人数（该职位类下is_qualifications_standard=1的专家人数）
+     */
+    private Integer qualifiedByRequirementCount;
+
+    /**
+     * 按要求AI任职人数占比（百分比，保留4位小数）
+     */
+    private BigDecimal qualifiedByRequirementRate;
+
     public ExpertJobCategoryQualifiedStatisticsVO() {
     }
 
@@ -63,6 +73,22 @@ public class ExpertJobCategoryQualifiedStatisticsVO implements Serializable {
 
     public void setQualifiedRate(BigDecimal qualifiedRate) {
         this.qualifiedRate = qualifiedRate;
+    }
+
+    public Integer getQualifiedByRequirementCount() {
+        return qualifiedByRequirementCount;
+    }
+
+    public void setQualifiedByRequirementCount(Integer qualifiedByRequirementCount) {
+        this.qualifiedByRequirementCount = qualifiedByRequirementCount;
+    }
+
+    public BigDecimal getQualifiedByRequirementRate() {
+        return qualifiedByRequirementRate;
+    }
+
+    public void setQualifiedByRequirementRate(BigDecimal qualifiedByRequirementRate) {
+        this.qualifiedByRequirementRate = qualifiedByRequirementRate;
     }
 }
 

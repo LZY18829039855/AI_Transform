@@ -2756,7 +2756,9 @@ public class ExpertCertStatisticsService {
             total.setMaturityLevel("总计");
             total.setBaselineCount(0);
             total.setQualifiedCount(0);
+            total.setQualifiedByRequirementCount(0);
             total.setQualifiedRate(BigDecimal.ZERO);
+            total.setQualifiedByRequirementRate(BigDecimal.ZERO);
             total.setJobCategoryStatistics(null);
             response.setTotalStatistics(total);
             return response;
@@ -2780,9 +2782,11 @@ public class ExpertCertStatisticsService {
         // 用于统计L2和L3的总基数（包含所有职位类）
         Map<String, Integer> maturityTotalBaselineMap = new HashMap<>();
         Map<String, Integer> maturityTotalQualifiedMap = new HashMap<>();
+        Map<String, Integer> maturityTotalQualifiedByRequirementMap = new HashMap<>();
         
         int totalBaselineCount = 0;
         int totalQualifiedCount = 0;
+        int totalQualifiedByRequirementCount = 0;
         
         for (ExpertInfoVO expert : expertList) {
             String aiMaturity = expert.getAiMaturity();
@@ -2794,6 +2798,7 @@ public class ExpertCertStatisticsService {
             String jobCategory = extractJobCategory(expert.getJobCategory());
             
             String employeeNumber = expert.getEmployeeNumber();
+            Integer isQualificationsStandard = expert.getIsQualificationsStandard();
             
             // 统计成熟度的总基数（所有职位类）
             maturityTotalBaselineMap.put(aiMaturity, 
@@ -2805,6 +2810,13 @@ public class ExpertCertStatisticsService {
                 maturityTotalQualifiedMap.put(aiMaturity, 
                     maturityTotalQualifiedMap.getOrDefault(aiMaturity, 0) + 1);
                 totalQualifiedCount++;
+            }
+            
+            // 统计成熟度的总按要求任职人数（所有职位类，is_qualifications_standard=1）
+            if (isQualificationsStandard != null && isQualificationsStandard == 1) {
+                maturityTotalQualifiedByRequirementMap.put(aiMaturity, 
+                    maturityTotalQualifiedByRequirementMap.getOrDefault(aiMaturity, 0) + 1);
+                totalQualifiedByRequirementCount++;
             }
             
             // 获取或创建成熟度对应的职位类Map
@@ -2830,6 +2842,14 @@ public class ExpertCertStatisticsService {
                 jobCategoryStat.setQualifiedCount(jobCategoryStat.getQualifiedCount() + 1);
             }
             
+            // 统计按要求任职人数（is_qualifications_standard=1）
+            if (isQualificationsStandard != null && isQualificationsStandard == 1) {
+                if (jobCategoryStat.getQualifiedByRequirementCount() == null) {
+                    jobCategoryStat.setQualifiedByRequirementCount(0);
+                }
+                jobCategoryStat.setQualifiedByRequirementCount(jobCategoryStat.getQualifiedByRequirementCount() + 1);
+            }
+            
             jobCategoryMap.put(jobCategory, jobCategoryStat);
             maturityJobCategoryMap.put(aiMaturity, jobCategoryMap);
         }
@@ -2852,6 +2872,7 @@ public class ExpertCertStatisticsService {
             // 使用所有职位类的总基数
             int maturityBaselineCount = maturityTotalBaselineMap.getOrDefault(aiMaturity, 0);
             int maturityQualifiedCount = maturityTotalQualifiedMap.getOrDefault(aiMaturity, 0);
+            int maturityQualifiedByRequirementCount = maturityTotalQualifiedByRequirementMap.getOrDefault(aiMaturity, 0);
             
             List<ExpertJobCategoryQualifiedStatisticsVO> jobCategoryStatistics = new ArrayList<>();
             
@@ -2866,8 +2887,18 @@ public class ExpertCertStatisticsService {
                             .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
                             .multiply(new BigDecimal(100));
                     jobCategoryStat.setQualifiedRate(qualifiedRate);
+                    
+                    // 计算职位类按要求任职人数占比
+                    if (jobCategoryStat.getQualifiedByRequirementCount() == null) {
+                        jobCategoryStat.setQualifiedByRequirementCount(0);
+                    }
+                    BigDecimal qualifiedByRequirementRate = new BigDecimal(jobCategoryStat.getQualifiedByRequirementCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
+                    jobCategoryStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
                 } else {
                     jobCategoryStat.setQualifiedRate(BigDecimal.ZERO);
+                    jobCategoryStat.setQualifiedByRequirementRate(BigDecimal.ZERO);
                 }
                 
                 jobCategoryStatistics.add(jobCategoryStat);
@@ -2876,6 +2907,7 @@ public class ExpertCertStatisticsService {
             // 设置成熟度统计数据
             maturityStat.setBaselineCount(maturityBaselineCount);
             maturityStat.setQualifiedCount(maturityQualifiedCount);
+            maturityStat.setQualifiedByRequirementCount(maturityQualifiedByRequirementCount);
             maturityStat.setJobCategoryStatistics(jobCategoryStatistics);
             
             // 计算成熟度任职率
@@ -2884,8 +2916,15 @@ public class ExpertCertStatisticsService {
                         .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
                         .multiply(new BigDecimal(100));
                 maturityStat.setQualifiedRate(qualifiedRate);
+                
+                // 计算成熟度按要求任职人数占比
+                BigDecimal qualifiedByRequirementRate = new BigDecimal(maturityQualifiedByRequirementCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
+                maturityStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
             } else {
                 maturityStat.setQualifiedRate(BigDecimal.ZERO);
+                maturityStat.setQualifiedByRequirementRate(BigDecimal.ZERO);
             }
             
             maturityStatistics.add(maturityStat);
@@ -2896,6 +2935,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setMaturityLevel("总计");
         totalStatistics.setBaselineCount(totalBaselineCount);
         totalStatistics.setQualifiedCount(totalQualifiedCount);
+        totalStatistics.setQualifiedByRequirementCount(totalQualifiedByRequirementCount);
         totalStatistics.setJobCategoryStatistics(null);
         
         // 计算总计任职率
@@ -2904,8 +2944,15 @@ public class ExpertCertStatisticsService {
                     .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100));
             totalStatistics.setQualifiedRate(totalQualifiedRate);
+            
+            // 计算总计按要求任职人数占比
+            BigDecimal totalQualifiedByRequirementRate = new BigDecimal(totalQualifiedByRequirementCount)
+                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+            totalStatistics.setQualifiedByRequirementRate(totalQualifiedByRequirementRate);
         } else {
             totalStatistics.setQualifiedRate(BigDecimal.ZERO);
+            totalStatistics.setQualifiedByRequirementRate(BigDecimal.ZERO);
         }
         
         // 8. 构建返回结果
