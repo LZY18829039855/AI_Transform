@@ -2888,16 +2888,13 @@ public class ExpertCertStatisticsService {
                             .multiply(new BigDecimal(100));
                     jobCategoryStat.setQualifiedRate(qualifiedRate);
                     
-                    // 计算职位类按要求任职人数占比（使用总基线人数）
+                    // 计算职位类按要求任职人数占比
                     if (jobCategoryStat.getQualifiedByRequirementCount() == null) {
                         jobCategoryStat.setQualifiedByRequirementCount(0);
                     }
-                    // 修改：使用总基线人数而不是该职位类的基线人数
-                    BigDecimal qualifiedByRequirementRate = totalBaselineCount > 0
-                            ? new BigDecimal(jobCategoryStat.getQualifiedByRequirementCount())
-                                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
-                                    .multiply(new BigDecimal(100))
-                            : BigDecimal.ZERO;
+                    BigDecimal qualifiedByRequirementRate = new BigDecimal(jobCategoryStat.getQualifiedByRequirementCount())
+                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP)
+                            .multiply(new BigDecimal(100));
                     jobCategoryStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
                 } else {
                     jobCategoryStat.setQualifiedRate(BigDecimal.ZERO);
@@ -2920,13 +2917,10 @@ public class ExpertCertStatisticsService {
                         .multiply(new BigDecimal(100));
                 maturityStat.setQualifiedRate(qualifiedRate);
                 
-                // 计算成熟度按要求任职人数占比（使用总基线人数）
-                // 修改：使用总基线人数而不是该成熟度的基线人数
-                BigDecimal qualifiedByRequirementRate = totalBaselineCount > 0
-                        ? new BigDecimal(maturityQualifiedByRequirementCount)
-                                .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP)
-                                .multiply(new BigDecimal(100))
-                        : BigDecimal.ZERO;
+                // 计算成熟度按要求任职人数占比
+                BigDecimal qualifiedByRequirementRate = new BigDecimal(maturityQualifiedByRequirementCount)
+                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP)
+                        .multiply(new BigDecimal(100));
                 maturityStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
             } else {
                 maturityStat.setQualifiedRate(BigDecimal.ZERO);
