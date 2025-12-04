@@ -695,3 +695,4 @@ public static final String CLOUD_CORE_NETWORK_DEPT_CODE = "031562";
    - VO类名从`Cert`改为`Qualified`
 3. **实现建议**：可以参考`getExpertAiCertStatistics`方法的实现，将认证相关的逻辑替换为任职相关的逻辑即可
 
+
