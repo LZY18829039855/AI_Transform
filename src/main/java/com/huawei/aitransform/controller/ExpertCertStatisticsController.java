@@ -489,6 +489,31 @@ public class ExpertCertStatisticsController {
     }
 
     /**
+     * 更新L2、L3专家的AI任职达标情况
+     * 
+     * 任职要求：
+     * - L2软件类专家：AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
+     * - L3软件类专家：AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
+     * 如果满足要求，将专家表中的is_qualifications_standard字段更新为1
+     * 
+     * @return 更新结果信息（包含更新的专家数量）
+     */
+    @PostMapping("/update-expert-qualification-standard")
+    public ResponseEntity<Result<Object>> updateExpertQualificationStandard() {
+        try {
+            java.util.Map<String, Object> result = expertCertStatisticsService.updateExpertQualificationStandard();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
      * 查询专家AI认证数据
      * @param deptCode 部门ID（部门编码），当值为"0"时，自动赋值为"云核心网产品线"部门ID
      * @return 专家AI认证统计结果

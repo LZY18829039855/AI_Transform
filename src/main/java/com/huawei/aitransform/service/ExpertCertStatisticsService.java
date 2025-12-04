@@ -9,6 +9,7 @@ import com.huawei.aitransform.entity.CadreMaturityJobCategoryCertStatisticsRespo
 import com.huawei.aitransform.entity.CadreMaturityJobCategoryQualifiedStatisticsResponseVO;
 import com.huawei.aitransform.entity.CadreMaturityQualifiedStatisticsVO;
 import com.huawei.aitransform.entity.CadreQualificationVO;
+import com.huawei.aitransform.entity.ExpertQualificationVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.CompetenceCategoryCertStatisticsVO;
 import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
@@ -2348,6 +2349,151 @@ public class ExpertCertStatisticsService {
             result.put("l2CertUnqualifiedCount", l2CertUnqualifiedCount);
             result.put("l3CertQualifiedCount", l3CertQualifiedCount);
             result.put("l3CertUnqualifiedCount", l3CertUnqualifiedCount);
+            
+            return result;
+        } catch (Exception e) {
+            result.put("success", false);
+            result.put("message", "更新失败：" + e.getMessage());
+            result.put("error", e.getClass().getName());
+            return result;
+        }
+    }
+
+    /**
+     * 更新L2、L3专家的AI任职达标情况
+     * 
+     * 任职要求：
+     * - L2软件类专家：AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
+     * - L3软件类专家：AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
+     * 如果满足要求，将专家表中的is_qualifications_standard字段更新为1
+     * 
+     * @return 更新结果信息（包含更新的专家数量）
+     */
+    public Map<String, Object> updateExpertQualificationStandard() {
+        Map<String, Object> result = new HashMap<>();
+        
+        try {
+            // 1. 查询所有L2、L3专家及其最高AI任职级别和职位类
+            List<ExpertQualificationVO> expertList = expertMapper.getL2L3ExpertWithHighestQualification();
+            
+            if (expertList == null || expertList.isEmpty()) {
+                result.put("success", true);
+                result.put("message", "未找到L2、L3专家数据");
+                result.put("totalCount", 0);
+                result.put("qualifiedCount", 0);
+                result.put("unqualifiedCount", 0);
+                result.put("updatedQualificationCount", 0);
+                result.put("l2QualifiedCount", 0);
+                result.put("l2UnqualifiedCount", 0);
+                result.put("l3QualifiedCount", 0);
+                result.put("l3UnqualifiedCount", 0);
+                return result;
+            }
+            
+            // 2. 收集所有L2、L3专家的工号（用于重置）
+            List<String> allL2L3EmployeeNumbers = new ArrayList<>();
+            // 3. 收集任职达标的专家工号
+            List<String> qualifiedEmployeeNumbers = new ArrayList<>();
+            
+            int l2QualifiedCount = 0;
+            int l3QualifiedCount = 0;
+            int l2UnqualifiedCount = 0;
+            int l3UnqualifiedCount = 0;
+            
+            // 4. 遍历每个专家，判断是否达标
+            for (ExpertQualificationVO expert : expertList) {
+                String employeeNumber = expert.getEmployeeNumber();
+                String aiMaturity = expert.getAiMaturity();
+                String highestQualificationLevel = expert.getHighestQualificationLevel();
+                String jobCategoryFull = expert.getJobCategory();
+                
+                if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
+                    continue;
+                }
+                
+                // 只处理L2和L3的成熟度
+                if (!"L2".equals(aiMaturity) && !"L3".equals(aiMaturity)) {
+                    continue;
+                }
+                
+                // 提取职位类（从"职位族-职位类-职位子类"格式中提取中间的职位类）
+                String jobCategory = extractJobCategory(jobCategoryFull);
+                
+                // 只处理软件类专家
+                boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
+                if (!isSoftwareCategory) {
+                    continue;
+                }
+                
+                allL2L3EmployeeNumbers.add(employeeNumber);
+                
+                // 判断任职是否达标
+                boolean isQualified = false;
+                
+                if ("L3".equals(aiMaturity)) {
+                    // L3软件类专家的AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
+                    if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
+                        if ("4级".equals(highestQualificationLevel)
+                                || "5级".equals(highestQualificationLevel) 
+                                || "6级".equals(highestQualificationLevel)
+                                || "7级".equals(highestQualificationLevel)
+                                || "8级".equals(highestQualificationLevel)) {
+                            isQualified = true;
+                            l3QualifiedCount++;
+                        } else {
+                            l3UnqualifiedCount++;
+                        }
+                    } else {
+                        // 没有任职记录，不达标
+                        l3UnqualifiedCount++;
+                    }
+                } else if ("L2".equals(aiMaturity)) {
+                    // L2软件类专家的AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
+                    if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
+                        if ("3级".equals(highestQualificationLevel)
+                                || "4级".equals(highestQualificationLevel)
+                                || "5级".equals(highestQualificationLevel)
+                                || "6级".equals(highestQualificationLevel)
+                                || "7级".equals(highestQualificationLevel)
+                                || "8级".equals(highestQualificationLevel)) {
+                            isQualified = true;
+                            l2QualifiedCount++;
+                        } else {
+                            l2UnqualifiedCount++;
+                        }
+                    } else {
+                        // 没有任职记录，不达标
+                        l2UnqualifiedCount++;
+                    }
+                }
+                
+                if (isQualified) {
+                    qualifiedEmployeeNumbers.add(employeeNumber);
+                }
+            }
+            
+            // 5. 先重置所有L2、L3软件类专家的is_qualifications_standard字段为0
+            if (!allL2L3EmployeeNumbers.isEmpty()) {
+                expertMapper.batchResetQualificationStandard(allL2L3EmployeeNumbers);
+            }
+            
+            // 6. 批量更新任职达标的专家is_qualifications_standard字段为1
+            int updatedQualificationCount = 0;
+            if (!qualifiedEmployeeNumbers.isEmpty()) {
+                updatedQualificationCount = expertMapper.batchUpdateQualificationStandard(qualifiedEmployeeNumbers);
+            }
+            
+            // 7. 构建返回结果
+            result.put("success", true);
+            result.put("message", "更新成功");
+            result.put("totalCount", allL2L3EmployeeNumbers.size());
+            result.put("qualifiedCount", qualifiedEmployeeNumbers.size());
+            result.put("unqualifiedCount", allL2L3EmployeeNumbers.size() - qualifiedEmployeeNumbers.size());
+            result.put("updatedQualificationCount", updatedQualificationCount);
+            result.put("l2QualifiedCount", l2QualifiedCount);
+            result.put("l2UnqualifiedCount", l2UnqualifiedCount);
+            result.put("l3QualifiedCount", l3QualifiedCount);
+            result.put("l3UnqualifiedCount", l3UnqualifiedCount);
             
             return result;
         } catch (Exception e) {

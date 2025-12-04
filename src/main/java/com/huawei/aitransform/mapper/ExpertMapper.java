@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.ExpertInfoVO;
+import com.huawei.aitransform.entity.ExpertQualificationVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -21,6 +22,26 @@ public interface ExpertMapper {
     List<ExpertInfoVO> getExpertInfoByDeptCode(
             @Param("deptCode") String deptCode,
             @Param("deptLevel") Integer deptLevel);
+
+    /**
+     * 查询所有L2、L3专家及其最高AI任职级别和职位类
+     * @return 专家任职信息列表
+     */
+    List<ExpertQualificationVO> getL2L3ExpertWithHighestQualification();
+
+    /**
+     * 批量更新专家的is_qualifications_standard字段为1
+     * @param employeeNumbers 专家工号列表
+     * @return 更新的记录数
+     */
+    int batchUpdateQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量将专家的is_qualifications_standard字段重置为0
+     * @param employeeNumbers 专家工号列表
+     * @return 更新的记录数
+     */
+    int batchResetQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 
 
