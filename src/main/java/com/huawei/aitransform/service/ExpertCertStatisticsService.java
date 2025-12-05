@@ -1890,12 +1890,12 @@ public class ExpertCertStatisticsService {
             Integer isQualificationsStandard = cadre.getIsQualificationsStandard();
 
             // 统计成熟度的总基数（所有职位类）
-            // 注意：对于L2成熟度，总基数需要统计软件类以及非软件类员工
+            // 注意：对于L2和L3成熟度，总基数需要统计软件类以及非软件类员工
             maturityTotalBaselineMap.put(aiMaturity, maturityTotalBaselineMap.getOrDefault(aiMaturity, 0) + 1);
             totalBaselineCount++;
             
             // 统计成熟度的总任职人数（所有职位类）
-            // 注意：对于L2成熟度，总任职人数需要统计软件类以及非软件类员工
+            // 注意：对于L2和L3成熟度，总任职人数需要统计软件类以及非软件类员工
             if (employeeNumber != null && qualifiedSet.contains(employeeNumber)) {
                 maturityTotalQualifiedMap.put(aiMaturity, maturityTotalQualifiedMap.getOrDefault(aiMaturity, 0) + 1);
                 totalQualifiedCount++;
@@ -1908,21 +1908,15 @@ public class ExpertCertStatisticsService {
                 totalQualifiedByRequirementCount++;
             }
 
-            // 判断是否为软件类（职位类等于"软件类"）
-            boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
-            
-            // L2只返回软件类员工数据，L3返回软件类和非软件类员工数据
-            // 注意：L2的总基数、总任职人数已经在上面的统计中包含了所有职位类
+            // L2和L3都返回软件类和非软件类员工数据（即所有职位类）
+            // 注意：L2和L3的总基数、总任职人数已经在上面的统计中包含了所有职位类
             boolean shouldInclude = false;
-            if ("L2".equals(aiMaturity)) {
-                // L2只返回软件类员工，不返回其他类型的数据
-                shouldInclude = isSoftwareCategory;
-            } else if ("L3".equals(aiMaturity)) {
-                // L3返回软件类和非软件类（即所有职位类）
+            if ("L2".equals(aiMaturity) || "L3".equals(aiMaturity)) {
+                // L2和L3都返回所有职位类（软件类和非软件类）
                 shouldInclude = true;
             }
 
-            // 只有符合条件的职位类才加入到jobCategoryStatistics中（L2只包含软件类）
+            // 所有符合条件的职位类都加入到jobCategoryStatistics中（L2和L3都包含所有职位类）
             if (shouldInclude) {
                 // 获取或创建成熟度对应的职位类Map
                 Map<String, CadreJobCategoryQualifiedStatisticsVO> jobCategoryMap = 
@@ -1982,16 +1976,9 @@ public class ExpertCertStatisticsService {
             
             List<CadreJobCategoryQualifiedStatisticsVO> jobCategoryStatistics = new ArrayList<>();
 
-            // 遍历该成熟度下的所有职位类（只包含符合条件的职位类）
+            // 遍历该成熟度下的所有职位类（包含所有职位类：软件类和非软件类）
             for (CadreJobCategoryQualifiedStatisticsVO jobCategoryStat : jobCategoryMap.values()) {
-                // 对于L2成熟度，只返回软件类员工，过滤掉非软件类数据
-                if ("L2".equals(aiMaturity)) {
-                    String jobCategory = jobCategoryStat.getJobCategory();
-                    if (jobCategory == null || jobCategory.equals("非软件类")) {
-                        // L2非软件类数据不返回
-                        continue;
-                    }
-                }
+                // L2和L3都返回所有职位类数据（包括软件类和非软件类）
                 
                 // 计算职位类任职率（基于该职位类的基数）
                 if (jobCategoryStat.getBaselineCount() != null && jobCategoryStat.getBaselineCount() > 0) {
