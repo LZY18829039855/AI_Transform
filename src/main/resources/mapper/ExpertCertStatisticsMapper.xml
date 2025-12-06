@@ -291,5 +291,113 @@
         ORDER BY e.employee_number, q.competence_from
     </select>
 
+    <!-- 根据工号列表查询专家认证详细信息 -->
+    <select id="getExpertCertDetailsByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT DISTINCT
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.job_category AS competenceCategory,
+            e.firstdept AS departname2,
+            e.seconddept AS departname3,
+            e.thirddept AS departname4,
+            e.fourthdept AS departname5,
+            e.fifthdept AS departname6,
+            cert.cer_title AS certTitle,
+            cert.start_time AS certStartTime,
+            CASE 
+                WHEN exam.emp_num IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isPassedSubject2,
+            CASE 
+                WHEN c.account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isCadre,
+            COALESCE(c.is_cert_standard, 0) AS isCertStandard,
+            COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
+            NULL AS miniDeptName
+        FROM t_expert exp
+        INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
+        <choose>
+            <when test="queryType != null and queryType == 2">
+                <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
+                LEFT JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        -- 华为研究类能力认证（专业级，xxx）
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+            </when>
+            <otherwise>
+                <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
+                INNER JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        -- 华为研究类能力认证（专业级，xxx）
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+            </otherwise>
+        </choose>
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE exam_name IS NOT NULL
+            AND exam_name != ''
+            AND is_pass = 1
+            AND emp_num IS NOT NULL
+            AND emp_num != ''
+        ) exam ON (e.employee_number = exam.emp_num)
+        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        WHERE e.period_id = 20251126
+        AND exp.position_ai_maturity IN ('L2', 'L3')
+        AND exp.account IS NOT NULL
+        AND exp.account != ''
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <if test="employeeNumbers != null and employeeNumbers.size() > 0">
+            AND e.employee_number IN
+            <foreach collection="employeeNumbers" item="empNum" open="(" separator="," close=")">
+                #{empNum}
+            </foreach>
+        </if>
+        <if test="aiMaturity != null and aiMaturity != ''">
+            <choose>
+                <when test="'L5'.equals(aiMaturity)">
+                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
+                    AND exp.position_ai_maturity IN ('L2', 'L3')
+                </when>
+                <otherwise>
+                    AND COALESCE(exp.position_ai_maturity, '未知') = #{aiMaturity}
+                </otherwise>
+            </choose>
+        </if>
+        <if test="jobCategory != null and jobCategory != ''">
+            <!-- 职位类需要从job_category字段中提取中间部分进行匹配 -->
+            AND (
+                e.job_category LIKE CONCAT('%-', #{jobCategory}, '-%')
+                OR e.job_category LIKE CONCAT(#{jobCategory}, '-%')
+                OR e.job_category = #{jobCategory}
+            )
+        </if>
+        ORDER BY e.employee_number
+    </select>
+
 </mapper>
 

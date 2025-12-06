@@ -78,5 +78,19 @@ public interface ExpertCertStatisticsMapper {
             @Param("deptName") String deptName,
             @Param("aiMaturity") String aiMaturity,
             @Param("jobCategory") String jobCategory);
+
+    /**
+     * 根据工号列表查询专家认证详细信息
+     * @param employeeNumbers 工号列表
+     * @param aiMaturity AI成熟度（可选）
+     * @param jobCategory 职位类（可选，需要从job_category字段中提取中间部分）
+     * @param queryType 查询类型（1-认证人数，2-基线人数），默认为1
+     * @return 专家认证详细信息列表
+     */
+    List<EmployeeDetailVO> getExpertCertDetailsByEmployeeNumbers(
+            @Param("employeeNumbers") List<String> employeeNumbers,
+            @Param("aiMaturity") String aiMaturity,
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
 }
 

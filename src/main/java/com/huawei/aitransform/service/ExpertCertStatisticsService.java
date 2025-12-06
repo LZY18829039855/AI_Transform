@@ -1346,16 +1346,82 @@ public class ExpertCertStatisticsService {
             // 干部认证数据（queryType参数暂时保留，但认证数据查询不使用）
             employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory, queryType);
         } else if (personType == 2) {
-            // 专家处理
-            String deptName = null;
-            // 判断是三层还是四层部门
-            if ("3".equals(deptInfo.getDeptLevel())) {
-                deptName = deptInfo.getDeptName();
+            // 专家处理 - 参考getExpertAiCertStatistics的逻辑
+            String actualDeptCode = deptCode;
+            
+            // 当deptCode为"0"时，使用云核心网产品线部门ID
+            if ("0".equals(deptCode)) {
+                actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
-
-            // 专家认证数据
-            employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByConditions(
-                    deptCode, deptName, aiMaturity, jobCategory, queryType);
+            
+            // 获取部门层级，用于后续的部门过滤
+            String deptLevelStr = deptInfo.getDeptLevel();
+            Integer deptLevel = Integer.parseInt(deptLevelStr);
+            
+            // 1. 调用Mapper方法查询专家数据
+            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+            
+            if (expertList == null || expertList.isEmpty()) {
+                employeeDetails = new ArrayList<>();
+            } else {
+                // 2. 根据条件过滤专家
+                List<ExpertInfoVO> filteredExpertList = new ArrayList<>();
+                for (ExpertInfoVO expert : expertList) {
+                    String expertAiMaturity = expert.getAiMaturity();
+                    String expertJobCategory = extractJobCategory(expert.getJobCategory());
+                    
+                    // 过滤AI成熟度
+                    if (aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+                        if ("L5".equals(aiMaturity)) {
+                            // L5代表查询L2和L3
+                            if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
+                                continue;
+                            }
+                        } else {
+                            if (expertAiMaturity == null || !expertAiMaturity.equals(aiMaturity)) {
+                                continue;
+                            }
+                        }
+                    }
+                    
+                    // 过滤职位类
+                    if (jobCategory != null && !jobCategory.trim().isEmpty()) {
+                        if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
+                            continue;
+                        }
+                    }
+                    
+                    filteredExpertList.add(expert);
+                }
+                
+                // 3. 根据queryType决定是否只返回已认证的专家
+                List<String> employeeNumbers = filteredExpertList.stream()
+                        .map(ExpertInfoVO::getEmployeeNumber)
+                        .filter(num -> num != null && !num.trim().isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList());
+                
+                if (employeeNumbers.isEmpty()) {
+                    employeeDetails = new ArrayList<>();
+                } else {
+                    // 如果queryType=1，只返回已认证的专家
+                    if (queryType == 1) {
+                        List<String> certifiedNumbers = getCertifiedEmployeeNumbers(employeeNumbers);
+                        Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+                        employeeNumbers = employeeNumbers.stream()
+                                .filter(certifiedSet::contains)
+                                .collect(Collectors.toList());
+                    }
+                    
+                    // 4. 查询专家的详细信息和证书信息
+                    if (employeeNumbers.isEmpty()) {
+                        employeeDetails = new ArrayList<>();
+                    } else {
+                        employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByEmployeeNumbers(
+                                employeeNumbers, aiMaturity, jobCategory, queryType);
+                    }
+                }
+            }
         }
 
         // 4. 构建返回结果
