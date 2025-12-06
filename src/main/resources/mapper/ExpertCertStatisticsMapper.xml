@@ -296,7 +296,11 @@
         SELECT DISTINCT
             e.last_name AS name,
             e.employee_number AS employeeNumber,
-            e.job_category AS competenceCategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE e.job_category
+            END AS competenceCategory,
             e.firstdept AS departname2,
             e.seconddept AS departname3,
             e.thirddept AS departname4,
