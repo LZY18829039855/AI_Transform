@@ -30,6 +30,12 @@ public interface ExpertMapper {
     List<ExpertQualificationVO> getL2L3ExpertWithHighestQualification();
 
     /**
+     * 查询所有L2、L3专家及其专业级证书和科目二通过情况
+     * @return 专家认证信息列表
+     */
+    List<ExpertQualificationVO> getL2L3ExpertWithCertInfo();
+
+    /**
      * 批量更新专家的is_qualifications_standard字段为1
      * @param employeeNumbers 专家工号列表
      * @return 更新的记录数
@@ -42,6 +48,20 @@ public interface ExpertMapper {
      * @return 更新的记录数
      */
     int batchResetQualificationStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量更新专家的is_cert_standard字段为1
+     * @param employeeNumbers 专家工号列表
+     * @return 更新的记录数
+     */
+    int batchUpdateCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量将专家的is_cert_standard字段重置为0
+     * @param employeeNumbers 专家工号列表
+     * @return 更新的记录数
+     */
+    int batchResetCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 
 

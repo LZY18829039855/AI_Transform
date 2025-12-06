@@ -133,6 +133,70 @@
         </foreach>
     </update>
 
+    <!-- 查询所有L2、L3专家及其专业级证书和科目二通过情况 -->
+    <select id="getL2L3ExpertWithCertInfo" resultType="com.huawei.aitransform.entity.ExpertQualificationVO">
+        SELECT 
+            exp.account AS employeeNumber,
+            COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
+            COALESCE(e.job_category, '未知') AS jobCategory,
+            CASE 
+                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasProfessionalCert,
+            CASE 
+                WHEN exam.emp_num IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS hasPassedSubject2
+        FROM t_expert exp
+        INNER JOIN t_employee_sync e ON (e.employee_number = exp.account)
+        LEFT JOIN (
+            SELECT DISTINCT
+                employee_number,
+                w3_account
+            FROM dwr_t_cert_record_t
+            WHERE (status = 1 OR approved_status = 1)
+            AND (
+                -- 华为研究类能力认证（专业级，xxx）
+                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE exam_code IN ('EXCN022303075ZA20', 'EXCN022303075ZA2E', 'EXCN022303075ZA2A')
+            AND is_pass = 1
+            AND emp_num IS NOT NULL
+            AND emp_num != ''
+        ) exam ON (e.employee_number = exam.emp_num)
+        WHERE exp.position_ai_maturity IN ('L2', 'L3')
+        AND exp.account IS NOT NULL
+        AND exp.account != ''
+        AND e.period_id = 20251126
+        ORDER BY exp.account
+    </select>
+
+    <!-- 批量更新专家的is_cert_standard字段为1 -->
+    <update id="batchUpdateCertStandard">
+        UPDATE t_expert
+        SET is_cert_standard = 1
+        WHERE account IN
+        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
+            #{employeeNumber}
+        </foreach>
+    </update>
+
+    <!-- 批量将专家的is_cert_standard字段重置为0 -->
+    <update id="batchResetCertStandard">
+        UPDATE t_expert
+        SET is_cert_standard = 0
+        WHERE account IN
+        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
+            #{employeeNumber}
+        </foreach>
+    </update>
+
 </mapper>
 
 
