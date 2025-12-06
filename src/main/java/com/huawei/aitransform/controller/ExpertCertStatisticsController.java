@@ -387,11 +387,11 @@ public class ExpertCertStatisticsController {
     }
 
     /**
-     * 查询干部任职数据
+     * 查询干部或专家任职数据
      * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网产品线部门ID
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
-     * @param personType 人员类型（1-干部，当前只处理干部类型）
+     * @param personType 人员类型（1-干部，2-专家）
      * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数）
      * @return 员工详细信息列表
      */

@@ -1450,8 +1450,8 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("人员类型不能为空");
         }
 
-        if (personType != 1) {
-            throw new IllegalArgumentException("暂不支持该人员类型，当前只支持干部（personType=1）");
+        if (personType != 1 && personType != 2) {
+            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
         }
 
         // 验证 queryType 参数
@@ -1468,23 +1468,121 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("部门不存在：" + deptCode);
         }
 
-        // 3. 查询该部门下的所有子部门（包括所有层级）
-        List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
-        
-        // 构造部门编码列表（包括本部门本身和所有子部门）
-        List<String> deptCodeList = new ArrayList<>();
-        deptCodeList.add(deptCode);
-        if (allSubDepts != null && !allSubDepts.isEmpty()) {
-            for (DepartmentInfoVO subDept : allSubDepts) {
-                if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
-                    deptCodeList.add(subDept.getDeptCode());
+        List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
+
+        if (personType == 1) {
+            // 干部处理
+            // 3. 查询该部门下的所有子部门（包括所有层级）
+            List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+            
+            // 构造部门编码列表（包括本部门本身和所有子部门）
+            List<String> deptCodeList = new ArrayList<>();
+            deptCodeList.add(deptCode);
+            if (allSubDepts != null && !allSubDepts.isEmpty()) {
+                for (DepartmentInfoVO subDept : allSubDepts) {
+                    if (subDept.getDeptCode() != null && !subDept.getDeptCode().trim().isEmpty()) {
+                        deptCodeList.add(subDept.getDeptCode());
+                    }
+                }
+            }
+
+            // 4. 查询干部任职数据
+            employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(
+                    deptCodeList, aiMaturity, jobCategory, queryType);
+        } else if (personType == 2) {
+            // 专家处理 - 参考getExpertAiQualifiedStatistics的逻辑
+            String actualDeptCode = deptCode;
+            String deptName = null;
+            
+            // 当deptCode为"0"时，使用云核心网产品线部门ID
+            if ("0".equals(deptCode)) {
+                actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+                deptName = "云核心网";
+            } else {
+                deptName = deptInfo.getDeptName();
+            }
+            
+            // 获取部门层级，用于后续的部门过滤
+            String deptLevelStr = deptInfo.getDeptLevel();
+            Integer deptLevel = Integer.parseInt(deptLevelStr);
+            
+            // 1. 调用Mapper方法查询专家数据
+            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+            
+            if (expertList == null || expertList.isEmpty()) {
+                employeeDetails = new ArrayList<>();
+            } else {
+                // 2. 根据条件过滤专家
+                List<ExpertInfoVO> filteredExpertList = new ArrayList<>();
+                for (ExpertInfoVO expert : expertList) {
+                    String expertAiMaturity = expert.getAiMaturity();
+                    String expertJobCategory = extractJobCategory(expert.getJobCategory());
+                    
+                    // 只处理L2和L3的成熟度
+                    if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
+                        continue;
+                    }
+                    
+                    // 过滤AI成熟度
+                    if (aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+                        if ("L5".equals(aiMaturity)) {
+                            // L5代表查询L2和L3，已经在上面的判断中处理了
+                            // 不需要额外判断
+                        } else {
+                            if (!expertAiMaturity.equals(aiMaturity)) {
+                                continue;
+                            }
+                        }
+                    }
+                    
+                    // 过滤职位类
+                    if (jobCategory != null && !jobCategory.trim().isEmpty()) {
+                        if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
+                            continue;
+                        }
+                    }
+                    
+                    filteredExpertList.add(expert);
+                }
+                
+                // 3. 根据queryType决定是否只返回已任职的专家
+                List<String> employeeNumbers = filteredExpertList.stream()
+                        .map(ExpertInfoVO::getEmployeeNumber)
+                        .filter(num -> num != null && !num.trim().isEmpty())
+                        .distinct()
+                        .collect(Collectors.toList());
+                
+                if (employeeNumbers.isEmpty()) {
+                    employeeDetails = new ArrayList<>();
+                } else {
+                    // 如果queryType=1，只返回已任职的专家
+                    if (queryType == 1) {
+                        List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbers);
+                        Set<String> qualifiedSet = new HashSet<>(qualifiedNumbers != null ? qualifiedNumbers : new ArrayList<>());
+                        employeeNumbers = employeeNumbers.stream()
+                                .filter(qualifiedSet::contains)
+                                .collect(Collectors.toList());
+                    }
+                    
+                    // 4. 查询专家的任职详细信息
+                    if (employeeNumbers.isEmpty()) {
+                        employeeDetails = new ArrayList<>();
+                    } else {
+                        // 使用getExpertQualifiedDetailsByConditions查询专家任职详情
+                        // 需要根据部门编码和部门名称来查询
+                        employeeDetails = expertCertStatisticsMapper.getExpertQualifiedDetailsByConditions(
+                                actualDeptCode, deptName, aiMaturity, jobCategory);
+                        
+                        // 进一步过滤，只返回符合条件的专家
+                        Set<String> employeeNumberSet = new HashSet<>(employeeNumbers);
+                        employeeDetails = employeeDetails.stream()
+                                .filter(detail -> detail.getEmployeeNumber() != null 
+                                        && employeeNumberSet.contains(detail.getEmployeeNumber()))
+                                .collect(Collectors.toList());
+                    }
                 }
             }
         }
-
-        // 4. 查询干部任职数据
-        List<EmployeeDetailVO> employeeDetails = cadreMapper.getCadreQualifiedDetailsByConditions(
-                deptCodeList, aiMaturity, jobCategory, queryType);
 
         // 5. 构建返回结果
         EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
