@@ -312,7 +312,7 @@
                 WHEN c.account IS NOT NULL THEN 1 
                 ELSE 0 
             END AS isCadre,
-            COALESCE(c.is_cert_standard, 0) AS isCertStandard,
+            COALESCE(exp.is_cert_standard, 0) AS isCertStandard,
             COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
             NULL AS miniDeptName
         FROM t_expert exp
