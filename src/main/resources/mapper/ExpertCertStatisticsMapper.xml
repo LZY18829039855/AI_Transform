@@ -133,11 +133,11 @@
         SELECT DISTINCT
             e.last_name AS name,
             e.employee_number AS employeeNumber,
-            e.firstdept AS departname2,
-            e.seconddept AS departname3,
-            e.thirddept AS departname4,
-            e.fourthdept AS departname5,
-            e.fifthdept AS departname6,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
@@ -242,11 +242,11 @@
                 WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE e.job_category
             END AS competenceCategory,
-            e.firstdept AS firstLevelDept,
-            e.seconddept AS secondLevelDept,
-            e.thirddept AS thirdLevelDept,
-            e.fourthdept AS fourthLevelDept,
-            e.fifthdept AS fifthLevelDept,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS firstLevelDept,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS secondLevelDept,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS thirdLevelDept,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS fourthLevelDept,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS fifthLevelDept,
             e.sixthdept AS sixthLevelDept,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
@@ -393,11 +393,11 @@
                 WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE e.job_category
             END AS competenceCategory,
-            e.firstdept AS departname2,
-            e.seconddept AS departname3,
-            e.thirddept AS departname4,
-            e.fourthdept AS departname5,
-            e.fifthdept AS departname6,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
