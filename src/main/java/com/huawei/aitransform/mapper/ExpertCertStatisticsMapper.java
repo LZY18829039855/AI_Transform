@@ -71,13 +71,15 @@ public interface ExpertCertStatisticsMapper {
      * @param deptName 部门名称（用于三层部门查询）
      * @param aiMaturity AI成熟度
      * @param jobCategory 职位类
+     * @param deptLevel 部门层级（用于根据层级使用正确的部门字段）
      * @return 专家任职详细信息列表
      */
     List<EmployeeDetailVO> getExpertQualifiedDetailsByConditions(
             @Param("deptCode") String deptCode,
             @Param("deptName") String deptName,
             @Param("aiMaturity") String aiMaturity,
-            @Param("jobCategory") String jobCategory);
+            @Param("jobCategory") String jobCategory,
+            @Param("deptLevel") Integer deptLevel);
 
     /**
      * 根据工号列表查询专家认证详细信息

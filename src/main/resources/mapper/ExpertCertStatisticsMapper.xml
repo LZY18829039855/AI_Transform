@@ -315,14 +315,44 @@
                 q2.competence_from DESC
             LIMIT 1
         )
-        <choose>
-            <when test="deptName != null and deptName != ''">
-                AND e.firstdept = #{deptName}
-            </when>
-            <otherwise>
-                AND e.firstdeptcode = #{deptCode}
-            </otherwise>
-        </choose>
+        <if test="deptCode != null and deptCode != ''">
+            <choose>
+                <!-- 根据部门层级使用对应的部门字段进行过滤，参考getExpertInfoByDeptCode的逻辑 -->
+                <when test="deptLevel == 1">
+                    AND e.firstdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 2">
+                    AND e.seconddeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 3">
+                    AND e.thirddeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 4">
+                    AND e.fourthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 5">
+                    AND e.fifthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 6">
+                    AND e.sixthdeptcode = #{deptCode}
+                </when>
+                <when test="deptLevel == 7">
+                    <!-- 如果deptLevel为7，已经是最高层级，无法再查询 -->
+                    AND 1 = 0
+                </when>
+                <otherwise>
+                    <!-- 如果没有提供deptLevel，使用旧的逻辑（兼容性处理） -->
+                    <choose>
+                        <when test="deptName != null and deptName != ''">
+                            AND e.firstdept = #{deptName}
+                        </when>
+                        <otherwise>
+                            AND e.firstdeptcode = #{deptCode}
+                        </otherwise>
+                    </choose>
+                </otherwise>
+            </choose>
+        </if>
         <if test="aiMaturity != null and aiMaturity != ''">
             <choose>
                 <when test="aiMaturity == 'L5'">

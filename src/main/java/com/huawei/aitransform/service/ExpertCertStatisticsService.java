@@ -1569,9 +1569,9 @@ public class ExpertCertStatisticsService {
                         employeeDetails = new ArrayList<>();
                     } else {
                         // 使用getExpertQualifiedDetailsByConditions查询专家任职详情
-                        // 需要根据部门编码和部门名称来查询
+                        // 需要根据部门编码、部门名称和部门层级来查询
                         employeeDetails = expertCertStatisticsMapper.getExpertQualifiedDetailsByConditions(
-                                actualDeptCode, deptName, aiMaturity, jobCategory);
+                                actualDeptCode, deptName, aiMaturity, jobCategory, deptLevel);
                         
                         // 进一步过滤，只返回符合条件的专家
                         Set<String> employeeNumberSet = new HashSet<>(employeeNumbers);
