@@ -266,55 +266,61 @@
             COALESCE(exp.is_qualifications_standard, 0) AS isQualificationsStandard
         FROM t_expert exp
         INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
-        INNER JOIN t_qualifications q ON (e.employee_number = q.employee_number)
-        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
-        LEFT JOIN t_department_info dept ON (e.sixthdeptcode = dept.dept_code)
-        WHERE e.period_id = 20251126
-        AND exp.position_ai_maturity IN ('L2', 'L3')
-        AND exp.account IS NOT NULL
-        AND exp.account != ''
-        AND q.employee_number IS NOT NULL
-        AND q.employee_number != ''
-        AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
-        )
-        AND q.competence_from IS NOT NULL
-        AND q.competence_to IS NOT NULL
-        AND q.competence_from = (
-            -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
-            SELECT q2.competence_from
-            FROM t_qualifications q2
-            WHERE q2.employee_number = e.employee_number
-            AND q2.employee_number IS NOT NULL
-            AND q2.employee_number != ''
-            AND q2.direction_cn_name IN (
+        LEFT JOIN t_qualifications q ON (
+            e.employee_number = q.employee_number
+            AND q.employee_number IS NOT NULL
+            AND q.employee_number != ''
+            AND q.direction_cn_name IN (
                 '数据科学与AI工程（ICT）',
                 'AI算法及应用（ICT）',
                 'AI软件工程与工具（ICT）',
                 'AI系统测试（ICT）'
             )
-            AND q2.competence_from IS NOT NULL
-            AND q2.competence_to IS NOT NULL
-            ORDER BY 
-                CASE 
-                    -- 8级最高，依次到1级，初级最低
-                    WHEN q2.competence_rating_cn = '8级' THEN 1
-                    WHEN q2.competence_rating_cn = '7级' THEN 2
-                    WHEN q2.competence_rating_cn = '6级' THEN 3
-                    WHEN q2.competence_rating_cn = '5级' THEN 4
-                    WHEN q2.competence_rating_cn = '4级' THEN 5
-                    WHEN q2.competence_rating_cn = '3级' THEN 6
-                    WHEN q2.competence_rating_cn = '2级' THEN 7
-                    WHEN q2.competence_rating_cn = '1级' THEN 8
-                    WHEN q2.competence_rating_cn = '初级' THEN 9
-                    ELSE 10
-                END,
-                q2.competence_from DESC
-            LIMIT 1
+            AND q.competence_from IS NOT NULL
+            AND q.competence_to IS NOT NULL
+            AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+            AND q.competence_from = (
+                -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                SELECT q2.competence_from
+                FROM t_qualifications q2
+                WHERE q2.employee_number = e.employee_number
+                AND q2.employee_number IS NOT NULL
+                AND q2.employee_number != ''
+                AND q2.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                AND q2.competence_from IS NOT NULL
+                AND q2.competence_to IS NOT NULL
+                AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
+                ORDER BY 
+                    CASE 
+                        -- 8级最高，依次到1级，初级最低
+                        WHEN q2.competence_rating_cn = '8级' THEN 1
+                        WHEN q2.competence_rating_cn = '7级' THEN 2
+                        WHEN q2.competence_rating_cn = '6级' THEN 3
+                        WHEN q2.competence_rating_cn = '5级' THEN 4
+                        WHEN q2.competence_rating_cn = '4级' THEN 5
+                        WHEN q2.competence_rating_cn = '3级' THEN 6
+                        WHEN q2.competence_rating_cn = '2级' THEN 7
+                        WHEN q2.competence_rating_cn = '1级' THEN 8
+                        WHEN q2.competence_rating_cn = '初级' THEN 9
+                        ELSE 10
+                    END,
+                    q2.competence_from DESC
+                LIMIT 1
+            )
         )
+        LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        LEFT JOIN department_info_hrms dept ON (e.sixthdeptcode = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
+        WHERE e.period_id = 20251126
+        AND exp.position_ai_maturity IN ('L2', 'L3')
+        AND exp.account IS NOT NULL
+        AND exp.account != ''
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
         <if test="deptCode != null and deptCode != ''">
             <choose>
                 <!-- 根据部门层级使用对应的部门字段进行过滤，参考getExpertInfoByDeptCode的逻辑 -->
@@ -374,7 +380,7 @@
         </if>
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
-        ORDER BY e.employee_number, q.competence_from
+        ORDER BY e.employee_number, COALESCE(q.competence_from, '1900-01-01')
     </select>
 
     <!-- 根据工号列表查询专家认证详细信息 -->
