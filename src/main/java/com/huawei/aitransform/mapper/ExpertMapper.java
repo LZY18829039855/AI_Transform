@@ -62,6 +62,16 @@ public interface ExpertMapper {
      * @return 更新的记录数
      */
     int batchResetCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 根据部门层级和部门ID列表查询专家工号列表
+     * @param deptLevel 部门层级（1-7），用于确定使用哪个部门字段进行过滤
+     * @param deptIds 部门ID列表
+     * @return 专家工号列表
+     */
+    List<String> getExpertNumbersByDeptLevel(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptIds") List<String> deptIds);
 }
 
 

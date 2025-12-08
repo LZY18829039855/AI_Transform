@@ -197,6 +197,61 @@
         </foreach>
     </update>
 
+    <!-- 根据部门层级和部门ID列表查询专家工号列表 -->
+    <!-- 注意：查询的部门层级为传入的deptLevel，即deptLevel=1时查询firstdeptcode -->
+    <select id="getExpertNumbersByDeptLevel" resultType="java.lang.String">
+        SELECT DISTINCT exp.account AS employeeNumber
+        FROM t_expert exp
+        INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
+        WHERE e.period_id = 20251126
+        AND exp.account IS NOT NULL
+        AND exp.account != ''
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <choose>
+            <when test="deptLevel == 1">
+                AND e.firstdeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 2">
+                AND e.seconddeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 3">
+                AND e.thirddeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 4">
+                AND e.fourthdeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 5">
+                AND e.fifthdeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 6">
+                AND e.sixthdeptcode IN
+                <foreach collection="deptIds" item="deptId" open="(" separator="," close=")">
+                    #{deptId}
+                </foreach>
+            </when>
+            <when test="deptLevel == 7">
+                <!-- 如果deptLevel为7，已经是最高层级，无法再查询 -->
+                AND 1 = 0
+            </when>
+        </choose>
+    </select>
+
 </mapper>
 
 

@@ -177,9 +177,9 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
-            // 支持全员（personType=0）和干部（personType=1）
-            if (personType != 0 && personType != 1) {
-                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）和干部（personType=1）"));
+            // 支持全员（personType=0）、干部（personType=1）和专家（personType=2）
+            if (personType != 0 && personType != 1 && personType != 2) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）、干部（personType=1）和专家（personType=2）"));
             }
 
             EmployeeCertStatisticsResponseVO result = expertCertStatisticsService.getEmployeeCertStatistics(deptCode, personType);
