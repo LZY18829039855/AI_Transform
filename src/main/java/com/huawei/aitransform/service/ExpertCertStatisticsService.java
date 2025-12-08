@@ -1386,8 +1386,23 @@ public class ExpertCertStatisticsService {
                     
                     // 过滤职位类
                     if (jobCategory != null && !jobCategory.trim().isEmpty()) {
-                        if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
-                            continue;
+                        if ("非软件类".equals(jobCategory)) {
+                            // 非软件类：查询所有不是"软件类"的职位类
+                            if (expertJobCategory == null || "软件类".equals(expertJobCategory)) {
+                                continue;
+                            }
+                        } else if ("其他类".equals(jobCategory)) {
+                            // 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类
+                            if (expertJobCategory == null || "研究类".equals(expertJobCategory) 
+                                    || "软件类".equals(expertJobCategory) || "系统类".equals(expertJobCategory) 
+                                    || "测试类".equals(expertJobCategory)) {
+                                continue;
+                            }
+                        } else {
+                            // 其他职位类：精确匹配
+                            if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
+                                continue;
+                            }
                         }
                     }
                     
@@ -1537,8 +1552,23 @@ public class ExpertCertStatisticsService {
                     
                     // 过滤职位类
                     if (jobCategory != null && !jobCategory.trim().isEmpty()) {
-                        if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
-                            continue;
+                        if ("非软件类".equals(jobCategory)) {
+                            // 非软件类：查询所有不是"软件类"的职位类
+                            if (expertJobCategory == null || "软件类".equals(expertJobCategory)) {
+                                continue;
+                            }
+                        } else if ("其他类".equals(jobCategory)) {
+                            // 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类
+                            if (expertJobCategory == null || "研究类".equals(expertJobCategory) 
+                                    || "软件类".equals(expertJobCategory) || "系统类".equals(expertJobCategory) 
+                                    || "测试类".equals(expertJobCategory)) {
+                                continue;
+                            }
+                        } else {
+                            // 其他职位类：精确匹配
+                            if (expertJobCategory == null || !expertJobCategory.equals(jobCategory)) {
+                                continue;
+                            }
                         }
                     }
                     

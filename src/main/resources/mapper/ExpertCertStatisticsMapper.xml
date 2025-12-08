@@ -225,7 +225,16 @@
             </choose>
         </if>
         <if test="jobCategory != null and jobCategory != ''">
-            AND COALESCE(exp.job_category, '未知') = #{jobCategory}
+            <choose>
+                <when test="jobCategory == '其他类'">
+                    <!-- 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类 -->
+                    AND COALESCE(exp.job_category, '未知') NOT IN ('研究类', '软件类', '系统类', '测试类')
+                </when>
+                <otherwise>
+                    <!-- 其他职位类：精确匹配 -->
+                    AND COALESCE(exp.job_category, '未知') = #{jobCategory}
+                </otherwise>
+            </choose>
         </if>
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
@@ -370,13 +379,28 @@
             </choose>
         </if>
         <if test="jobCategory != null and jobCategory != ''">
-            AND (
-                CASE 
-                    WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
-                    WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
-                    ELSE e.job_category
-                END
-            ) = #{jobCategory}
+            <choose>
+                <when test="jobCategory == '非软件类'">
+                    <!-- 非软件类：查询所有不是"软件类"的职位类 -->
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) != '软件类'
+                </when>
+                <otherwise>
+                    <!-- 其他职位类：精确匹配 -->
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) = #{jobCategory}
+                </otherwise>
+            </choose>
         </if>
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
@@ -485,12 +509,26 @@
             </choose>
         </if>
         <if test="jobCategory != null and jobCategory != ''">
-            <!-- 职位类需要从job_category字段中提取中间部分进行匹配 -->
-            AND (
-                e.job_category LIKE CONCAT('%-', #{jobCategory}, '-%')
-                OR e.job_category LIKE CONCAT(#{jobCategory}, '-%')
-                OR e.job_category = #{jobCategory}
-            )
+            <choose>
+                <when test="jobCategory == '其他类'">
+                    <!-- 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类 -->
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) NOT IN ('研究类', '软件类', '系统类', '测试类')
+                </when>
+                <otherwise>
+                    <!-- 其他职位类：从job_category字段中提取中间部分进行匹配 -->
+                    AND (
+                        e.job_category LIKE CONCAT('%-', #{jobCategory}, '-%')
+                        OR e.job_category LIKE CONCAT(#{jobCategory}, '-%')
+                        OR e.job_category = #{jobCategory}
+                    )
+                </otherwise>
+            </choose>
         </if>
         ORDER BY e.employee_number
     </select>
