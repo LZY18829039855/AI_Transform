@@ -1,5 +1,6 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import com.huawei.aitransform.entity.ExpertInfoVO;
 import com.huawei.aitransform.entity.ExpertQualificationVO;
 import org.apache.ibatis.annotations.Mapper;
@@ -72,6 +73,16 @@ public interface ExpertMapper {
     List<String> getExpertNumbersByDeptLevel(
             @Param("deptLevel") Integer deptLevel,
             @Param("deptIds") List<String> deptIds);
+
+    /**
+     * 根据部门层级和部门编码列表查询专家工号和职位族
+     * @param deptLevel 部门层级（1-7），用于确定使用哪个部门字段进行过滤
+     * @param deptCodes 部门编码列表
+     * @return 专家工号和职位族列表（包含job_category字段，格式：职位族-职位类-职位子类）
+     */
+    List<EmployeeWithCategoryVO> getExpertsWithJobCategoryByDeptCodes(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptCodes") List<String> deptCodes);
 }
 
 

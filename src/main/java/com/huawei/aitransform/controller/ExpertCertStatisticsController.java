@@ -194,7 +194,7 @@ public class ExpertCertStatisticsController {
     /**
      * 按职位类统计部门下不同职位类人数中的认证和任职人数
      * @param deptCode 部门ID（部门编码）
-     * @param personType 人员类型（0-全员，1-干部）
+     * @param personType 人员类型（0-全员，1-干部，2-专家）
      * @return 按职位类统计的认证和任职信息（包含认证人数和任职人数）
      */
     @GetMapping("/competence-category-cert-statistics")
@@ -215,9 +215,9 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
-            // 支持全员（personType=0）和干部（personType=1）
-            if (personType != 0 && personType != 1) {
-                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）和干部（personType=1）"));
+            // 支持全员（personType=0）、干部（personType=1）和专家（personType=2）
+            if (personType != 0 && personType != 1 && personType != 2) {
+                return ResponseEntity.ok(Result.error(400, "暂不支持该人员类型，目前只支持全员（personType=0）、干部（personType=1）和专家（personType=2）"));
             }
 
             CompetenceCategoryCertStatisticsResponseVO result = expertCertStatisticsService.getCompetenceCategoryCertStatistics(deptCode, personType);
