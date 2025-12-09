@@ -345,8 +345,8 @@ public class ExpertCertStatisticsController {
      * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网产品线部门ID
      * @param aiMaturity 岗位AI成熟度（L5代表查询L2和L3的数据）
      * @param jobCategory 职位类
-     * @param personType 人员类型（1-干部，2-专家）
-     * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数），仅对干部类型有效
+     * @param personType 人员类型（0-全员，1-干部，2-专家）
+     * @param queryType 查询类型（1-认证人数，2-基线人数），默认为1（认证人数）
      * @return 员工详细信息列表
      */
     @GetMapping("/person-cert-details")
@@ -366,12 +366,17 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
             }
 
-            // 验证 queryType 参数
-            if (queryType != null && queryType != 1 && queryType != 2) {
-                return ResponseEntity.ok(Result.error(400, "查询类型参数错误，只支持1（任职人数）或2（基线人数）"));
+            // 验证 personType 参数
+            if (personType != 0 && personType != 1 && personType != 2) {
+                return ResponseEntity.ok(Result.error(400, "不支持的人员类型：" + personType + "，只支持0（全员）、1（干部）和2（专家）"));
             }
 
-            // 如果未提供 queryType，默认为1（任职人数）
+            // 验证 queryType 参数
+            if (queryType != null && queryType != 1 && queryType != 2) {
+                return ResponseEntity.ok(Result.error(400, "查询类型参数错误，只支持1（认证人数）或2（基线人数）"));
+            }
+
+            // 如果未提供 queryType，默认为1（认证人数）
             if (queryType == null) {
                 queryType = 1;
             }

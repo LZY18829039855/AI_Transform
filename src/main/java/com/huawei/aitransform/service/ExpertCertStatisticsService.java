@@ -1615,7 +1615,8 @@ public class ExpertCertStatisticsService {
         if (dataType == 2) {
             // 认证数据：查询员工认证详细信息
             Integer deptLevel = Integer.parseInt(deptInfo.getDeptLevel());
-            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevel(deptLevel, deptCode);
+            // 默认查询认证人数（queryType=1），不按职位类过滤（jobCategory=null）
+            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevel(deptLevel, deptCode, null, 1);
         } else if (dataType == 1) {
             // 任职数据：暂时返回空列表，等用户提供具体需求
             employeeDetails = new ArrayList<>();
@@ -1635,7 +1636,8 @@ public class ExpertCertStatisticsService {
      * @param deptCode 部门ID（部门编码）
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
-     * @param personType 人员类型（1-干部，2-专家）
+     * @param personType 人员类型（0-全员，1-干部，2-专家）
+     * @param queryType 查询类型（1-认证人数，2-基线人数）
      * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getPersonCertDetailsByConditions(
@@ -1649,16 +1651,22 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("人员类型不能为空");
         }
 
-        if (personType != 1 && personType != 2) {
-            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
+        if (personType != 0 && personType != 1 && personType != 2) {
+            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持0（全员）、1（干部）和2（专家）");
         }
 
         // 验证 queryType 参数
         if (queryType == null) {
-            queryType = 1; // 默认为任职人数
+            queryType = 1; // 默认为认证人数
         }
         if (queryType != 1 && queryType != 2) {
-            throw new IllegalArgumentException("查询类型参数错误，只支持1（任职人数）或2（基线人数）");
+            throw new IllegalArgumentException("查询类型参数错误，只支持1（认证人数）或2（基线人数）");
+        }
+
+        // 全员类型不支持按成熟度过滤，如果传入了aiMaturity参数，忽略该参数
+        if (personType == 0 && aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+            // 忽略aiMaturity参数，不报错
+            aiMaturity = null;
         }
 
         // 2. 查询部门信息
@@ -1670,7 +1678,26 @@ public class ExpertCertStatisticsService {
         // 3. 根据人员类型查询认证数据（默认查询认证数据，dataType=2）
         List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
 
-        if (personType == 1) {
+        if (personType == 0) {
+            // 全员处理
+            // 特殊处理：当 deptCode 为 "0" 时
+            String actualDeptCode = deptCode;
+            if ("0".equals(deptCode.trim())) {
+                actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+            }
+            
+            // 查询部门信息，获取部门层级
+            DepartmentInfoVO actualDeptInfo = departmentInfoMapper.getDepartmentByCode(actualDeptCode);
+            if (actualDeptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + actualDeptCode);
+            }
+            
+            // 直接使用当前部门的层级进行查询（不查询子部门）
+            Integer deptLevel = Integer.parseInt(actualDeptInfo.getDeptLevel());
+            
+            // 调用 EmployeeMapper.getEmployeeCertDetailsByDeptLevel 查询当前部门的员工认证详细信息
+            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevel(deptLevel, actualDeptCode, jobCategory, queryType);
+        } else if (personType == 1) {
             // 干部处理
             // 查询该部门下的所有子部门（包括所有层级）
             List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);

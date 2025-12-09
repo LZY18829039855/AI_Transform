@@ -108,17 +108,23 @@
         AND employee_number != ''
     </select>
 
-    <!-- 根据部门层级和部门ID查询员工认证详细信息（用于下钻） -->
-    <!-- 注意：查询的部门层级为传入的deptLevel+1，即deptLevel=1时查询firstdeptcode -->
+    <!-- 根据部门层级和部门ID查询员工认证详细信息（全员类型） -->
+    <!-- 注意：当部门ID不为0时，只查询当前部门，不查询子部门 -->
     <select id="getEmployeeCertDetailsByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.last_name AS name,
             e.employee_number AS employeeNumber,
-            e.firstdept AS departname2,
-            e.seconddept AS departname3,
-            e.thirddept AS departname4,
-            e.fourthdept AS departname5,
-            e.fifthdept AS departname6,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE e.job_category
+            END AS competenceCategory,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
+            e.sixthdept AS departname7,
             cert.cer_title AS certTitle,
             cert.start_time AS certStartTime,
             CASE 
@@ -128,23 +134,79 @@
             CASE 
                 WHEN c.account IS NOT NULL THEN 1 
                 ELSE 0 
-            END AS isCadre
+            END AS isCadre,
+            c.cadre_type AS cadreType,
+            COALESCE(c.is_cert_standard, 0) AS isCertStandard,
+            CASE 
+                WHEN exp.account IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isExpert,
+            COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
+            dept.dept_name AS miniDeptName,
+            NULL AS isQualificationsStandard
         FROM t_employee_sync e
-        INNER JOIN (
-            SELECT DISTINCT
-                COALESCE(employee_number, w3_account) AS employee_number,
-                w3_account,
-                cer_title,
-                start_time
-            FROM dwr_t_cert_record_t
-            WHERE (status = 1 OR approved_status = 1)
-            AND (
-                -- 华为研究类能力认证（专业级，xxx）
-                cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
-            )
-        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+        <choose>
+            <when test="queryType != null and queryType == 2">
+                <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
+                LEFT JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY COALESCE(employee_number, w3_account)
+                            ORDER BY start_time DESC
+                        ) AS rn
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert_ranked ON (
+                    (e.employee_number = cert_ranked.employee_number OR e.employee_number = cert_ranked.w3_account)
+                    AND cert_ranked.rn = 1
+                )
+                LEFT JOIN dwr_t_cert_record_t cert ON (
+                    (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND cert.cer_title = cert_ranked.cer_title
+                    AND cert.start_time = cert_ranked.start_time
+                    AND (cert.status = 1 OR cert.approved_status = 1)
+                )
+            </when>
+            <otherwise>
+                <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
+                INNER JOIN (
+                    SELECT DISTINCT
+                        COALESCE(employee_number, w3_account) AS employee_number,
+                        w3_account,
+                        cer_title,
+                        start_time,
+                        ROW_NUMBER() OVER (
+                            PARTITION BY COALESCE(employee_number, w3_account)
+                            ORDER BY start_time DESC
+                        ) AS rn
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
+                    AND (
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                    )
+                ) cert_ranked ON (
+                    (e.employee_number = cert_ranked.employee_number OR e.employee_number = cert_ranked.w3_account)
+                    AND cert_ranked.rn = 1
+                )
+                INNER JOIN dwr_t_cert_record_t cert ON (
+                    (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND cert.cer_title = cert_ranked.cer_title
+                    AND cert.start_time = cert_ranked.start_time
+                    AND (cert.status = 1 OR cert.approved_status = 1)
+                )
+            </otherwise>
+        </choose>
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
@@ -155,7 +217,14 @@
             AND emp_num != ''
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
+        LEFT JOIN t_expert exp ON (e.employee_number = exp.account)
+        LEFT JOIN department_info_hrms dept ON (
+            e.sixthdeptcode = dept.dept_code 
+            AND DATE(dept.update_time) = '2025-11-18'
+        )
         WHERE e.period_id = 20251126
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
         <choose>
             <when test="deptLevel == 1">
                 AND e.firstdeptcode = #{deptId}
@@ -176,13 +245,42 @@
                 AND e.sixthdeptcode = #{deptId}
             </when>
             <when test="deptLevel == 7">
-                <!-- 如果deptLevel为7，已经是最高层级，无法再查询下一层 -->
                 AND 1 = 0
             </when>
         </choose>
-        AND e.employee_number IS NOT NULL
-        AND e.employee_number != ''
-        ORDER BY e.employee_number
+        <!-- 注意：使用 = 精确匹配当前部门编码，不查询子部门 -->
+        <if test="jobCategory != null and jobCategory != ''">
+            <choose>
+                <when test="jobCategory == '非软件类'">
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) != '软件类'
+                </when>
+                <when test="jobCategory == '其他类'">
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) NOT IN ('研究类', '软件类', '系统类', '测试类')
+                </when>
+                <otherwise>
+                    AND (
+                        CASE 
+                            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                            WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                            ELSE e.job_category
+                        END
+                    ) = #{jobCategory}
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY e.employee_number, COALESCE(cert.start_time, '1900-01-01')
     </select>
 
     <!-- 根据部门层级和部门编码列表查询员工工号和职位族信息 -->
