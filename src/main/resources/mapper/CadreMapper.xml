@@ -68,6 +68,10 @@
             e.last_name AS name,
             e.employee_number AS employeeNumber,
             COALESCE(c.cadre_competence_category, '未知') AS competenceCategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS competenceSubcategory,
             c.departname1 AS departname2,
             c.departname2 AS departname3,
             c.departname3 AS departname4,
@@ -82,7 +86,7 @@
             1 AS isCadre,
             COALESCE(c.is_cert_standard, 0) AS isCertStandard,
             COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
-            dept.dept_name AS miniDeptName,
+            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
             c.cadre_type AS cadreType
         FROM t_cadre c
         INNER JOIN t_employee_sync e ON (e.employee_number = c.account)
@@ -186,7 +190,7 @@
             q.competence_to AS competenceTo,
             COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
             1 AS isCadre,
-            dept.dept_name AS miniDeptName,
+            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
             c.cadre_type AS cadreType,
             COALESCE(c.is_qualifications_standard, 0) AS isQualificationsStandard
         FROM t_cadre c
@@ -399,7 +403,7 @@
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
-            WHERE exam_code IN ('EXCN022303075ZA2A', 'EXCN022303075ZA2C')
+            WHERE exam_code IN ('EXCN022303075ZA20', 'EXCN022303075ZA2E', 'EXCN022303075ZA2A')
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
@@ -483,7 +487,7 @@
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
-            WHERE exam_code IN ('EXCN022303075ZA2A', 'EXCN022303075ZA2C')
+            WHERE exam_code IN ('EXCN022303075ZA20', 'EXCN022303075ZA2E', 'EXCN022303075ZA2A')
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
