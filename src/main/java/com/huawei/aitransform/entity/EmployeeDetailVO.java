@@ -90,6 +90,11 @@ public class EmployeeDetailVO implements Serializable {
     private Integer isCadre;
 
     /**
+     * 是否为专家（0-否，1-是）
+     */
+    private Integer isExpert;
+
+    /**
      * 岗位AI成熟度
      */
     private String aiMaturity;
@@ -267,6 +272,14 @@ public class EmployeeDetailVO implements Serializable {
 
     public void setIsCadre(Integer isCadre) {
         this.isCadre = isCadre;
+    }
+
+    public Integer getIsExpert() {
+        return isExpert;
+    }
+
+    public void setIsExpert(Integer isExpert) {
+        this.isExpert = isExpert;
     }
 
     public String getAiMaturity() {

@@ -52,5 +52,19 @@ public interface EmployeeMapper {
     List<EmployeeWithCategoryVO> getEmployeesWithJobCategoryByDeptCodes(
             @Param("deptLevel") Integer deptLevel,
             @Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 根据部门层级和部门ID查询员工任职详细信息（全员类型）
+     * @param deptLevel 部门层级（1-6）
+     * @param deptId 部门ID（单个部门编码）
+     * @param jobCategory 职位类（可选）
+     * @param queryType 查询类型（1-任职人数，2-基线人数）
+     * @return 员工任职详细信息列表
+     */
+    List<EmployeeDetailVO> getEmployeeQualifiedDetailsByDeptLevel(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptId") String deptId,
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
 }
 

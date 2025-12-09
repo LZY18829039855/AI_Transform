@@ -1808,8 +1808,8 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("人员类型不能为空");
         }
 
-        if (personType != 1 && personType != 2) {
-            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持1（干部）和2（专家）");
+        if (personType != 0 && personType != 1 && personType != 2) {
+            throw new IllegalArgumentException("不支持的人员类型：" + personType + "，只支持0（全员）、1（干部）和2（专家）");
         }
 
         // 验证 queryType 参数
@@ -1820,15 +1820,63 @@ public class ExpertCertStatisticsService {
             throw new IllegalArgumentException("查询类型参数错误，只支持1（任职人数）或2（基线人数）");
         }
 
-        // 2. 查询部门信息
-        DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
-        if (deptInfo == null) {
-            throw new IllegalArgumentException("部门不存在：" + deptCode);
+        // 全员类型不支持按成熟度过滤，如果传入了aiMaturity参数，忽略该参数
+        if (personType == 0 && aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+            // 忽略aiMaturity参数，不报错
+            aiMaturity = null;
         }
 
         List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
 
-        if (personType == 1) {
+        if (personType == 0) {
+            // 全员处理
+            // 特殊处理：当 deptCode 为 "0" 时
+            if ("0".equals(deptCode.trim())) {
+                // 查询云核心网产品线部门下的所有四级部门
+                List<DepartmentInfoVO> level4Depts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(
+                        DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+                
+                if (level4Depts == null || level4Depts.isEmpty()) {
+                    employeeDetails = new ArrayList<>();
+                } else {
+                    // 遍历每个四级部门，查询员工任职详细信息
+                    List<EmployeeDetailVO> allEmployeeDetails = new ArrayList<>();
+                    Integer queryLevel = 4; // 四级部门
+                    
+                    for (DepartmentInfoVO dept : level4Depts) {
+                        if (dept.getDeptCode() != null && !dept.getDeptCode().trim().isEmpty()) {
+                            List<EmployeeDetailVO> deptEmployeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
+                                    queryLevel, dept.getDeptCode(), jobCategory, queryType);
+                            if (deptEmployeeDetails != null && !deptEmployeeDetails.isEmpty()) {
+                                allEmployeeDetails.addAll(deptEmployeeDetails);
+                            }
+                        }
+                    }
+                    
+                    employeeDetails = allEmployeeDetails;
+                }
+            } else {
+                // 普通处理：当 deptCode 不为 "0" 时
+                // 查询部门信息
+                DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+                if (deptInfo == null) {
+                    throw new IllegalArgumentException("部门不存在：" + deptCode);
+                }
+                
+                // 直接使用当前部门的层级进行查询
+                String deptLevelStr = deptInfo.getDeptLevel();
+                Integer queryLevel = Integer.parseInt(deptLevelStr);
+                
+                // 查询当前部门的员工任职详细信息
+                employeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
+                        queryLevel, deptCode, jobCategory, queryType);
+            }
+        } else if (personType == 1) {
+            // 2. 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
+            }
             // 干部处理
             // 3. 查询该部门下的所有子部门（包括所有层级）
             List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
@@ -1849,6 +1897,12 @@ public class ExpertCertStatisticsService {
                     deptCodeList, aiMaturity, jobCategory, queryType);
         } else if (personType == 2) {
             // 专家处理 - 参考getExpertAiQualifiedStatistics的逻辑
+            // 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
+            }
+            
             String actualDeptCode = deptCode;
             String deptName = null;
             

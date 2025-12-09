@@ -391,7 +391,7 @@ public class ExpertCertStatisticsController {
      * @param deptCode 部门ID（部门编码），当为"0"或为空时，默认查询云核心网产品线部门ID
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
-     * @param personType 人员类型（1-干部，2-专家）
+     * @param personType 人员类型（0-全员，1-干部，2-专家）
      * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数）
      * @return 员工详细信息列表
      */
@@ -403,8 +403,15 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，使用默认值云核心网产品线部门ID
-            if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
+            // 当deptCode为"0"、空字符串或未提供时，对于全员类型（personType=0）保持"0"值，其他类型使用默认值云核心网产品线部门ID
+            if (deptCode == null || deptCode.trim().isEmpty()) {
+                if (personType != null && personType == 0) {
+                    deptCode = "0";
+                } else {
+                    deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+                }
+            } else if ("0".equals(deptCode.trim()) && (personType == null || personType != 0)) {
+                // 对于非全员类型，当deptCode为"0"时，使用默认值云核心网产品线部门ID
                 deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
