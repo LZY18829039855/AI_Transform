@@ -119,6 +119,10 @@
                 WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE e.job_category
             END AS competenceCategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS competenceSubcategory,
             SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
             SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
             SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
@@ -142,7 +146,7 @@
                 ELSE 0 
             END AS isExpert,
             COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
-            dept.dept_name AS miniDeptName,
+            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
             NULL AS isQualificationsStandard
         FROM t_employee_sync e
         <choose>
@@ -351,7 +355,6 @@
             END AS competenceCategory,
             CASE 
                 WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
-                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE NULL
             END AS competenceSubcategory,
             SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
@@ -378,7 +381,7 @@
                 ELSE 0 
             END AS isExpert,
             COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
-            dept.dept_name AS miniDeptName,
+            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
             NULL AS isQualificationsStandard,
             NULL AS isCertStandard
         FROM t_employee_sync e
