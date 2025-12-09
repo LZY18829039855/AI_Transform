@@ -256,14 +256,14 @@
             SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
             SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
             e.sixthdept AS departname7,
-            COALESCE(q.competence_family_cn, q_ranked.competence_family_cn) AS competenceFamilyCn,
-            COALESCE(q.competence_category_cn, q_ranked.competence_category_cn) AS competenceCategoryCn,
-            COALESCE(q.competence_subcategory_cn, q_ranked.competence_subcategory_cn) AS competenceSubcategoryCn,
-            COALESCE(q.direction_cn_name, q_ranked.direction_cn_name) AS directionCnName,
-            COALESCE(q.competence_rating_cn, q_ranked.competence_rating_cn) AS competenceRatingCn,
-            COALESCE(q.competence_grade_cn, q_ranked.competence_grade_cn) AS competenceGradeCn,
-            COALESCE(q.competence_from, q_ranked.competence_from) AS competenceFrom,
-            COALESCE(q.competence_to, q_ranked.competence_to) AS competenceTo,
+            q.competence_family_cn AS competenceFamilyCn,
+            q.competence_category_cn AS competenceCategoryCn,
+            q.competence_subcategory_cn AS competenceSubcategoryCn,
+            q.direction_cn_name AS directionCnName,
+            q.competence_rating_cn AS competenceRatingCn,
+            q.competence_grade_cn AS competenceGradeCn,
+            q.competence_from AS competenceFrom,
+            q.competence_to AS competenceTo,
             CASE 
                 WHEN c.account IS NOT NULL THEN 1 
                 ELSE 0 
@@ -281,37 +281,9 @@
         <choose>
             <when test="queryType != null and queryType == 2">
                 <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI任职也显示 -->
-                LEFT JOIN (
-                    SELECT 
-                        q.employee_number,
-                        q.competence_family_cn,
-                        q.competence_category_cn,
-                        q.competence_subcategory_cn,
-                        q.direction_cn_name,
-                        q.competence_rating_cn,
-                        q.competence_grade_cn,
-                        q.competence_from,
-                        q.competence_to,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY q.employee_number 
-                            ORDER BY 
-                                CASE 
-                                    -- 8级最高，依次到1级，初级最低
-                                    WHEN q.competence_rating_cn = '8级' THEN 1
-                                    WHEN q.competence_rating_cn = '7级' THEN 2
-                                    WHEN q.competence_rating_cn = '6级' THEN 3
-                                    WHEN q.competence_rating_cn = '5级' THEN 4
-                                    WHEN q.competence_rating_cn = '4级' THEN 5
-                                    WHEN q.competence_rating_cn = '3级' THEN 6
-                                    WHEN q.competence_rating_cn = '2级' THEN 7
-                                    WHEN q.competence_rating_cn = '1级' THEN 8
-                                    WHEN q.competence_rating_cn = '初级' THEN 9
-                                    ELSE 10
-                                END,
-                                q.competence_from DESC
-                        ) AS rn
-                    FROM t_qualifications q
-                    WHERE q.employee_number IS NOT NULL
+                LEFT JOIN t_qualifications q ON (
+                    e.employee_number = q.employee_number
+                    AND q.employee_number IS NOT NULL
                     AND q.employee_number != ''
                     AND q.direction_cn_name IN (
                         '数据科学与AI工程（ICT）',
@@ -322,58 +294,43 @@
                     AND q.competence_from IS NOT NULL
                     AND q.competence_to IS NOT NULL
                     AND CURDATE() BETWEEN q.competence_from AND q.competence_to
-                ) q_ranked ON (e.employee_number = q_ranked.employee_number AND q_ranked.rn = 1)
-                LEFT JOIN t_qualifications q ON (
-                    e.employee_number = q.employee_number
-                    AND q.employee_number = q_ranked.employee_number
-                    AND q.competence_from = q_ranked.competence_from
-                    AND q.competence_rating_cn = q_ranked.competence_rating_cn
+                    AND q.competence_from = (
+                        -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                        SELECT q2.competence_from
+                        FROM t_qualifications q2
+                        WHERE q2.employee_number = e.employee_number
+                        AND q2.employee_number IS NOT NULL
+                        AND q2.employee_number != ''
+                        AND q2.direction_cn_name IN (
+                            '数据科学与AI工程（ICT）',
+                            'AI算法及应用（ICT）',
+                            'AI软件工程与工具（ICT）',
+                            'AI系统测试（ICT）'
+                        )
+                        AND q2.competence_from IS NOT NULL
+                        AND q2.competence_to IS NOT NULL
+                        AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
+                        ORDER BY 
+                            CASE 
+                                -- 8级最高，依次到1级，初级最低
+                                WHEN q2.competence_rating_cn = '8级' THEN 1
+                                WHEN q2.competence_rating_cn = '7级' THEN 2
+                                WHEN q2.competence_rating_cn = '6级' THEN 3
+                                WHEN q2.competence_rating_cn = '5级' THEN 4
+                                WHEN q2.competence_rating_cn = '4级' THEN 5
+                                WHEN q2.competence_rating_cn = '3级' THEN 6
+                                WHEN q2.competence_rating_cn = '2级' THEN 7
+                                WHEN q2.competence_rating_cn = '1级' THEN 8
+                                WHEN q2.competence_rating_cn = '初级' THEN 9
+                                ELSE 10
+                            END,
+                            q2.competence_from DESC
+                        LIMIT 1
+                    )
                 )
             </when>
             <otherwise>
                 <!-- queryType=1: 使用 INNER JOIN，只返回有AI任职的人员 -->
-                <!-- 为了统一SELECT语句，也添加q_ranked的LEFT JOIN（虽然不会匹配到数据） -->
-                LEFT JOIN (
-                    SELECT 
-                        q.employee_number,
-                        q.competence_family_cn,
-                        q.competence_category_cn,
-                        q.competence_subcategory_cn,
-                        q.direction_cn_name,
-                        q.competence_rating_cn,
-                        q.competence_grade_cn,
-                        q.competence_from,
-                        q.competence_to,
-                        ROW_NUMBER() OVER (
-                            PARTITION BY q.employee_number 
-                            ORDER BY 
-                                CASE 
-                                    WHEN q.competence_rating_cn = '8级' THEN 1
-                                    WHEN q.competence_rating_cn = '7级' THEN 2
-                                    WHEN q.competence_rating_cn = '6级' THEN 3
-                                    WHEN q.competence_rating_cn = '5级' THEN 4
-                                    WHEN q.competence_rating_cn = '4级' THEN 5
-                                    WHEN q.competence_rating_cn = '3级' THEN 6
-                                    WHEN q.competence_rating_cn = '2级' THEN 7
-                                    WHEN q.competence_rating_cn = '1级' THEN 8
-                                    WHEN q.competence_rating_cn = '初级' THEN 9
-                                    ELSE 10
-                                END,
-                                q.competence_from DESC
-                        ) AS rn
-                    FROM t_qualifications q
-                    WHERE q.employee_number IS NOT NULL
-                    AND q.employee_number != ''
-                    AND q.direction_cn_name IN (
-                        '数据科学与AI工程（ICT）',
-                        'AI算法及应用（ICT）',
-                        'AI软件工程与工具（ICT）',
-                        'AI系统测试（ICT）'
-                    )
-                    AND q.competence_from IS NOT NULL
-                    AND q.competence_to IS NOT NULL
-                    AND CURDATE() BETWEEN q.competence_from AND q.competence_to
-                ) q_ranked ON (1 = 0)
                 INNER JOIN t_qualifications q ON (
                     e.employee_number = q.employee_number
                     AND q.employee_number IS NOT NULL
