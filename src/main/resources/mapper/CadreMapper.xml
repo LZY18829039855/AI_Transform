@@ -399,7 +399,7 @@
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
-            WHERE exam_code IN ('EXCN022303075ZA20', 'EXCN022303075ZA2E', 'EXCN022303075ZA2A')
+            WHERE exam_code IN ('EXCN022303075ZA2A', 'EXCN022303075ZA2C')
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
@@ -483,7 +483,7 @@
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
-            WHERE exam_code IN ('EXCN022303075ZA20', 'EXCN022303075ZA2E', 'EXCN022303075ZA2A')
+            WHERE exam_code IN ('EXCN022303075ZA2A', 'EXCN022303075ZA2C')
             AND is_pass = 1
             AND emp_num IS NOT NULL
             AND emp_num != ''
