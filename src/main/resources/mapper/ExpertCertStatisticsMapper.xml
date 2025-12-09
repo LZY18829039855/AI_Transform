@@ -69,10 +69,9 @@
         AND c.employee_number != ''
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
-            -- 华为研究类能力认证（专业级，xxx）
-            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            -- 华为研究类能力认证（专业级，xxx�?            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
         )
         UNION
         SELECT DISTINCT c.employee_number
@@ -85,14 +84,13 @@
         AND c.employee_number != ''
         AND (c.status = 1 OR c.approved_status = 1)
         AND (
-            -- 华为研究类能力认证（专业级，xxx）
-            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+            -- 华为研究类能力认证（专业级，xxx�?            c.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+            OR c.cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+            OR c.cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
         )
     </select>
 
-    <!-- 查询获得AI任职的员工工号列表 -->
+    <!-- 查询获得AI任职的员工工号列�?-->
     <select id="getQualifiedEmployeeNumbers" resultType="java.lang.String">
         SELECT DISTINCT q.employee_number
         FROM t_qualifications q
@@ -103,17 +101,17 @@
         AND q.employee_number IS NOT NULL
         AND q.employee_number != ''
         AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
+            '数据科学与AI工程（ICT�?,
+            'AI算法及应用（ICT�?,
+            'AI软件工程与工具（ICT�?,
+            'AI系统测试（ICT�?
         )
         AND q.competence_from IS NOT NULL
         AND q.competence_to IS NOT NULL
         AND CURDATE() BETWEEN q.competence_from AND q.competence_to
     </select>
 
-    <!-- 查询已通过科目二考试的员工工号列表 -->
+    <!-- 查询已通过科目二考试的员工工号列�?-->
     <select id="getSubject2PassedEmployeeNumbers" resultType="java.lang.String">
         SELECT DISTINCT exam.emp_num
         FROM t_exam_record exam
@@ -128,7 +126,7 @@
         AND exam.is_pass = 1
     </select>
 
-    <!-- 根据部门编码、AI成熟度和职位类查询专家认证详细信息 -->
+    <!-- 根据部门编码、AI成熟度和职位类查询专家认证详细信�?-->
     <select id="getExpertCertDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.last_name AS name,
@@ -165,10 +163,9 @@
                     FROM dwr_t_cert_record_t
                     WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        -- 华为研究类能力认证（专业级，xxx）
-                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        -- 华为研究类能力认证（专业级，xxx�?                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
                     )
                 ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </when>
@@ -183,10 +180,9 @@
                     FROM dwr_t_cert_record_t
                     WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        -- 华为研究类能力认证（专业级，xxx）
-                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        -- 华为研究类能力认证（专业级，xxx�?                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
                     )
                 ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </otherwise>
@@ -216,7 +212,7 @@
         <if test="aiMaturity != null and aiMaturity != ''">
             <choose>
                 <when test="'L5'.equals(aiMaturity)">
-                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
+                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3�?-->
                     AND exp.ai_maturity IN ('L2', 'L3')
                 </when>
                 <otherwise>
@@ -226,9 +222,9 @@
         </if>
         <if test="jobCategory != null and jobCategory != ''">
             <choose>
-                <when test="jobCategory == '其他类'">
-                    <!-- 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类 -->
-                    AND COALESCE(exp.job_category, '未知') NOT IN ('研究类', '软件类', '系统类', '测试类')
+                <when test="jobCategory == '其他�?">
+                    <!-- 其他类：查询所有不�?研究�?�?软件�?�?系统�?�?测试�?的职位类 -->
+                    AND COALESCE(exp.job_category, '未知') NOT IN ('研究�?, '软件�?, '系统�?, '测试�?)
                 </when>
                 <otherwise>
                     <!-- 其他职位类：精确匹配 -->
@@ -241,7 +237,7 @@
         ORDER BY e.employee_number
     </select>
 
-    <!-- 根据部门编码、AI成熟度和职位类查询专家任职详细信息 -->
+    <!-- 根据部门编码、AI成熟度和职位类查询专家任职详细信�?-->
     <select id="getExpertQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT DISTINCT
             e.last_name AS name,
@@ -256,7 +252,7 @@
             SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
             SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
             SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
-            e.sixthdept AS departname7,
+            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS departname7,
             q.competence_family_cn AS competenceFamilyCn,
             q.competence_category_cn AS competenceCategoryCn,
             q.competence_subcategory_cn AS competenceSubcategoryCn,
@@ -280,10 +276,10 @@
             AND q.employee_number IS NOT NULL
             AND q.employee_number != ''
             AND q.direction_cn_name IN (
-                '数据科学与AI工程（ICT）',
-                'AI算法及应用（ICT）',
-                'AI软件工程与工具（ICT）',
-                'AI系统测试（ICT）'
+                '数据科学与AI工程（ICT�?,
+                'AI算法及应用（ICT�?,
+                'AI软件工程与工具（ICT�?,
+                'AI系统测试（ICT�?
             )
             AND q.competence_from IS NOT NULL
             AND q.competence_to IS NOT NULL
@@ -296,25 +292,24 @@
                 AND q2.employee_number IS NOT NULL
                 AND q2.employee_number != ''
                 AND q2.direction_cn_name IN (
-                    '数据科学与AI工程（ICT）',
-                    'AI算法及应用（ICT）',
-                    'AI软件工程与工具（ICT）',
-                    'AI系统测试（ICT）'
+                    '数据科学与AI工程（ICT�?,
+                    'AI算法及应用（ICT�?,
+                    'AI软件工程与工具（ICT�?,
+                    'AI系统测试（ICT�?
                 )
                 AND q2.competence_from IS NOT NULL
                 AND q2.competence_to IS NOT NULL
                 AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                 ORDER BY 
                     CASE 
-                        -- 8级最高，依次到1级，初级最低
-                        WHEN q2.competence_rating_cn = '8级' THEN 1
-                        WHEN q2.competence_rating_cn = '7级' THEN 2
-                        WHEN q2.competence_rating_cn = '6级' THEN 3
-                        WHEN q2.competence_rating_cn = '5级' THEN 4
-                        WHEN q2.competence_rating_cn = '4级' THEN 5
-                        WHEN q2.competence_rating_cn = '3级' THEN 6
-                        WHEN q2.competence_rating_cn = '2级' THEN 7
-                        WHEN q2.competence_rating_cn = '1级' THEN 8
+                        -- 8级最高，依次�?级，初级最�?                        WHEN q2.competence_rating_cn = '8�? THEN 1
+                        WHEN q2.competence_rating_cn = '7�? THEN 2
+                        WHEN q2.competence_rating_cn = '6�? THEN 3
+                        WHEN q2.competence_rating_cn = '5�? THEN 4
+                        WHEN q2.competence_rating_cn = '4�? THEN 5
+                        WHEN q2.competence_rating_cn = '3�? THEN 6
+                        WHEN q2.competence_rating_cn = '2�? THEN 7
+                        WHEN q2.competence_rating_cn = '1�? THEN 8
                         WHEN q2.competence_rating_cn = '初级' THEN 9
                         ELSE 10
                     END,
@@ -352,7 +347,7 @@
                     AND e.sixthdeptcode = #{deptCode}
                 </when>
                 <when test="deptLevel == 7">
-                    <!-- 如果deptLevel为7，已经是最高层级，无法再查询 -->
+                    <!-- 如果deptLevel�?，已经是最高层级，无法再查�?-->
                     AND 1 = 0
                 </when>
                 <otherwise>
@@ -381,14 +376,14 @@
         <if test="jobCategory != null and jobCategory != ''">
             <choose>
                 <when test="jobCategory == '非软件类'">
-                    <!-- 非软件类：查询所有不是"软件类"的职位类 -->
+                    <!-- 非软件类：查询所有不�?软件�?的职位类 -->
                     AND (
                         CASE 
                             WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
                             WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                             ELSE e.job_category
                         END
-                    ) != '软件类'
+                    ) != '软件�?
                 </when>
                 <otherwise>
                     <!-- 其他职位类：精确匹配 -->
@@ -453,10 +448,9 @@
                     FROM dwr_t_cert_record_t
                     WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        -- 华为研究类能力认证（专业级，xxx）
-                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        -- 华为研究类能力认证（专业级，xxx�?                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
                     )
                 ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </when>
@@ -471,10 +465,9 @@
                     FROM dwr_t_cert_record_t
                     WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        -- 华为研究类能力认证（专业级，xxx）
-                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        -- 华为研究类能力认证（专业级，xxx�?                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理�?
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义�?
                     )
                 ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
             </otherwise>
@@ -504,7 +497,7 @@
         <if test="aiMaturity != null and aiMaturity != ''">
             <choose>
                 <when test="'L5'.equals(aiMaturity)">
-                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
+                    <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3�?-->
                     AND exp.position_ai_maturity IN ('L2', 'L3')
                 </when>
                 <otherwise>
@@ -514,18 +507,18 @@
         </if>
         <if test="jobCategory != null and jobCategory != ''">
             <choose>
-                <when test="jobCategory == '其他类'">
-                    <!-- 其他类：查询所有不是"研究类"、"软件类"、"系统类"、"测试类"的职位类 -->
+                <when test="jobCategory == '其他�?">
+                    <!-- 其他类：查询所有不�?研究�?�?软件�?�?系统�?�?测试�?的职位类 -->
                     AND (
                         CASE 
                             WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
                             WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                             ELSE e.job_category
                         END
-                    ) NOT IN ('研究类', '软件类', '系统类', '测试类')
+                    ) NOT IN ('研究�?, '软件�?, '系统�?, '测试�?)
                 </when>
                 <otherwise>
-                    <!-- 其他职位类：从job_category字段中提取中间部分进行匹配 -->
+                    <!-- 其他职位类：从job_category字段中提取中间部分进行匹�?-->
                     AND (
                         e.job_category LIKE CONCAT('%-', #{jobCategory}, '-%')
                         OR e.job_category LIKE CONCAT(#{jobCategory}, '-%')
