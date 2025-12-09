@@ -10,19 +10,20 @@
             e.job_category AS jobCategory,
             e.employee_number AS employeeNumber,
             CASE 
-                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 
             END AS hasCert
         FROM expert_info e
         LEFT JOIN (
             SELECT DISTINCT 
-                COALESCE(employee_number, w3_account) AS employee_number,
-                w3_account
+                employee_number
             FROM dwr_t_cert_record_t
             WHERE (cer_title LIKE '华为研究类能力认证（专业级，%'
                 OR cer_title LIKE '%华为研究类能力认证（专业级，%')
             AND (status = 1 OR approved_status = 1)
-        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+            AND employee_number IS NOT NULL
+            AND employee_number != ''
+        ) cert ON (e.employee_number = cert.employee_number)
         WHERE e.org_level = #{deptName}
         AND e.on_duty_status = 1
         AND e.employee_number IS NOT NULL
@@ -37,19 +38,20 @@
             e.job_category AS jobCategory,
             e.employee_number AS employeeNumber,
             CASE 
-                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 
             END AS hasCert
         FROM expert_info e
         LEFT JOIN (
             SELECT DISTINCT 
-                COALESCE(employee_number, w3_account) AS employee_number,
-                w3_account
+                employee_number
             FROM dwr_t_cert_record_t
             WHERE (cer_title LIKE '华为研究类能力认证（专业级，%'
                 OR cer_title LIKE '%华为研究类能力认证（专业级，%')
             AND (status = 1 OR approved_status = 1)
-        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+            AND employee_number IS NOT NULL
+            AND employee_number != ''
+        ) cert ON (e.employee_number = cert.employee_number)
         WHERE e.l4_org_code = #{deptCode}
         AND e.on_duty_status = 1
         AND e.employee_number IS NOT NULL
@@ -158,8 +160,7 @@
                 <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
                 LEFT JOIN (
                     SELECT DISTINCT
-                        COALESCE(employee_number, w3_account) AS employee_number,
-                        w3_account,
+                        employee_number,
                         cer_title,
                         start_time
                     FROM dwr_t_cert_record_t
@@ -170,14 +171,15 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </when>
             <otherwise>
                 <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
                 INNER JOIN (
                     SELECT DISTINCT
-                        COALESCE(employee_number, w3_account) AS employee_number,
-                        w3_account,
+                        employee_number,
                         cer_title,
                         start_time
                     FROM dwr_t_cert_record_t
@@ -188,7 +190,9 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </otherwise>
         </choose>
         LEFT JOIN (
@@ -445,8 +449,7 @@
                 <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
                 LEFT JOIN (
                     SELECT DISTINCT
-                        COALESCE(employee_number, w3_account) AS employee_number,
-                        w3_account,
+                        employee_number,
                         cer_title,
                         start_time
                     FROM dwr_t_cert_record_t
@@ -457,14 +460,15 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </when>
             <otherwise>
                 <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
                 INNER JOIN (
                     SELECT DISTINCT
-                        COALESCE(employee_number, w3_account) AS employee_number,
-                        w3_account,
+                        employee_number,
                         cer_title,
                         start_time
                     FROM dwr_t_cert_record_t
@@ -475,7 +479,9 @@
                         OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                         OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </otherwise>
         </choose>
         LEFT JOIN (

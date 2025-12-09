@@ -140,7 +140,7 @@
             COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
             COALESCE(e.job_category, '未知') AS jobCategory,
             CASE 
-                WHEN cert.employee_number IS NOT NULL OR cert.w3_account IS NOT NULL THEN 1 
+                WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 
             END AS hasProfessionalCert,
             CASE 
@@ -151,8 +151,7 @@
         INNER JOIN t_employee_sync e ON (e.employee_number = exp.account)
         LEFT JOIN (
             SELECT DISTINCT
-                employee_number,
-                w3_account
+                employee_number
             FROM dwr_t_cert_record_t
             WHERE (status = 1 OR approved_status = 1)
             AND (
@@ -161,7 +160,9 @@
                 OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
                 OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
             )
-        ) cert ON (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
+            AND employee_number IS NOT NULL
+            AND employee_number != ''
+        ) cert ON (e.employee_number = cert.employee_number)
         LEFT JOIN (
             SELECT DISTINCT emp_num
             FROM t_exam_record
