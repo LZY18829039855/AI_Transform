@@ -153,64 +153,32 @@
             <when test="queryType != null and queryType == 2">
                 <!-- queryType=2: 使用 LEFT JOIN，返回所有人员，即使没有AI专业级证书也显示 -->
                 LEFT JOIN (
-                    SELECT c1.employee_number, c1.w3_account, c1.cer_title, c1.start_time
-                    FROM dwr_t_cert_record_t c1
-                    INNER JOIN (
-                        SELECT 
-                            COALESCE(employee_number, w3_account) AS emp_key,
-                            MAX(start_time) AS max_start_time
-                        FROM dwr_t_cert_record_t
-                        WHERE (status = 1 OR approved_status = 1)
-                        AND (
-                            cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                            OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                            OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
-                        )
-                        GROUP BY COALESCE(employee_number, w3_account)
-                    ) c2 ON (
-                        COALESCE(c1.employee_number, c1.w3_account) = c2.emp_key
-                        AND c1.start_time = c2.max_start_time
-                    )
-                    WHERE (c1.status = 1 OR c1.approved_status = 1)
+                    SELECT employee_number, cer_title, start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        c1.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR c1.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR c1.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (
-                    (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
-                )
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </when>
             <otherwise>
                 <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
                 INNER JOIN (
-                    SELECT c1.employee_number, c1.w3_account, c1.cer_title, c1.start_time
-                    FROM dwr_t_cert_record_t c1
-                    INNER JOIN (
-                        SELECT 
-                            COALESCE(employee_number, w3_account) AS emp_key,
-                            MAX(start_time) AS max_start_time
-                        FROM dwr_t_cert_record_t
-                        WHERE (status = 1 OR approved_status = 1)
-                        AND (
-                            cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                            OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                            OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
-                        )
-                        GROUP BY COALESCE(employee_number, w3_account)
-                    ) c2 ON (
-                        COALESCE(c1.employee_number, c1.w3_account) = c2.emp_key
-                        AND c1.start_time = c2.max_start_time
-                    )
-                    WHERE (c1.status = 1 OR c1.approved_status = 1)
+                    SELECT employee_number, cer_title, start_time
+                    FROM dwr_t_cert_record_t
+                    WHERE (status = 1 OR approved_status = 1)
                     AND (
-                        c1.cer_title = '华为研究类能力认证（专业级，AI算法技术）'
-                        OR c1.cer_title = '华为研究类能力认证（专业级，AI决策推理）'
-                        OR c1.cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
+                        cer_title = '华为研究类能力认证（专业级，AI算法技术）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI决策推理）'
+                        OR cer_title = '华为研究类能力认证（专业级，AI图像语言语义）'
                     )
-                ) cert ON (
-                    (e.employee_number = cert.employee_number OR e.employee_number = cert.w3_account)
-                )
+                    AND employee_number IS NOT NULL
+                    AND employee_number != ''
+                ) cert ON (e.employee_number = cert.employee_number)
             </otherwise>
         </choose>
         LEFT JOIN (
