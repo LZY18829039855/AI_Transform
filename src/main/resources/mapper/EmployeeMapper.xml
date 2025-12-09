@@ -146,7 +146,7 @@
                 ELSE 0 
             END AS isExpert,
             COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
-            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
+            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS miniDeptName,
             NULL AS isQualificationsStandard
         FROM t_employee_sync e
         <choose>
@@ -224,10 +224,6 @@
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
         LEFT JOIN t_expert exp ON (e.employee_number = exp.account)
-        LEFT JOIN department_info_hrms dept ON (
-            e.sixthdeptcode = dept.dept_code 
-            AND DATE(dept.update_time) = '2025-11-18'
-        )
         WHERE e.period_id = 20251126
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
@@ -381,7 +377,7 @@
                 ELSE 0 
             END AS isExpert,
             COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
-            SUBSTRING_INDEX(dept.dept_name, '/', 1) AS miniDeptName,
+            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS miniDeptName,
             NULL AS isQualificationsStandard,
             NULL AS isCertStandard
         FROM t_employee_sync e
@@ -489,10 +485,6 @@
         </choose>
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
         LEFT JOIN t_expert exp ON (e.employee_number = exp.account)
-        LEFT JOIN department_info_hrms dept ON (
-            e.sixthdeptcode = dept.dept_code 
-            AND DATE(dept.update_time) = '2025-11-18'
-        )
         WHERE e.period_id = 20251126
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
