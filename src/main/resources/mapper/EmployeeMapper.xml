@@ -349,7 +349,11 @@
                 WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE e.job_category
             END AS competenceCategory,
-            NULL AS competenceSubcategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS competenceSubcategory,
             SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
             SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
             SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
