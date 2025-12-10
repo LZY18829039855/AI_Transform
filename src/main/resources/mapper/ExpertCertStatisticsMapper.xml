@@ -247,36 +247,40 @@
 
     <!-- 根据部门编码、AI成熟度和职位类查询专家任职详细信息 -->
     <select id="getExpertQualifiedDetailsByConditions" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
-        SELECT DISTINCT
-            e.last_name AS name,
+        SELECT 
+            ANY_VALUE(e.last_name) AS name,
             e.employee_number AS employeeNumber,
-            CASE 
-                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
-                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
-                ELSE e.job_category
-            END AS competenceCategory,
-            SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
-            SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
-            SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
-            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
-            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
-            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS departname7,
-            q.competence_family_cn AS competenceFamilyCn,
-            q.competence_category_cn AS competenceCategoryCn,
-            q.competence_subcategory_cn AS competenceSubcategoryCn,
-            q.direction_cn_name AS directionCnName,
-            q.competence_rating_cn AS competenceRatingCn,
-            q.competence_grade_cn AS competenceGradeCn,
-            q.competence_from AS competenceFrom,
-            q.competence_to AS competenceTo,
-            COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
-            CASE 
-                WHEN c.account IS NOT NULL THEN 1 
-                ELSE 0 
-            END AS isCadre,
-            c.cadre_type AS cadreType,
-            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS miniDeptName,
-            COALESCE(exp.is_qualifications_standard, 0) AS isQualificationsStandard
+            ANY_VALUE(
+                CASE 
+                    WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                    WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                    ELSE e.job_category
+                END
+            ) AS competenceCategory,
+            ANY_VALUE(SUBSTRING_INDEX(e.firstdept, '/', 1)) AS departname2,
+            ANY_VALUE(SUBSTRING_INDEX(e.seconddept, '/', 1)) AS departname3,
+            ANY_VALUE(SUBSTRING_INDEX(e.thirddept, '/', 1)) AS departname4,
+            ANY_VALUE(SUBSTRING_INDEX(e.fourthdept, '/', 1)) AS departname5,
+            ANY_VALUE(SUBSTRING_INDEX(e.fifthdept, '/', 1)) AS departname6,
+            ANY_VALUE(SUBSTRING_INDEX(e.sixthdept, '/', 1)) AS departname7,
+            ANY_VALUE(q.competence_family_cn) AS competenceFamilyCn,
+            ANY_VALUE(q.competence_category_cn) AS competenceCategoryCn,
+            ANY_VALUE(q.competence_subcategory_cn) AS competenceSubcategoryCn,
+            ANY_VALUE(q.direction_cn_name) AS directionCnName,
+            ANY_VALUE(q.competence_rating_cn) AS competenceRatingCn,
+            ANY_VALUE(q.competence_grade_cn) AS competenceGradeCn,
+            ANY_VALUE(q.competence_from) AS competenceFrom,
+            ANY_VALUE(q.competence_to) AS competenceTo,
+            ANY_VALUE(COALESCE(exp.position_ai_maturity, '未知')) AS aiMaturity,
+            ANY_VALUE(
+                CASE 
+                    WHEN c.account IS NOT NULL THEN 1 
+                    ELSE 0 
+                END
+            ) AS isCadre,
+            ANY_VALUE(c.cadre_type) AS cadreType,
+            ANY_VALUE(SUBSTRING_INDEX(e.lowest_dept, '/', 1)) AS miniDeptName,
+            ANY_VALUE(COALESCE(exp.is_qualifications_standard, 0)) AS isQualificationsStandard
         FROM t_expert exp
         INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
         LEFT JOIN t_qualifications q ON (
@@ -407,6 +411,7 @@
         </if>
         AND e.employee_number IS NOT NULL
         AND e.employee_number != ''
+        GROUP BY e.employee_number
         ORDER BY e.employee_number, COALESCE(q.competence_from, '1900-01-01')
     </select>
 
