@@ -3544,6 +3544,7 @@ public class ExpertCertStatisticsService {
             total.setBaselineCount(0);
             total.setQualifiedCount(0);
             total.setQualifiedByRequirementCount(0);
+            total.setBaselineCountByRequirement(0);
             total.setQualifiedRate(BigDecimal.ZERO);
             total.setQualifiedByRequirementRate(BigDecimal.ZERO);
             total.setJobCategoryStatistics(null);
@@ -3675,16 +3676,27 @@ public class ExpertCertStatisticsService {
                             .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP);
                     jobCategoryStat.setQualifiedRate(qualifiedRate);
                     
-                    // 计算职位类按要求任职人数占比
+                    // 计算按岗位要求AI任职基线人数（L2非软件类为0，其他等于baselineCount）
+                    String jobCategory = jobCategoryStat.getJobCategory();
+                    boolean isL2NonSoftware = "L2".equals(aiMaturity) && (jobCategory == null || !"软件类".equals(jobCategory));
+                    int baselineCountByRequirement = isL2NonSoftware ? 0 : jobCategoryStat.getBaselineCount();
+                    jobCategoryStat.setBaselineCountByRequirement(baselineCountByRequirement);
+                    
+                    // 计算职位类按要求任职人数占比（使用baselineCountByRequirement作为分母）
                     if (jobCategoryStat.getQualifiedByRequirementCount() == null) {
                         jobCategoryStat.setQualifiedByRequirementCount(0);
                     }
-                    // 返回0-1之间的比率，不乘100，让前端统一格式化
-                    BigDecimal qualifiedByRequirementRate = new BigDecimal(jobCategoryStat.getQualifiedByRequirementCount())
-                            .divide(new BigDecimal(jobCategoryStat.getBaselineCount()), 4, RoundingMode.HALF_UP);
-                    jobCategoryStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
+                    if (baselineCountByRequirement > 0) {
+                        // 返回0-1之间的比率，不乘100，让前端统一格式化
+                        BigDecimal qualifiedByRequirementRate = new BigDecimal(jobCategoryStat.getQualifiedByRequirementCount())
+                                .divide(new BigDecimal(baselineCountByRequirement), 4, RoundingMode.HALF_UP);
+                        jobCategoryStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
+                    } else {
+                        jobCategoryStat.setQualifiedByRequirementRate(BigDecimal.ZERO);
+                    }
                 } else {
                     jobCategoryStat.setQualifiedRate(BigDecimal.ZERO);
+                    jobCategoryStat.setBaselineCountByRequirement(0);
                     jobCategoryStat.setQualifiedByRequirementRate(BigDecimal.ZERO);
                 }
                 
@@ -3697,20 +3709,33 @@ public class ExpertCertStatisticsService {
             maturityStat.setQualifiedByRequirementCount(maturityQualifiedByRequirementCount);
             maturityStat.setJobCategoryStatistics(jobCategoryStatistics);
             
+            // 计算按岗位要求AI任职基线人数（L2非软件类为0，其他等于baselineCount）
+            // 对于成熟度级别，需要统计所有职位类的baselineCountByRequirement
+            int maturityBaselineCountByRequirement = 0;
+            for (ExpertJobCategoryQualifiedStatisticsVO jobCategoryStat : jobCategoryStatistics) {
+                if (jobCategoryStat.getBaselineCountByRequirement() != null) {
+                    maturityBaselineCountByRequirement += jobCategoryStat.getBaselineCountByRequirement();
+                }
+            }
+            maturityStat.setBaselineCountByRequirement(maturityBaselineCountByRequirement);
+            
             // 计算成熟度任职率
             if (maturityBaselineCount > 0) {
                 // 返回0-1之间的比率，不乘100，让前端统一格式化
                 BigDecimal qualifiedRate = new BigDecimal(maturityQualifiedCount)
                         .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP);
                 maturityStat.setQualifiedRate(qualifiedRate);
-                
-                // 计算成熟度按要求任职人数占比
-                // 返回0-1之间的比率，不乘100，让前端统一格式化
-                BigDecimal qualifiedByRequirementRate = new BigDecimal(maturityQualifiedByRequirementCount)
-                        .divide(new BigDecimal(maturityBaselineCount), 4, RoundingMode.HALF_UP);
-                maturityStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
             } else {
                 maturityStat.setQualifiedRate(BigDecimal.ZERO);
+            }
+            
+            // 计算成熟度按要求任职人数占比（使用baselineCountByRequirement作为分母）
+            if (maturityBaselineCountByRequirement > 0) {
+                // 返回0-1之间的比率，不乘100，让前端统一格式化
+                BigDecimal qualifiedByRequirementRate = new BigDecimal(maturityQualifiedByRequirementCount)
+                        .divide(new BigDecimal(maturityBaselineCountByRequirement), 4, RoundingMode.HALF_UP);
+                maturityStat.setQualifiedByRequirementRate(qualifiedByRequirementRate);
+            } else {
                 maturityStat.setQualifiedByRequirementRate(BigDecimal.ZERO);
             }
             
@@ -3725,20 +3750,32 @@ public class ExpertCertStatisticsService {
         totalStatistics.setQualifiedByRequirementCount(totalQualifiedByRequirementCount);
         totalStatistics.setJobCategoryStatistics(null);
         
+        // 计算总计按岗位要求AI任职基线人数（统计所有成熟度的baselineCountByRequirement）
+        int totalBaselineCountByRequirement = 0;
+        for (ExpertMaturityQualifiedStatisticsVO maturityStat : maturityStatistics) {
+            if (maturityStat.getBaselineCountByRequirement() != null) {
+                totalBaselineCountByRequirement += maturityStat.getBaselineCountByRequirement();
+            }
+        }
+        totalStatistics.setBaselineCountByRequirement(totalBaselineCountByRequirement);
+        
         // 计算总计任职率
         if (totalBaselineCount > 0) {
             // 返回0-1之间的比率，不乘100，让前端统一格式化
             BigDecimal totalQualifiedRate = new BigDecimal(totalQualifiedCount)
                     .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP);
             totalStatistics.setQualifiedRate(totalQualifiedRate);
-            
-            // 计算总计按要求任职人数占比
-            // 返回0-1之间的比率，不乘100，让前端统一格式化
-            BigDecimal totalQualifiedByRequirementRate = new BigDecimal(totalQualifiedByRequirementCount)
-                    .divide(new BigDecimal(totalBaselineCount), 4, RoundingMode.HALF_UP);
-            totalStatistics.setQualifiedByRequirementRate(totalQualifiedByRequirementRate);
         } else {
             totalStatistics.setQualifiedRate(BigDecimal.ZERO);
+        }
+        
+        // 计算总计按要求任职人数占比（使用baselineCountByRequirement作为分母）
+        if (totalBaselineCountByRequirement > 0) {
+            // 返回0-1之间的比率，不乘100，让前端统一格式化
+            BigDecimal totalQualifiedByRequirementRate = new BigDecimal(totalQualifiedByRequirementCount)
+                    .divide(new BigDecimal(totalBaselineCountByRequirement), 4, RoundingMode.HALF_UP);
+            totalStatistics.setQualifiedByRequirementRate(totalQualifiedByRequirementRate);
+        } else {
             totalStatistics.setQualifiedByRequirementRate(BigDecimal.ZERO);
         }
         

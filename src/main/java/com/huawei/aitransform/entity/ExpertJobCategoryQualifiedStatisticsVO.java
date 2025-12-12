@@ -40,6 +40,11 @@ public class ExpertJobCategoryQualifiedStatisticsVO implements Serializable {
      */
     private BigDecimal qualifiedByRequirementRate;
 
+    /**
+     * 按岗位要求AI任职基线人数（与对应类别的基线人数一致，但L2非软件类为0）
+     */
+    private Integer baselineCountByRequirement;
+
     public ExpertJobCategoryQualifiedStatisticsVO() {
     }
 
@@ -89,6 +94,14 @@ public class ExpertJobCategoryQualifiedStatisticsVO implements Serializable {
 
     public void setQualifiedByRequirementRate(BigDecimal qualifiedByRequirementRate) {
         this.qualifiedByRequirementRate = qualifiedByRequirementRate;
+    }
+
+    public Integer getBaselineCountByRequirement() {
+        return baselineCountByRequirement;
+    }
+
+    public void setBaselineCountByRequirement(Integer baselineCountByRequirement) {
+        this.baselineCountByRequirement = baselineCountByRequirement;
     }
 }
 
