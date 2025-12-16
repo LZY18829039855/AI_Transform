@@ -3202,9 +3202,8 @@ public class ExpertCertStatisticsService {
      * 更新L2、L3专家的认证达标情况
      * 
      * 认证达标规则：
-     * - L2、L3软件类专家：如果获得了专业级证书即为达标
-     * - 其他所有职位类的专家：如果通过了科目二即为达标
-     * 如果满足条件，将专家表中的is_cert_standard字段更新为1
+     * - 所有L2、L3专家（所有职位类）：如果持有专业级证书即为达标，否则视为不达标
+     * 如果满足条件，将专家表中的is_cert_standard字段更新为1，不达标为0
      * 
      * @return 更新结果信息（包含更新的专家数量）
      */
@@ -3212,7 +3211,7 @@ public class ExpertCertStatisticsService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // 1. 查询所有L2、L3专家及其专业级证书和科目二通过情况
+            // 1. 查询所有L2、L3专家及其专业级证书情况
             List<ExpertQualificationVO> expertList = expertMapper.getL2L3ExpertWithCertInfo();
             
             if (expertList == null || expertList.isEmpty()) {
@@ -3243,9 +3242,7 @@ public class ExpertCertStatisticsService {
             for (ExpertQualificationVO expert : expertList) {
                 String employeeNumber = expert.getEmployeeNumber();
                 String aiMaturity = expert.getAiMaturity();
-                String jobCategoryFull = expert.getJobCategory();
                 Integer hasProfessionalCert = expert.getHasProfessionalCert();
-                Integer hasPassedSubject2 = expert.getHasPassedSubject2();
                 
                 if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
                     continue;
@@ -3256,27 +3253,12 @@ public class ExpertCertStatisticsService {
                     continue;
                 }
                 
-                // 提取职位类（从"职位族-职位类-职位子类"格式中提取中间的职位类）
-                String jobCategory = extractJobCategory(jobCategoryFull);
-                
                 allL2L3EmployeeNumbers.add(employeeNumber);
                 
-                // 判断认证是否达标
+                // 判断认证是否达标：所有专家持有专业级证书即为达标
                 boolean isCertQualified = false;
-                
-                // 判断是否为软件类
-                boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
-                
-                if (isSoftwareCategory) {
-                    // L2、L3软件类专家：如果获得了专业级证书即为达标
-                    if (hasProfessionalCert != null && hasProfessionalCert == 1) {
-                        isCertQualified = true;
-                    }
-                } else {
-                    // 其他所有职位类的专家：如果通过了科目二即为达标
-                    if (hasPassedSubject2 != null && hasPassedSubject2 == 1) {
-                        isCertQualified = true;
-                    }
+                if (hasProfessionalCert != null && hasProfessionalCert == 1) {
+                    isCertQualified = true;
                 }
                 
                 if (isCertQualified) {
