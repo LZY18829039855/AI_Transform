@@ -35,6 +35,11 @@ public class ExpertQualificationVO {
      */
     private Integer hasPassedSubject2;
 
+    /**
+     * 专家职级（orig_position_grade字段，数字，如19、20、21、22、23等）
+     */
+    private Integer origPositionGrade;
+
     public String getEmployeeNumber() {
         return employeeNumber;
     }
@@ -82,7 +87,12 @@ public class ExpertQualificationVO {
     public void setHasPassedSubject2(Integer hasPassedSubject2) {
         this.hasPassedSubject2 = hasPassedSubject2;
     }
+
+    public Integer getOrigPositionGrade() {
+        return origPositionGrade;
+    }
+
+    public void setOrigPositionGrade(Integer origPositionGrade) {
+        this.origPositionGrade = origPositionGrade;
+    }
 }
-
-
-
