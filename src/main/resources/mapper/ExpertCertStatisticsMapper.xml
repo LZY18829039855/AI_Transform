@@ -205,7 +205,7 @@
             AND emp_num != ''
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
-        WHERE e.period_id = 20251126
+        WHERE e.period_id = 20251213
         AND exp.on_duty_status = 1
         AND exp.employee_number IS NOT NULL
         AND exp.employee_number != ''
@@ -257,6 +257,10 @@
                     ELSE e.job_category
                 END
             ) AS competenceCategory,
+            CASE
+            WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+            ELSE NULL
+            END AS competenceSubcategory,
             ANY_VALUE(SUBSTRING_INDEX(e.firstdept, '/', 1)) AS departname2,
             ANY_VALUE(SUBSTRING_INDEX(e.seconddept, '/', 1)) AS departname3,
             ANY_VALUE(SUBSTRING_INDEX(e.thirddept, '/', 1)) AS departname4,
@@ -331,7 +335,7 @@
             )
         )
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
-        WHERE e.period_id = 20251126
+        WHERE e.period_id = 20251213
         AND exp.position_ai_maturity IN ('L2', 'L3')
         AND exp.account IS NOT NULL
         AND exp.account != ''
@@ -499,7 +503,7 @@
             AND emp_num != ''
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
-        WHERE e.period_id = 20251126
+        WHERE e.period_id = 20251213
         AND exp.position_ai_maturity IN ('L2', 'L3')
         AND exp.account IS NOT NULL
         AND exp.account != ''
@@ -548,4 +552,3 @@
     </select>
 
 </mapper>
-
