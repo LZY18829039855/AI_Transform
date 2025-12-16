@@ -3022,7 +3022,12 @@ public class ExpertCertStatisticsService {
      * 
      * 任职要求：
      * - L2软件类专家：AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
-     * - L3软件类专家：AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
+     * - L3级别的所有职位类专家：根据专家的职级判断（职级在t_expert表的orig_position_grade字段）
+     *   - 19级专家：要求4+AI任职（4级、5级、6级、7级、8级）
+     *   - 20级专家：要求5+AI任职（5级、6级、7级、8级）
+     *   - 21级专家：要求6+AI任职（6级、7级、8级）
+     *   - 22级专家：要求7+AI任职（7级、8级）
+     *   - 23+级专家：要求8级AI任职
      * 如果满足要求，将专家表中的is_qualifications_standard字段更新为1
      * 
      * @return 更新结果信息（包含更新的专家数量）
@@ -3064,6 +3069,7 @@ public class ExpertCertStatisticsService {
                 String aiMaturity = expert.getAiMaturity();
                 String highestQualificationLevel = expert.getHighestQualificationLevel();
                 String jobCategoryFull = expert.getJobCategory();
+                Integer origPositionGrade = expert.getOrigPositionGrade();
                 
                 if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
                     continue;
@@ -3077,36 +3083,66 @@ public class ExpertCertStatisticsService {
                 // 提取职位类（从"职位族-职位类-职位子类"格式中提取中间的职位类）
                 String jobCategory = extractJobCategory(jobCategoryFull);
                 
-                // 只处理软件类专家
-                boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
-                if (!isSoftwareCategory) {
-                    continue;
-                }
-                
-                allL2L3EmployeeNumbers.add(employeeNumber);
-                
                 // 判断任职是否达标
                 boolean isQualified = false;
                 
                 if ("L3".equals(aiMaturity)) {
-                    // L3软件类专家的AI任职需要达到4+（包括四级），即4级、5级、6级、7级、8级
-                    if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
-                        if ("4级".equals(highestQualificationLevel)
-                                || "5级".equals(highestQualificationLevel) 
-                                || "6级".equals(highestQualificationLevel)
-                                || "7级".equals(highestQualificationLevel)
-                                || "8级".equals(highestQualificationLevel)) {
+                    // L3级别的所有职位类专家：根据专家的职级判断
+                    // 19级专家要求4+AI任职，20级要求5+AI任职，21级要求6+AI任职，22级要求7+AI任职，23+级要求8级AI任职
+                    allL2L3EmployeeNumbers.add(employeeNumber);
+                    
+                    if (highestQualificationLevel == null || highestQualificationLevel.trim().isEmpty()) {
+                        // 没有任职记录，不达标
+                        l3UnqualifiedCount++;
+                    } else {
+                        // 根据职级判断是否达标
+                        boolean meetsRequirement = false;
+                        
+                        if (origPositionGrade != null) {
+                            if (origPositionGrade == 19) {
+                                // 19级：要求4+AI任职（4级、5级、6级、7级、8级）
+                                meetsRequirement = "4级".equals(highestQualificationLevel)
+                                        || "5级".equals(highestQualificationLevel)
+                                        || "6级".equals(highestQualificationLevel)
+                                        || "7级".equals(highestQualificationLevel)
+                                        || "8级".equals(highestQualificationLevel);
+                            } else if (origPositionGrade == 20) {
+                                // 20级：要求5+AI任职（5级、6级、7级、8级）
+                                meetsRequirement = "5级".equals(highestQualificationLevel)
+                                        || "6级".equals(highestQualificationLevel)
+                                        || "7级".equals(highestQualificationLevel)
+                                        || "8级".equals(highestQualificationLevel);
+                            } else if (origPositionGrade == 21) {
+                                // 21级：要求6+AI任职（6级、7级、8级）
+                                meetsRequirement = "6级".equals(highestQualificationLevel)
+                                        || "7级".equals(highestQualificationLevel)
+                                        || "8级".equals(highestQualificationLevel);
+                            } else if (origPositionGrade == 22) {
+                                // 22级：要求7+AI任职（7级、8级）
+                                meetsRequirement = "7级".equals(highestQualificationLevel)
+                                        || "8级".equals(highestQualificationLevel);
+                            } else if (origPositionGrade >= 23) {
+                                // 23+级：要求8级AI任职
+                                meetsRequirement = "8级".equals(highestQualificationLevel);
+                            }
+                        }
+                        
+                        if (meetsRequirement) {
                             isQualified = true;
                             l3QualifiedCount++;
                         } else {
                             l3UnqualifiedCount++;
                         }
-                    } else {
-                        // 没有任职记录，不达标
-                        l3UnqualifiedCount++;
                     }
                 } else if ("L2".equals(aiMaturity)) {
-                    // L2软件类专家的AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
+                    // L2软件类专家：AI任职需要达到3+（包括三级），即3级、4级、5级、6级、7级、8级
+                    boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
+                    if (!isSoftwareCategory) {
+                        continue;
+                    }
+                    
+                    allL2L3EmployeeNumbers.add(employeeNumber);
+                    
                     if (highestQualificationLevel != null && !highestQualificationLevel.trim().isEmpty()) {
                         if ("3级".equals(highestQualificationLevel)
                                 || "4级".equals(highestQualificationLevel)
@@ -3130,7 +3166,7 @@ public class ExpertCertStatisticsService {
                 }
             }
             
-            // 5. 先重置所有L2、L3软件类专家的is_qualifications_standard字段为0
+            // 5. 先重置所有L2软件类专家和L3所有职位类专家的is_qualifications_standard字段为0
             if (!allL2L3EmployeeNumbers.isEmpty()) {
                 expertMapper.batchResetQualificationStandard(allL2L3EmployeeNumbers);
             }
