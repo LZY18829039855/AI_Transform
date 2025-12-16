@@ -53,7 +53,8 @@
             exp.account AS employeeNumber,
             COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
             q.competence_rating_cn AS highestQualificationLevel,
-            COALESCE(e.job_category, '未知') AS jobCategory
+            COALESCE(e.job_category, '未知') AS jobCategory,
+            exp.orig_position_grade AS origPositionGrade
         FROM t_expert exp
         INNER JOIN t_employee_sync e ON (e.employee_number = exp.account)
         LEFT JOIN (
@@ -312,5 +313,3 @@
     </select>
 
 </mapper>
-
-
