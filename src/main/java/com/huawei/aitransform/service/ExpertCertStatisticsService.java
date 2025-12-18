@@ -1856,79 +1856,51 @@ public class ExpertCertStatisticsService {
         List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
 
         if (personType == 0) {
-            // 全员处理
-            // 特殊处理：当 deptCode 为 "0" 时
-            if ("0".equals(deptCode.trim())) {
-                // 查询云核心网产品线部门下的所有四级部门
-                List<DepartmentInfoVO> level4Depts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(
-                        DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
-                
-                if (level4Depts == null || level4Depts.isEmpty()) {
-                    employeeDetails = new ArrayList<>();
-                } else {
-                    // 遍历每个四级部门，查询员工任职详细信息
-                    List<EmployeeDetailVO> allEmployeeDetails = new ArrayList<>();
-                    Integer queryLevel = 4; // 四级部门
-                    
-                    for (DepartmentInfoVO dept : level4Depts) {
-                        if (dept.getDeptCode() != null && !dept.getDeptCode().trim().isEmpty()) {
-                            List<EmployeeDetailVO> deptEmployeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
-                                    queryLevel, dept.getDeptCode(), jobCategory, queryType);
-                            if (deptEmployeeDetails != null && !deptEmployeeDetails.isEmpty()) {
-                                allEmployeeDetails.addAll(deptEmployeeDetails);
-                            }
-                        }
-                    }
-                    
-                    employeeDetails = allEmployeeDetails;
-                }
-            } else {
-                // 普通处理：当 deptCode 不为 "0" 时
-                // 查询部门信息
-                DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
-                if (deptInfo == null) {
-                    throw new IllegalArgumentException("部门不存在：" + deptCode);
-                }
-                
-                // 查询所有层级子部门信息（与competence-category-cert-statistics保持一致）
-                List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
-                
-                // 构造部门编码列表（包括本部门本身和所有子部门）
-                List<DepartmentInfoVO> allDepts = new ArrayList<>();
-                allDepts.add(deptInfo);
-                if (allSubDepts != null && !allSubDepts.isEmpty()) {
-                    allDepts.addAll(allSubDepts);
-                }
-                
-                // 遍历所有部门，查询每个部门的员工任职详细信息
-                List<EmployeeDetailVO> allEmployeeDetails = new ArrayList<>();
-                
-                for (DepartmentInfoVO dept : allDepts) {
-                    if (dept.getDeptCode() != null && !dept.getDeptCode().trim().isEmpty()) {
-                        String deptLevelStr = dept.getDeptLevel();
-                        Integer queryLevel = Integer.parseInt(deptLevelStr);
-                        
-                        List<EmployeeDetailVO> deptEmployeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
-                                queryLevel, dept.getDeptCode(), jobCategory, queryType);
-                        if (deptEmployeeDetails != null && !deptEmployeeDetails.isEmpty()) {
-                            allEmployeeDetails.addAll(deptEmployeeDetails);
-                        }
-                    }
-                }
-                
-                // 按员工工号去重，确保每个员工只出现一次（与competence-category-cert-statistics保持一致）
-                Map<String, EmployeeDetailVO> employeeMap = new HashMap<>();
-                for (EmployeeDetailVO employee : allEmployeeDetails) {
-                    if (employee.getEmployeeNumber() != null && !employee.getEmployeeNumber().trim().isEmpty()) {
-                        // 如果该员工已存在，保留第一个（或者可以根据业务需求选择保留最新的）
-                        if (!employeeMap.containsKey(employee.getEmployeeNumber())) {
-                            employeeMap.put(employee.getEmployeeNumber(), employee);
-                        }
-                    }
-                }
-                
-                employeeDetails = new ArrayList<>(employeeMap.values());
+            // 全员处理（与competence-category-cert-statistics保持一致）
+            // 查询部门信息
+            DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
+            if (deptInfo == null) {
+                throw new IllegalArgumentException("部门不存在：" + deptCode);
             }
+            
+            // 查询所有层级子部门信息（与competence-category-cert-statistics保持一致）
+            List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
+            
+            // 构造部门编码列表（包括本部门本身和所有子部门）
+            List<DepartmentInfoVO> allDepts = new ArrayList<>();
+            allDepts.add(deptInfo);
+            if (allSubDepts != null && !allSubDepts.isEmpty()) {
+                allDepts.addAll(allSubDepts);
+            }
+            
+            // 遍历所有部门，查询每个部门的员工任职详细信息
+            List<EmployeeDetailVO> allEmployeeDetails = new ArrayList<>();
+            
+            for (DepartmentInfoVO dept : allDepts) {
+                if (dept.getDeptCode() != null && !dept.getDeptCode().trim().isEmpty()) {
+                    String deptLevelStr = dept.getDeptLevel();
+                    Integer queryLevel = Integer.parseInt(deptLevelStr);
+                    
+                    List<EmployeeDetailVO> deptEmployeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
+                            queryLevel, dept.getDeptCode(), jobCategory, queryType);
+                    if (deptEmployeeDetails != null && !deptEmployeeDetails.isEmpty()) {
+                        allEmployeeDetails.addAll(deptEmployeeDetails);
+                    }
+                }
+            }
+            
+            // 按员工工号去重，确保每个员工只出现一次（与competence-category-cert-statistics保持一致）
+            Map<String, EmployeeDetailVO> employeeMap = new HashMap<>();
+            for (EmployeeDetailVO employee : allEmployeeDetails) {
+                if (employee.getEmployeeNumber() != null && !employee.getEmployeeNumber().trim().isEmpty()) {
+                    // 如果该员工已存在，保留第一个（或者可以根据业务需求选择保留最新的）
+                    if (!employeeMap.containsKey(employee.getEmployeeNumber())) {
+                        employeeMap.put(employee.getEmployeeNumber(), employee);
+                    }
+                }
+            }
+            
+            employeeDetails = new ArrayList<>(employeeMap.values());
         } else if (personType == 1) {
             // 2. 查询部门信息
             DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);

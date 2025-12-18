@@ -408,15 +408,12 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "personType", required = true) Integer personType,
             @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
         try {
-            // 当deptCode为"0"、空字符串或未提供时，对于全员类型（personType=0）保持"0"值，其他类型使用默认值云核心网产品线部门ID
             if (deptCode == null || deptCode.trim().isEmpty()) {
-                if (personType != null && personType == 0) {
-                    deptCode = "0";
-                } else {
-                    deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
-                }
-            } else if ("0".equals(deptCode.trim()) && (personType == null || personType != 0)) {
-                // 对于非全员类型，当deptCode为"0"时，使用默认值云核心网产品线部门ID
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+
+            // 当deptCode为"0"时，使用云核心网产品线部门ID（与competence-category-cert-statistics保持一致）
+            if ("0".equals(deptCode.trim())) {
                 deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
