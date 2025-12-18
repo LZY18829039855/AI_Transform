@@ -110,43 +110,54 @@
 
     <!-- 根据部门层级和部门ID查询员工认证详细信息（全员类型） -->
     <!-- 注意：当部门ID不为0时，只查询当前部门，不查询子部门 -->
+    <!-- 使用 GROUP BY 确保每个员工只统计一次，与任职数据查询保持一致 -->
     <select id="getEmployeeCertDetailsByDeptLevel" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
-        SELECT DISTINCT
-            e.last_name AS name,
+        SELECT 
+            ANY_VALUE(e.last_name) AS name,
             e.employee_number AS employeeNumber,
-            CASE 
-                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
-                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
-                ELSE e.job_category
-            END AS competenceCategory,
-            CASE 
-                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
-                ELSE NULL
-            END AS competenceSubcategory,
-            SUBSTRING_INDEX(e.firstdept, '/', 1) AS departname2,
-            SUBSTRING_INDEX(e.seconddept, '/', 1) AS departname3,
-            SUBSTRING_INDEX(e.thirddept, '/', 1) AS departname4,
-            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS departname5,
-            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS departname6,
-            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS departname7,
-            cert.cer_title AS certTitle,
-            cert.start_time AS certStartTime,
-            CASE 
-                WHEN exam.emp_num IS NOT NULL THEN 1 
-                ELSE 0 
-            END AS isPassedSubject2,
-            CASE 
-                WHEN c.account IS NOT NULL THEN 1 
-                ELSE 0 
-            END AS isCadre,
-            c.cadre_type AS cadreType,
-            COALESCE(c.is_cert_standard, 0) AS isCertStandard,
-            CASE 
-                WHEN exp.account IS NOT NULL THEN 1 
-                ELSE 0 
-            END AS isExpert,
-            COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL) AS aiMaturity,
-            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS miniDeptName,
+            ANY_VALUE(
+                CASE 
+                    WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                    WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                    ELSE e.job_category
+                END
+            ) AS competenceCategory,
+            ANY_VALUE(
+                CASE 
+                    WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                    ELSE NULL
+                END
+            ) AS competenceSubcategory,
+            ANY_VALUE(SUBSTRING_INDEX(e.firstdept, '/', 1)) AS departname2,
+            ANY_VALUE(SUBSTRING_INDEX(e.seconddept, '/', 1)) AS departname3,
+            ANY_VALUE(SUBSTRING_INDEX(e.thirddept, '/', 1)) AS departname4,
+            ANY_VALUE(SUBSTRING_INDEX(e.fourthdept, '/', 1)) AS departname5,
+            ANY_VALUE(SUBSTRING_INDEX(e.fifthdept, '/', 1)) AS departname6,
+            ANY_VALUE(SUBSTRING_INDEX(e.sixthdept, '/', 1)) AS departname7,
+            ANY_VALUE(cert.cer_title) AS certTitle,
+            ANY_VALUE(cert.start_time) AS certStartTime,
+            ANY_VALUE(
+                CASE 
+                    WHEN exam.emp_num IS NOT NULL THEN 1 
+                    ELSE 0 
+                END
+            ) AS isPassedSubject2,
+            ANY_VALUE(
+                CASE 
+                    WHEN c.account IS NOT NULL THEN 1 
+                    ELSE 0 
+                END
+            ) AS isCadre,
+            ANY_VALUE(c.cadre_type) AS cadreType,
+            ANY_VALUE(COALESCE(c.is_cert_standard, 0)) AS isCertStandard,
+            ANY_VALUE(
+                CASE 
+                    WHEN exp.account IS NOT NULL THEN 1 
+                    ELSE 0 
+                END
+            ) AS isExpert,
+            ANY_VALUE(COALESCE(exp.position_ai_maturity, c.position_ai_maturity, NULL)) AS aiMaturity,
+            ANY_VALUE(SUBSTRING_INDEX(e.lowest_dept, '/', 1)) AS miniDeptName,
             NULL AS isQualificationsStandard
         FROM t_employee_sync e
         <choose>
@@ -237,7 +248,7 @@
                             WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                             ELSE e.job_category
                         END
-                    ) NOT IN ('研究类', '软件类', '系统类', '测试类')
+                    ) NOT IN ('研究类', '软件类', '系统类', '测试类', '产品开发项目管理类')
                 </when>
                 <otherwise>
                     AND (
@@ -250,7 +261,8 @@
                 </otherwise>
             </choose>
         </if>
-        ORDER BY e.employee_number, COALESCE(cert.start_time, '1900-01-01')
+        GROUP BY e.employee_number
+        ORDER BY e.employee_number, COALESCE(MAX(cert.start_time), '1900-01-01')
     </select>
 
     <!-- 根据部门层级和部门编码列表查询员工工号和职位族信息 -->
@@ -506,7 +518,7 @@
                             WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                             ELSE e.job_category
                         END
-                    ) NOT IN ('研究类', '软件类', '系统类', '测试类')
+                    ) NOT IN ('研究类', '软件类', '系统类', '测试类', '产品开发项目管理类')
                 </when>
                 <otherwise>
                     AND (
