@@ -384,9 +384,9 @@
                     )
                     AND q.competence_from IS NOT NULL
                     AND q.competence_to IS NOT NULL
-                    AND CURDATE() BETWEEN q.competence_from AND q.competence_to
                     AND q.competence_from = (
                         -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                        -- 注意：移除日期限制，查询所有任职记录（包括已过期的），与认证数据查询逻辑保持一致
                         SELECT q2.competence_from
                         FROM t_qualifications q2
                         WHERE q2.employee_number = e.employee_number
@@ -400,7 +400,6 @@
                         )
                         AND q2.competence_from IS NOT NULL
                         AND q2.competence_to IS NOT NULL
-                        AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                         ORDER BY 
                             CASE 
                                 -- 8级最高，依次到1级，初级最低
@@ -434,9 +433,9 @@
                     )
                     AND q.competence_from IS NOT NULL
                     AND q.competence_to IS NOT NULL
-                    AND CURDATE() BETWEEN q.competence_from AND q.competence_to
                     AND q.competence_from = (
                         -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                        -- 注意：移除日期限制，查询所有任职记录（包括已过期的），与认证数据查询逻辑保持一致
                         SELECT q2.competence_from
                         FROM t_qualifications q2
                         WHERE q2.employee_number = e.employee_number
@@ -450,7 +449,6 @@
                         )
                         AND q2.competence_from IS NOT NULL
                         AND q2.competence_to IS NOT NULL
-                        AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                         ORDER BY 
                             CASE 
                                 -- 8级最高，依次到1级，初级最低
