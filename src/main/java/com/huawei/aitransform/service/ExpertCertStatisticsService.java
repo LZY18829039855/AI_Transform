@@ -1890,13 +1890,44 @@ public class ExpertCertStatisticsService {
                     throw new IllegalArgumentException("部门不存在：" + deptCode);
                 }
                 
-                // 直接使用当前部门的层级进行查询
-                String deptLevelStr = deptInfo.getDeptLevel();
-                Integer queryLevel = Integer.parseInt(deptLevelStr);
+                // 查询所有层级子部门信息（与competence-category-cert-statistics保持一致）
+                List<DepartmentInfoVO> allSubDepts = departmentInfoMapper.getAllSubDepartments(deptCode);
                 
-                // 查询当前部门的员工任职详细信息
-                employeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
-                        queryLevel, deptCode, jobCategory, queryType);
+                // 构造部门编码列表（包括本部门本身和所有子部门）
+                List<DepartmentInfoVO> allDepts = new ArrayList<>();
+                allDepts.add(deptInfo);
+                if (allSubDepts != null && !allSubDepts.isEmpty()) {
+                    allDepts.addAll(allSubDepts);
+                }
+                
+                // 遍历所有部门，查询每个部门的员工任职详细信息
+                List<EmployeeDetailVO> allEmployeeDetails = new ArrayList<>();
+                
+                for (DepartmentInfoVO dept : allDepts) {
+                    if (dept.getDeptCode() != null && !dept.getDeptCode().trim().isEmpty()) {
+                        String deptLevelStr = dept.getDeptLevel();
+                        Integer queryLevel = Integer.parseInt(deptLevelStr);
+                        
+                        List<EmployeeDetailVO> deptEmployeeDetails = employeeMapper.getEmployeeQualifiedDetailsByDeptLevel(
+                                queryLevel, dept.getDeptCode(), jobCategory, queryType);
+                        if (deptEmployeeDetails != null && !deptEmployeeDetails.isEmpty()) {
+                            allEmployeeDetails.addAll(deptEmployeeDetails);
+                        }
+                    }
+                }
+                
+                // 按员工工号去重，确保每个员工只出现一次（与competence-category-cert-statistics保持一致）
+                Map<String, EmployeeDetailVO> employeeMap = new HashMap<>();
+                for (EmployeeDetailVO employee : allEmployeeDetails) {
+                    if (employee.getEmployeeNumber() != null && !employee.getEmployeeNumber().trim().isEmpty()) {
+                        // 如果该员工已存在，保留第一个（或者可以根据业务需求选择保留最新的）
+                        if (!employeeMap.containsKey(employee.getEmployeeNumber())) {
+                            employeeMap.put(employee.getEmployeeNumber(), employee);
+                        }
+                    }
+                }
+                
+                employeeDetails = new ArrayList<>(employeeMap.values());
             }
         } else if (personType == 1) {
             // 2. 查询部门信息
