@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.CoursePlanningInfoMapper">
+
+    <!-- 查询所有课程规划明细数据 -->
+    <select id="getAllCoursePlanningInfo" resultType="com.huawei.aitransform.entity.CoursePlanningInfoVO">
+        SELECT 
+            id,
+            big_type AS bigType,
+            syb_type AS sybType,
+            course_name AS courseName,
+            course_link AS courseLink,
+            credit,
+            course_status AS courseStatus,
+            knowledge_point AS knowledgePoint,
+            course_explain AS courseExplain,
+            study_duration AS studyDuration,
+            course_level AS courseLevel,
+            in_class_test AS inClassTest
+        FROM ai_course_planning_info
+        ORDER BY id
+    </select>
+
+</mapper>
+
