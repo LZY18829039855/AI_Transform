@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -18,6 +19,9 @@ public class ExternalApiController {
 
     @Autowired
     private ExpertCertStatisticsService expertCertStatisticsService;
+
+    @Autowired
+    private EntryLevelManagerService entryLevelManagerService;
 
     /**
      * 更新L2、L3专家的认证达标情况
@@ -118,6 +122,34 @@ public class ExternalApiController {
     public ResponseEntity<Result<Object>> updateExpertQualificationStandard() {
         try {
             java.util.Map<String, Object> result = expertCertStatisticsService.updateExpertQualificationStandard();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 同步基层主管（PL/TM）数据
+     * 
+     * 从 t_entry_level_manager_sync 表中筛选出当前有效的PL和TM数据，并同步至 t_entry_level_manager 表中。
+     * 
+     * 业务逻辑：
+     * 1. 查询所有状态为有效的PL和TM人员（status='Y'）
+     * 2. 查询所有任期结束的PL和TM（status='N'）
+     * 3. 从状态为有效的PL和TM中剔除任期结束的数据，得到当前有效的PL和TM信息
+     * 4. 将有效PL和TM的完整数据更新到 t_entry_level_manager 表中
+     * 
+     * @return 同步结果信息（包含同步的数据数量）
+     */
+    @PostMapping("/sync-entry-level-manager")
+    public ResponseEntity<Result<Object>> syncEntryLevelManager() {
+        try {
+            java.util.Map<String, Object> result = entryLevelManagerService.syncEntryLevelManager();
             Boolean success = (Boolean) result.get("success");
             if (success != null && success) {
                 return ResponseEntity.ok(Result.success((String) result.get("message"), result));

@@ -1,0 +1,285 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.EntryLevelManagerMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.huawei.aitransform.entity.EntryLevelManager">
+        <id column="employee_appointment_id" property="employeeAppointmentId" jdbcType="BIGINT"/>
+        <result column="employee_number" property="employeeNumber" jdbcType="VARCHAR"/>
+        <result column="organization_code" property="organizationCode" jdbcType="VARCHAR"/>
+        <result column="organization_name_cn" property="organizationNameCn" jdbcType="VARCHAR"/>
+        <result column="job_code" property="jobCode" jdbcType="VARCHAR"/>
+        <result column="job_name_cn" property="jobNameCn" jdbcType="VARCHAR"/>
+        <result column="start_date" property="startDate" jdbcType="TIMESTAMP"/>
+        <result column="end_date" property="endDate" jdbcType="TIMESTAMP"/>
+        <result column="status" property="status" jdbcType="VARCHAR"/>
+        <result column="l1_department_code" property="l1DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l2_department_code" property="l2DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l3_department_code" property="l3DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l4_department_code" property="l4DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l5_department_code" property="l5DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l6_department_code" property="l6DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l7_department_code" property="l7DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l1_department_cn_name" property="l1DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l2_department_cn_name" property="l2DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l3_department_cn_name" property="l3DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l4_department_cn_name" property="l4DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l5_department_cn_name" property="l5DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l6_department_cn_name" property="l6DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="l7_department_cn_name" property="l7DepartmentCnName" jdbcType="VARCHAR"/>
+    </resultMap>
+
+    <!-- 查询所有状态为有效的PL和TM人员 -->
+    <select id="selectValidPlAndTm" resultMap="BaseResultMap">
+        SELECT s.* 
+        FROM t_entry_level_manager_sync s 
+        JOIN t_employee_sync t ON t.employee_number = s.employee_number 
+        WHERE s.job_name_cn IN ('PL', 'TM')
+          AND t.period_id = '20251222'
+          AND s.l1_department_code = '075774'
+          AND s.status = 'Y'
+        GROUP BY s.employee_number
+    </select>
+
+    <!-- 查询所有任期结束的PL和TM -->
+    <select id="selectExpiredPlAndTm" resultMap="BaseResultMap">
+        SELECT s.* 
+        FROM t_entry_level_manager_sync s 
+        JOIN t_employee_sync t ON t.employee_number = s.employee_number 
+        WHERE s.job_name_cn IN ('PL', 'TM')
+          AND t.period_id = '20251222'
+          AND s.l1_department_code = '075774'
+          AND s.status = 'N'
+        GROUP BY s.employee_number
+    </select>
+
+    <!-- 根据employee_appointment_id查询记录 -->
+    <select id="selectByEmployeeAppointmentId" resultMap="BaseResultMap">
+        SELECT * 
+        FROM t_entry_level_manager 
+        WHERE employee_appointment_id = #{employeeAppointmentId}
+    </select>
+
+    <!-- 根据employee_number查询记录 -->
+    <select id="selectByEmployeeNumber" resultMap="BaseResultMap">
+        SELECT * 
+        FROM t_entry_level_manager 
+        WHERE employee_number = #{employeeNumber}
+        LIMIT 1
+    </select>
+
+    <!-- 插入记录 -->
+    <insert id="insert" parameterType="com.huawei.aitransform.entity.EntryLevelManager">
+        INSERT INTO t_entry_level_manager (
+            employee_appointment_id,
+            employee_number,
+            organization_code,
+            organization_name_cn,
+            job_code,
+            job_name_cn,
+            start_date,
+            end_date,
+            status,
+            l1_department_code,
+            l2_department_code,
+            l3_department_code,
+            l4_department_code,
+            l5_department_code,
+            l6_department_code,
+            l7_department_code,
+            l1_department_cn_name,
+            l2_department_cn_name,
+            l3_department_cn_name,
+            l4_department_cn_name,
+            l5_department_cn_name,
+            l6_department_cn_name,
+            l7_department_cn_name
+        ) VALUES (
+            #{employeeAppointmentId},
+            #{employeeNumber},
+            #{organizationCode},
+            #{organizationNameCn},
+            #{jobCode},
+            #{jobNameCn},
+            #{startDate},
+            #{endDate},
+            #{status},
+            #{l1DepartmentCode},
+            #{l2DepartmentCode},
+            #{l3DepartmentCode},
+            #{l4DepartmentCode},
+            #{l5DepartmentCode},
+            #{l6DepartmentCode},
+            #{l7DepartmentCode},
+            #{l1DepartmentCnName},
+            #{l2DepartmentCnName},
+            #{l3DepartmentCnName},
+            #{l4DepartmentCnName},
+            #{l5DepartmentCnName},
+            #{l6DepartmentCnName},
+            #{l7DepartmentCnName}
+        )
+    </insert>
+
+    <!-- 更新记录（根据employee_appointment_id） -->
+    <update id="update" parameterType="com.huawei.aitransform.entity.EntryLevelManager">
+        UPDATE t_entry_level_manager
+        SET employee_number = #{employeeNumber},
+            organization_code = #{organizationCode},
+            organization_name_cn = #{organizationNameCn},
+            job_code = #{jobCode},
+            job_name_cn = #{jobNameCn},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            status = #{status},
+            l1_department_code = #{l1DepartmentCode},
+            l2_department_code = #{l2DepartmentCode},
+            l3_department_code = #{l3DepartmentCode},
+            l4_department_code = #{l4DepartmentCode},
+            l5_department_code = #{l5DepartmentCode},
+            l6_department_code = #{l6DepartmentCode},
+            l7_department_code = #{l7DepartmentCode},
+            l1_department_cn_name = #{l1DepartmentCnName},
+            l2_department_cn_name = #{l2DepartmentCnName},
+            l3_department_cn_name = #{l3DepartmentCnName},
+            l4_department_cn_name = #{l4DepartmentCnName},
+            l5_department_cn_name = #{l5DepartmentCnName},
+            l6_department_cn_name = #{l6DepartmentCnName},
+            l7_department_cn_name = #{l7DepartmentCnName}
+        WHERE employee_appointment_id = #{employeeAppointmentId}
+    </update>
+
+    <!-- 根据employee_number更新记录 -->
+    <update id="updateByEmployeeNumber" parameterType="com.huawei.aitransform.entity.EntryLevelManager">
+        UPDATE t_entry_level_manager
+        SET employee_appointment_id = #{employeeAppointmentId},
+            organization_code = #{organizationCode},
+            organization_name_cn = #{organizationNameCn},
+            job_code = #{jobCode},
+            job_name_cn = #{jobNameCn},
+            start_date = #{startDate},
+            end_date = #{endDate},
+            status = #{status},
+            l1_department_code = #{l1DepartmentCode},
+            l2_department_code = #{l2DepartmentCode},
+            l3_department_code = #{l3DepartmentCode},
+            l4_department_code = #{l4DepartmentCode},
+            l5_department_code = #{l5DepartmentCode},
+            l6_department_code = #{l6DepartmentCode},
+            l7_department_code = #{l7DepartmentCode},
+            l1_department_cn_name = #{l1DepartmentCnName},
+            l2_department_cn_name = #{l2DepartmentCnName},
+            l3_department_cn_name = #{l3DepartmentCnName},
+            l4_department_cn_name = #{l4DepartmentCnName},
+            l5_department_cn_name = #{l5DepartmentCnName},
+            l6_department_cn_name = #{l6DepartmentCnName},
+            l7_department_cn_name = #{l7DepartmentCnName}
+        WHERE employee_number = #{employeeNumber}
+    </update>
+
+    <!-- 批量插入或更新（根据employee_number，使用ON DUPLICATE KEY UPDATE） -->
+    <!-- 注意：需要确保employee_number字段有唯一索引，否则ON DUPLICATE KEY UPDATE不会生效 -->
+    <insert id="batchInsertOrUpdate" parameterType="java.util.List">
+        INSERT INTO t_entry_level_manager (
+            employee_appointment_id,
+            employee_number,
+            organization_code,
+            organization_name_cn,
+            job_code,
+            job_name_cn,
+            start_date,
+            end_date,
+            status,
+            l1_department_code,
+            l2_department_code,
+            l3_department_code,
+            l4_department_code,
+            l5_department_code,
+            l6_department_code,
+            l7_department_code,
+            l1_department_cn_name,
+            l2_department_cn_name,
+            l3_department_cn_name,
+            l4_department_cn_name,
+            l5_department_cn_name,
+            l6_department_cn_name,
+            l7_department_cn_name
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.employeeAppointmentId},
+                #{item.employeeNumber},
+                #{item.organizationCode},
+                #{item.organizationNameCn},
+                #{item.jobCode},
+                #{item.jobNameCn},
+                #{item.startDate},
+                #{item.endDate},
+                #{item.status},
+                #{item.l1DepartmentCode},
+                #{item.l2DepartmentCode},
+                #{item.l3DepartmentCode},
+                #{item.l4DepartmentCode},
+                #{item.l5DepartmentCode},
+                #{item.l6DepartmentCode},
+                #{item.l7DepartmentCode},
+                #{item.l1DepartmentCnName},
+                #{item.l2DepartmentCnName},
+                #{item.l3DepartmentCnName},
+                #{item.l4DepartmentCnName},
+                #{item.l5DepartmentCnName},
+                #{item.l6DepartmentCnName},
+                #{item.l7DepartmentCnName}
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+            employee_appointment_id = VALUES(employee_appointment_id),
+            organization_code = VALUES(organization_code),
+            organization_name_cn = VALUES(organization_name_cn),
+            job_code = VALUES(job_code),
+            job_name_cn = VALUES(job_name_cn),
+            start_date = VALUES(start_date),
+            end_date = VALUES(end_date),
+            status = VALUES(status),
+            l1_department_code = VALUES(l1_department_code),
+            l2_department_code = VALUES(l2_department_code),
+            l3_department_code = VALUES(l3_department_code),
+            l4_department_code = VALUES(l4_department_code),
+            l5_department_code = VALUES(l5_department_code),
+            l6_department_code = VALUES(l6_department_code),
+            l7_department_code = VALUES(l7_department_code),
+            l1_department_cn_name = VALUES(l1_department_cn_name),
+            l2_department_cn_name = VALUES(l2_department_cn_name),
+            l3_department_cn_name = VALUES(l3_department_cn_name),
+            l4_department_cn_name = VALUES(l4_department_cn_name),
+            l5_department_cn_name = VALUES(l5_department_cn_name),
+            l6_department_cn_name = VALUES(l6_department_cn_name),
+            l7_department_cn_name = VALUES(l7_department_cn_name)
+    </insert>
+
+    <!-- 查询目标表中所有的employee_number -->
+    <select id="selectAllEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT employee_number 
+        FROM t_entry_level_manager 
+        WHERE employee_number IS NOT NULL 
+          AND employee_number != ''
+    </select>
+
+    <!-- 根据employee_number删除记录 -->
+    <delete id="deleteByEmployeeNumber">
+        DELETE FROM t_entry_level_manager 
+        WHERE employee_number = #{employeeNumber}
+    </delete>
+
+    <!-- 批量根据employee_number删除记录 -->
+    <delete id="batchDeleteByEmployeeNumbers" parameterType="java.util.List">
+        DELETE FROM t_entry_level_manager 
+        WHERE employee_number IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </delete>
+
+</mapper>
+
