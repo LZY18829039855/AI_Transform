@@ -1,4 +1,4 @@
-﻿package com.huawei.aitransform.entity;
+package com.huawei.aitransform.entity;
 
 import java.io.Serializable;
 import java.util.Date;
