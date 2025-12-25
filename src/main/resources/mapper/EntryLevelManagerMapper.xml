@@ -28,6 +28,7 @@
         <result column="l5_department_cn_name" property="l5DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="l6_department_cn_name" property="l6DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="l7_department_cn_name" property="l7DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="posion_name_cn" property="posionNameCn" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!-- 查询所有状态为有效的PL和TM人员 -->
@@ -94,7 +95,8 @@
             l4_department_cn_name,
             l5_department_cn_name,
             l6_department_cn_name,
-            l7_department_cn_name
+            l7_department_cn_name,
+            posion_name_cn
         ) VALUES (
             #{employeeAppointmentId},
             #{employeeNumber},
@@ -118,7 +120,8 @@
             #{l4DepartmentCnName},
             #{l5DepartmentCnName},
             #{l6DepartmentCnName},
-            #{l7DepartmentCnName}
+            #{l7DepartmentCnName},
+            #{posionNameCn}
         )
     </insert>
 
@@ -146,7 +149,8 @@
             l4_department_cn_name = #{l4DepartmentCnName},
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
-            l7_department_cn_name = #{l7DepartmentCnName}
+            l7_department_cn_name = #{l7DepartmentCnName},
+            posion_name_cn = #{posionNameCn}
         WHERE employee_appointment_id = #{employeeAppointmentId}
     </update>
 
@@ -174,7 +178,8 @@
             l4_department_cn_name = #{l4DepartmentCnName},
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
-            l7_department_cn_name = #{l7DepartmentCnName}
+            l7_department_cn_name = #{l7DepartmentCnName},
+            posion_name_cn = #{posionNameCn}
         WHERE employee_number = #{employeeNumber}
     </update>
 
@@ -204,7 +209,8 @@
             l4_department_cn_name,
             l5_department_cn_name,
             l6_department_cn_name,
-            l7_department_cn_name
+            l7_department_cn_name,
+            posion_name_cn
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -230,7 +236,8 @@
                 #{item.l4DepartmentCnName},
                 #{item.l5DepartmentCnName},
                 #{item.l6DepartmentCnName},
-                #{item.l7DepartmentCnName}
+                #{item.l7DepartmentCnName},
+                #{item.posionNameCn}
             )
         </foreach>
         ON DUPLICATE KEY UPDATE
@@ -255,7 +262,8 @@
             l4_department_cn_name = VALUES(l4_department_cn_name),
             l5_department_cn_name = VALUES(l5_department_cn_name),
             l6_department_cn_name = VALUES(l6_department_cn_name),
-            l7_department_cn_name = VALUES(l7_department_cn_name)
+            l7_department_cn_name = VALUES(l7_department_cn_name),
+            posion_name_cn = VALUES(posion_name_cn)
     </insert>
 
     <!-- 查询目标表中所有的employee_number -->
