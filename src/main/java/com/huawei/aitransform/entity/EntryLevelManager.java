@@ -1,10 +1,10 @@
-package com.huawei.aitransform.entity;
+﻿package com.huawei.aitransform.entity;
 
 import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 基层主管数据实体类
+ * 基层主管数据实体�?
  * 对应表：t_entry_level_manager
  */
 public class EntryLevelManager implements Serializable {
@@ -22,12 +22,12 @@ public class EntryLevelManager implements Serializable {
     private String employeeNumber;
 
     /**
-     * 最小部门编码
+     * 最小部门编�?
      */
     private String organizationCode;
 
     /**
-     * 最小部门中文
+     * 最小部门中�?
      */
     private String organizationNameCn;
 
@@ -42,7 +42,7 @@ public class EntryLevelManager implements Serializable {
     private String jobNameCn;
 
     /**
-     * 任命开始时间
+     * 任命开始时�?
      */
     private Date startDate;
 
@@ -52,12 +52,12 @@ public class EntryLevelManager implements Serializable {
     private Date endDate;
 
     /**
-     * 状态
+     * 状�?
      */
     private String status;
 
     /**
-     * 一层组织编码
+     * 一层组织编�?
      */
     private String l1DepartmentCode;
 
@@ -92,44 +92,44 @@ public class EntryLevelManager implements Serializable {
     private String l7DepartmentCode;
 
     /**
-     * 1层组织中文名称
+     * 1层组织中文名�?
      */
     private String l1DepartmentCnName;
 
     /**
-     * 2层组织中文名称
+     * 2层组织中文名�?
      */
     private String l2DepartmentCnName;
 
     /**
-     * 3层组织中文名称
+     * 3层组织中文名�?
      */
     private String l3DepartmentCnName;
 
     /**
-     * 4层组织中文名称
+     * 4层组织中文名�?
      */
     private String l4DepartmentCnName;
 
     /**
-     * 5层组织中文名称
+     * 5层组织中文名�?
      */
     private String l5DepartmentCnName;
 
     /**
-     * 6层组织中文名称
+     * 6层组织中文名�?
      */
     private String l6DepartmentCnName;
 
     /**
-     * 7层组织中文名称
+     * 7层组织中文名�?
      */
     private String l7DepartmentCnName;
 
     /**
-     * 职位名称中文（数据库字段：posion_name_cn）
+     * 职位名称中文（数据库字段：position_name_cn�?
      */
-    private String posionNameCn;
+    private String positionNameCn;
 
     public EntryLevelManager() {
     }
@@ -318,12 +318,12 @@ public class EntryLevelManager implements Serializable {
         this.l7DepartmentCnName = l7DepartmentCnName;
     }
 
-    public String getPosionNameCn() {
-        return posionNameCn;
+    public String getpositionNameCn() {
+        return positionNameCn;
     }
 
-    public void setPosionNameCn(String posionNameCn) {
-        this.posionNameCn = posionNameCn;
+    public void setpositionNameCn(String positionNameCn) {
+        this.positionNameCn = positionNameCn;
     }
 }
 

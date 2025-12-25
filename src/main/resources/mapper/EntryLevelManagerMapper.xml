@@ -28,7 +28,7 @@
         <result column="l5_department_cn_name" property="l5DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="l6_department_cn_name" property="l6DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="l7_department_cn_name" property="l7DepartmentCnName" jdbcType="VARCHAR"/>
-        <result column="posion_name_cn" property="posionNameCn" jdbcType="VARCHAR"/>
+        <result column="position_name_cn" property="positionNameCn" jdbcType="VARCHAR"/>
     </resultMap>
 
     <!-- 查询所有状态为有效的PL和TM人员 -->
@@ -96,7 +96,7 @@
             l5_department_cn_name,
             l6_department_cn_name,
             l7_department_cn_name,
-            posion_name_cn
+            position_name_cn
         ) VALUES (
             #{employeeAppointmentId},
             #{employeeNumber},
@@ -121,11 +121,11 @@
             #{l5DepartmentCnName},
             #{l6DepartmentCnName},
             #{l7DepartmentCnName},
-            #{posionNameCn}
+            #{positionNameCn}
         )
     </insert>
 
-    <!-- 更新记录（根据employee_appointment_id） -->
+    <!-- 更新记录（根据employee_appointment_id�?-->
     <update id="update" parameterType="com.huawei.aitransform.entity.EntryLevelManager">
         UPDATE t_entry_level_manager
         SET employee_number = #{employeeNumber},
@@ -150,7 +150,7 @@
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
             l7_department_cn_name = #{l7DepartmentCnName},
-            posion_name_cn = #{posionNameCn}
+            position_name_cn = #{positionNameCn}
         WHERE employee_appointment_id = #{employeeAppointmentId}
     </update>
 
@@ -179,11 +179,11 @@
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
             l7_department_cn_name = #{l7DepartmentCnName},
-            posion_name_cn = #{posionNameCn}
+            position_name_cn = #{positionNameCn}
         WHERE employee_number = #{employeeNumber}
     </update>
 
-    <!-- 批量插入或更新（根据employee_number，使用ON DUPLICATE KEY UPDATE） -->
+    <!-- 批量插入或更新（根据employee_number，使用ON DUPLICATE KEY UPDATE�?-->
     <!-- 注意：需要确保employee_number字段有唯一索引，否则ON DUPLICATE KEY UPDATE不会生效 -->
     <insert id="batchInsertOrUpdate" parameterType="java.util.List">
         INSERT INTO t_entry_level_manager (
@@ -210,7 +210,7 @@
             l5_department_cn_name,
             l6_department_cn_name,
             l7_department_cn_name,
-            posion_name_cn
+            position_name_cn
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -237,7 +237,7 @@
                 #{item.l5DepartmentCnName},
                 #{item.l6DepartmentCnName},
                 #{item.l7DepartmentCnName},
-                #{item.posionNameCn}
+                #{item.positionNameCn}
             )
         </foreach>
         ON DUPLICATE KEY UPDATE
@@ -263,7 +263,7 @@
             l5_department_cn_name = VALUES(l5_department_cn_name),
             l6_department_cn_name = VALUES(l6_department_cn_name),
             l7_department_cn_name = VALUES(l7_department_cn_name),
-            posion_name_cn = VALUES(posion_name_cn)
+            position_name_cn = VALUES(position_name_cn)
     </insert>
 
     <!-- 查询目标表中所有的employee_number -->
