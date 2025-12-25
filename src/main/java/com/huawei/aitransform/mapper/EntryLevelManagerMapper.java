@@ -2,6 +2,7 @@ package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.EntryLevelManager;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -84,5 +85,12 @@ public interface EntryLevelManagerMapper {
      * @return 影响行数
      */
     int batchDeleteByEmployeeNumbers(List<String> employeeNumbers);
+
+    /**
+     * 查询获得3级及以上AI任职的员工工号列表
+     * @param employeeNumbers 员工工号列表
+     * @return 获得3级及以上AI任职的员工工号列表
+     */
+    List<String> selectQualifiedEmployeeNumbersLevel3Plus(@Param("employeeNumbers") List<String> employeeNumbers);
 }
 

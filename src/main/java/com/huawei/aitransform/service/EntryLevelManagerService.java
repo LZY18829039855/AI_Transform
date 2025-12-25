@@ -8,7 +8,9 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +26,9 @@ public class EntryLevelManagerService {
 
     @Autowired
     private EntryLevelManagerMapper entryLevelManagerMapper;
+
+    @Autowired
+    private ExpertCertStatisticsService expertCertStatisticsService;
 
     /**
      * 同步有效的PL和TM数据到目标表
@@ -141,6 +146,52 @@ public class EntryLevelManagerService {
                     .collect(Collectors.toList());
                 
                 logger.info("需要插入的数据：{}条，需要更新的数据：{}条", toInsert.size(), toUpdate.size());
+                
+                // 7. 批量查询认证达标和任职达标的员工工号
+                List<String> employeeNumberList = new ArrayList<>(employeeNumbers);
+                Set<String> certifiedEmployeeNumbers = new HashSet<>();
+                Set<String> qualifiedEmployeeNumbers = new HashSet<>();
+                
+                if (!employeeNumberList.isEmpty()) {
+                    // 查询通过专业级认证的员工（认证达标）
+                    List<String> certifiedList = expertCertStatisticsService.getCertifiedEmployeeNumbers(employeeNumberList);
+                    if (certifiedList != null) {
+                        certifiedEmployeeNumbers.addAll(certifiedList);
+                    }
+                    logger.info("查询到通过专业级认证的员工数量：{}", certifiedEmployeeNumbers.size());
+                    
+                    // 查询获得3级及以上AI任职的员工（任职达标）
+                    List<String> qualifiedList = entryLevelManagerMapper.selectQualifiedEmployeeNumbersLevel3Plus(employeeNumberList);
+                    if (qualifiedList != null) {
+                        qualifiedEmployeeNumbers.addAll(qualifiedList);
+                    }
+                    logger.info("查询到获得3级及以上AI任职的员工数量：{}", qualifiedEmployeeNumbers.size());
+                }
+                
+                // 8. 为每个员工设置认证达标和任职达标字段
+                for (EntryLevelManager item : toInsert) {
+                    if (item.getEmployeeNumber() != null) {
+                        // 设置认证达标：通过专业级认证为1，否则为0
+                        item.setIsCertStandard(certifiedEmployeeNumbers.contains(item.getEmployeeNumber()) ? 1 : 0);
+                        // 设置任职达标：获得3级及以上AI任职为1，否则为0
+                        item.setIsQualificationsStandard(qualifiedEmployeeNumbers.contains(item.getEmployeeNumber()) ? 1 : 0);
+                    } else {
+                        item.setIsCertStandard(0);
+                        item.setIsQualificationsStandard(0);
+                    }
+                }
+                
+                for (EntryLevelManager item : toUpdate) {
+                    if (item.getEmployeeNumber() != null) {
+                        // 设置认证达标：通过专业级认证为1，否则为0
+                        item.setIsCertStandard(certifiedEmployeeNumbers.contains(item.getEmployeeNumber()) ? 1 : 0);
+                        // 设置任职达标：获得3级及以上AI任职为1，否则为0
+                        item.setIsQualificationsStandard(qualifiedEmployeeNumbers.contains(item.getEmployeeNumber()) ? 1 : 0);
+                    } else {
+                        item.setIsCertStandard(0);
+                        item.setIsQualificationsStandard(0);
+                    }
+                }
                 
                 // 批量插入
                 if (!toInsert.isEmpty()) {

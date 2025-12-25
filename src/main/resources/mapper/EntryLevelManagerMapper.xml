@@ -29,6 +29,8 @@
         <result column="l6_department_cn_name" property="l6DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="l7_department_cn_name" property="l7DepartmentCnName" jdbcType="VARCHAR"/>
         <result column="position_name_cn" property="positionNameCn" jdbcType="VARCHAR"/>
+        <result column="is_qualifications_standard" property="isQualificationsStandard" jdbcType="INTEGER"/>
+        <result column="is_cert_standard" property="isCertStandard" jdbcType="INTEGER"/>
     </resultMap>
 
     <!-- 查询所有状态为有效的PL和TM人员 -->
@@ -96,7 +98,9 @@
             l5_department_cn_name,
             l6_department_cn_name,
             l7_department_cn_name,
-            position_name_cn
+            position_name_cn,
+            is_qualifications_standard,
+            is_cert_standard
         ) VALUES (
             #{employeeAppointmentId},
             #{employeeNumber},
@@ -121,7 +125,9 @@
             #{l5DepartmentCnName},
             #{l6DepartmentCnName},
             #{l7DepartmentCnName},
-            #{positionNameCn}
+            #{positionNameCn},
+            #{isQualificationsStandard},
+            #{isCertStandard}
         )
     </insert>
 
@@ -150,7 +156,9 @@
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
             l7_department_cn_name = #{l7DepartmentCnName},
-            position_name_cn = #{positionNameCn}
+            position_name_cn = #{positionNameCn},
+            is_qualifications_standard = #{isQualificationsStandard},
+            is_cert_standard = #{isCertStandard}
         WHERE employee_appointment_id = #{employeeAppointmentId}
     </update>
 
@@ -179,7 +187,9 @@
             l5_department_cn_name = #{l5DepartmentCnName},
             l6_department_cn_name = #{l6DepartmentCnName},
             l7_department_cn_name = #{l7DepartmentCnName},
-            position_name_cn = #{positionNameCn}
+            position_name_cn = #{positionNameCn},
+            is_qualifications_standard = #{isQualificationsStandard},
+            is_cert_standard = #{isCertStandard}
         WHERE employee_number = #{employeeNumber}
     </update>
 
@@ -210,7 +220,9 @@
             l5_department_cn_name,
             l6_department_cn_name,
             l7_department_cn_name,
-            position_name_cn
+            position_name_cn,
+            is_qualifications_standard,
+            is_cert_standard
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -237,7 +249,9 @@
                 #{item.l5DepartmentCnName},
                 #{item.l6DepartmentCnName},
                 #{item.l7DepartmentCnName},
-                #{item.positionNameCn}
+                #{item.positionNameCn},
+                #{item.isQualificationsStandard},
+                #{item.isCertStandard}
             )
         </foreach>
         ON DUPLICATE KEY UPDATE
@@ -263,7 +277,9 @@
             l5_department_cn_name = VALUES(l5_department_cn_name),
             l6_department_cn_name = VALUES(l6_department_cn_name),
             l7_department_cn_name = VALUES(l7_department_cn_name),
-            position_name_cn = VALUES(position_name_cn)
+            position_name_cn = VALUES(position_name_cn),
+            is_qualifications_standard = VALUES(is_qualifications_standard),
+            is_cert_standard = VALUES(is_cert_standard)
     </insert>
 
     <!-- 查询目标表中所有的employee_number -->
@@ -288,5 +304,27 @@
             #{item}
         </foreach>
     </delete>
+
+    <!-- 查询获得3级及以上AI任职的员工工号列表 -->
+    <select id="selectQualifiedEmployeeNumbersLevel3Plus" resultType="java.lang.String">
+        SELECT DISTINCT q.employee_number
+        FROM t_qualifications q
+        WHERE q.employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+        AND q.employee_number IS NOT NULL
+        AND q.employee_number != ''
+        AND q.direction_cn_name IN (
+            '数据科学与AI工程（ICT）',
+            'AI算法及应用（ICT）',
+            'AI软件工程与工具（ICT）',
+            'AI系统测试（ICT）'
+        )
+        AND q.competence_rating_cn IN ('3级', '4级', '5级', '6级', '7级', '8级')
+        AND q.competence_from IS NOT NULL
+        AND q.competence_to IS NOT NULL
+        AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+    </select>
 
 </mapper>

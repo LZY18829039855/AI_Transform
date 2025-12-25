@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.Date;
 
 /**
- * 基层主管数据实体�?
+ * 基层主管数据实体类
  * 对应表：t_entry_level_manager
  */
 public class EntryLevelManager implements Serializable {
@@ -22,12 +22,12 @@ public class EntryLevelManager implements Serializable {
     private String employeeNumber;
 
     /**
-     * 最小部门编�?
+     * 最小部门编码
      */
     private String organizationCode;
 
     /**
-     * 最小部门中�?
+     * 最小部门中文
      */
     private String organizationNameCn;
 
@@ -42,7 +42,7 @@ public class EntryLevelManager implements Serializable {
     private String jobNameCn;
 
     /**
-     * 任命开始时�?
+     * 任命开始时间
      */
     private Date startDate;
 
@@ -52,12 +52,12 @@ public class EntryLevelManager implements Serializable {
     private Date endDate;
 
     /**
-     * 状�?
+     * 状态
      */
     private String status;
 
     /**
-     * 一层组织编�?
+     * 一层组织编码
      */
     private String l1DepartmentCode;
 
@@ -92,44 +92,56 @@ public class EntryLevelManager implements Serializable {
     private String l7DepartmentCode;
 
     /**
-     * 1层组织中文名�?
+     * 1层组织中文名称
      */
     private String l1DepartmentCnName;
 
     /**
-     * 2层组织中文名�?
+     * 2层组织中文名称
      */
     private String l2DepartmentCnName;
 
     /**
-     * 3层组织中文名�?
+     * 3层组织中文名称
      */
     private String l3DepartmentCnName;
 
     /**
-     * 4层组织中文名�?
+     * 4层组织中文名称
      */
     private String l4DepartmentCnName;
 
     /**
-     * 5层组织中文名�?
+     * 5层组织中文名称
      */
     private String l5DepartmentCnName;
 
     /**
-     * 6层组织中文名�?
+     * 6层组织中文名称
      */
     private String l6DepartmentCnName;
 
     /**
-     * 7层组织中文名�?
+     * 7层组织中文名称
      */
     private String l7DepartmentCnName;
 
     /**
-     * 职位名称中文（数据库字段：position_name_cn�?
+     * 职位名称中文（数据库字段：position_name_cn）
      */
     private String positionNameCn;
+
+    /**
+     * 任职是否达标（is_qualifications_standard）
+     * 1-达标（获得3+（包括3级）的AI任职），0-不达标
+     */
+    private Integer isQualificationsStandard;
+
+    /**
+     * 认证是否达标（is_cert_standard）
+     * 1-达标（通过专业级），0-不达标
+     */
+    private Integer isCertStandard;
 
     public EntryLevelManager() {
     }
@@ -318,12 +330,28 @@ public class EntryLevelManager implements Serializable {
         this.l7DepartmentCnName = l7DepartmentCnName;
     }
 
-    public String getpositionNameCn() {
+    public String getPositionNameCn() {
         return positionNameCn;
     }
 
-    public void setpositionNameCn(String positionNameCn) {
+    public void setPositionNameCn(String positionNameCn) {
         this.positionNameCn = positionNameCn;
+    }
+
+    public Integer getIsQualificationsStandard() {
+        return isQualificationsStandard;
+    }
+
+    public void setIsQualificationsStandard(Integer isQualificationsStandard) {
+        this.isQualificationsStandard = isQualificationsStandard;
+    }
+
+    public Integer getIsCertStandard() {
+        return isCertStandard;
+    }
+
+    public void setIsCertStandard(Integer isCertStandard) {
+        this.isCertStandard = isCertStandard;
     }
 }
 
