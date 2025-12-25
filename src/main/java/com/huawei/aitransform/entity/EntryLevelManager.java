@@ -126,6 +126,11 @@ public class EntryLevelManager implements Serializable {
      */
     private String l7DepartmentCnName;
 
+    /**
+     * 职位名称中文（数据库字段：posion_name_cn）
+     */
+    private String posionNameCn;
+
     public EntryLevelManager() {
     }
 
@@ -311,6 +316,14 @@ public class EntryLevelManager implements Serializable {
 
     public void setL7DepartmentCnName(String l7DepartmentCnName) {
         this.l7DepartmentCnName = l7DepartmentCnName;
+    }
+
+    public String getPosionNameCn() {
+        return posionNameCn;
+    }
+
+    public void setPosionNameCn(String posionNameCn) {
+        this.posionNameCn = posionNameCn;
     }
 }
 
