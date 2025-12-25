@@ -1,6 +1,9 @@
 package com.huawei.aitransform.service;
 
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.EntryLevelManager;
+import com.huawei.aitransform.entity.PlTmCertStatisticsResponseVO;
+import com.huawei.aitransform.entity.PlTmDepartmentStatisticsVO;
 import com.huawei.aitransform.mapper.EntryLevelManagerMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -236,6 +239,56 @@ public class EntryLevelManagerService {
             logger.error("同步基层主管数据失败", e);
             result.put("success", false);
             result.put("message", "同步失败：" + e.getMessage());
+            throw e;
+        }
+    }
+
+    /**
+     * 查询PL、TM任职与认证统计数据
+     * 统计研发管理部下各四级部门以及研发管理部整体的PL/TM总人数、通过任职标准的人数及占比、通过认证标准的人数及占比
+     * 
+     * @return PL/TM任职与认证统计响应数据
+     */
+    public PlTmCertStatisticsResponseVO getPlTmCertStatistics() {
+        logger.info("开始查询PL/TM任职与认证统计数据");
+        
+        try {
+            // 研发管理部部门编码
+            String l3DepartmentCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
+            
+            // 1. 查询各四级部门统计数据
+            List<PlTmDepartmentStatisticsVO> departmentList = entryLevelManagerMapper.selectPlTmStatisticsByL4Department(l3DepartmentCode);
+            if (departmentList == null) {
+                departmentList = new ArrayList<>();
+            }
+            logger.info("查询到{}个四级部门的统计数据", departmentList.size());
+            
+            // 2. 查询研发管理部汇总数据
+            PlTmDepartmentStatisticsVO summary = entryLevelManagerMapper.selectPlTmStatisticsSummary(l3DepartmentCode);
+            if (summary == null) {
+                // 如果没有数据，创建一个空的汇总对象
+                summary = new PlTmDepartmentStatisticsVO();
+                summary.setDeptCode(l3DepartmentCode);
+                summary.setDeptName("研发管理部");
+                summary.setTotalCount(0);
+                summary.setQualifiedCount(0);
+                summary.setQualifiedRatio(0.0);
+                summary.setCertCount(0);
+                summary.setCertRatio(0.0);
+            }
+            logger.info("研发管理部汇总数据：总人数={}, 任职达标人数={}, 认证达标人数={}", 
+                summary.getTotalCount(), summary.getQualifiedCount(), summary.getCertCount());
+            
+            // 3. 构建响应对象
+            PlTmCertStatisticsResponseVO response = new PlTmCertStatisticsResponseVO();
+            response.setSummary(summary);
+            response.setDepartmentList(departmentList);
+            
+            logger.info("PL/TM任职与认证统计数据查询完成");
+            return response;
+            
+        } catch (Exception e) {
+            logger.error("查询PL/TM任职与认证统计数据失败", e);
             throw e;
         }
     }

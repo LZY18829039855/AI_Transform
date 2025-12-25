@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.EntryLevelManager;
+import com.huawei.aitransform.entity.PlTmDepartmentStatisticsVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
@@ -92,5 +93,19 @@ public interface EntryLevelManagerMapper {
      * @return 获得3级及以上AI任职的员工工号列表
      */
     List<String> selectQualifiedEmployeeNumbersLevel3Plus(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 统计研发管理部下各四级部门的PL/TM任职与认证数据
+     * @param l3DepartmentCode 三级部门编码（研发管理部：030681）
+     * @return 各四级部门统计数据列表
+     */
+    List<PlTmDepartmentStatisticsVO> selectPlTmStatisticsByL4Department(@Param("l3DepartmentCode") String l3DepartmentCode);
+
+    /**
+     * 统计研发管理部整体的PL/TM任职与认证数据
+     * @param l3DepartmentCode 三级部门编码（研发管理部：030681）
+     * @return 研发管理部汇总统计数据
+     */
+    PlTmDepartmentStatisticsVO selectPlTmStatisticsSummary(@Param("l3DepartmentCode") String l3DepartmentCode);
 }
 

@@ -327,4 +327,55 @@
         AND CURDATE() BETWEEN q.competence_from AND q.competence_to
     </select>
 
+    <!-- 结果映射：PL/TM部门统计 -->
+    <resultMap id="PlTmDepartmentStatisticsResultMap" type="com.huawei.aitransform.entity.PlTmDepartmentStatisticsVO">
+        <result column="deptCode" property="deptCode" jdbcType="VARCHAR"/>
+        <result column="deptName" property="deptName" jdbcType="VARCHAR"/>
+        <result column="totalCount" property="totalCount" jdbcType="INTEGER"/>
+        <result column="qualifiedCount" property="qualifiedCount" jdbcType="INTEGER"/>
+        <result column="qualifiedRatio" property="qualifiedRatio" jdbcType="DOUBLE"/>
+        <result column="certCount" property="certCount" jdbcType="INTEGER"/>
+        <result column="certRatio" property="certRatio" jdbcType="DOUBLE"/>
+    </resultMap>
+
+    <!-- 统计研发管理部下各四级部门的PL/TM任职与认证数据 -->
+    <select id="selectPlTmStatisticsByL4Department" resultMap="PlTmDepartmentStatisticsResultMap">
+        SELECT 
+            l4_department_code AS deptCode,
+            l4_department_cn_name AS deptName,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount,
+            ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4) AS qualifiedRatio,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certCount,
+            ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4) AS certRatio
+        FROM t_entry_level_manager
+        WHERE l3_department_code = #{l3DepartmentCode}
+          AND job_name_cn IN ('PL', 'TM')
+          AND l4_department_code IS NOT NULL
+          AND l4_department_code != ''
+        GROUP BY l4_department_code, l4_department_cn_name
+        ORDER BY l4_department_code
+    </select>
+
+    <!-- 统计研发管理部整体的PL/TM任职与认证数据 -->
+    <select id="selectPlTmStatisticsSummary" resultMap="PlTmDepartmentStatisticsResultMap">
+        SELECT 
+            #{l3DepartmentCode} AS deptCode,
+            MAX(l3_department_cn_name) AS deptName,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS qualifiedRatio,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS certRatio
+        FROM t_entry_level_manager
+        WHERE l3_department_code = #{l3DepartmentCode}
+          AND job_name_cn IN ('PL', 'TM')
+    </select>
+
 </mapper>
