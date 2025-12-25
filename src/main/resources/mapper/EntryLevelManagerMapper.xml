@@ -125,7 +125,7 @@
         )
     </insert>
 
-    <!-- 更新记录（根据employee_appointment_id�?-->
+    <!-- 更新记录（根据employee_appointment_id） -->
     <update id="update" parameterType="com.huawei.aitransform.entity.EntryLevelManager">
         UPDATE t_entry_level_manager
         SET employee_number = #{employeeNumber},
@@ -183,7 +183,7 @@
         WHERE employee_number = #{employeeNumber}
     </update>
 
-    <!-- 批量插入或更新（根据employee_number，使用ON DUPLICATE KEY UPDATE�?-->
+    <!-- 批量插入或更新（根据employee_number，使用ON DUPLICATE KEY UPDATE） -->
     <!-- 注意：需要确保employee_number字段有唯一索引，否则ON DUPLICATE KEY UPDATE不会生效 -->
     <insert id="batchInsertOrUpdate" parameterType="java.util.List">
         INSERT INTO t_entry_level_manager (
@@ -290,4 +290,3 @@
     </delete>
 
 </mapper>
-
