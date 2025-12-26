@@ -890,9 +890,11 @@
         LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms l3_dept ON (
-            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
-            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
-            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            )
             AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
         )
         LEFT JOIN department_info_hrms l4_dept ON (
@@ -926,9 +928,11 @@
         LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms l3_dept ON (
-            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
-            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
-            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            )
             AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
         )
         LEFT JOIN department_info_hrms l4_dept ON (
@@ -963,9 +967,11 @@
         LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
         LEFT JOIN department_info_hrms l3_dept ON (
-            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
-            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
-            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            )
             AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
         )
         LEFT JOIN department_info_hrms l4_dept ON (
