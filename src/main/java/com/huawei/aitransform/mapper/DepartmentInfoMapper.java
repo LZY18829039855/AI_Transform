@@ -53,18 +53,5 @@ public interface DepartmentInfoMapper {
      */
     List<DepartmentInfoVO> getAllSubDepartments(@Param("deptCode") String deptCode);
 
-    /**
-     * 查询指定2级部门下的所有三级部门
-     * @param level2DeptCode 2级部门编码
-     * @return 三级部门列表
-     */
-    List<DepartmentInfoVO> getLevel3DepartmentsUnderLevel2(@Param("level2DeptCode") String level2DeptCode);
-
-    /**
-     * 查询指定3级部门下的所有四级部门
-     * @param level3DeptCode 3级部门编码
-     * @return 四级部门列表
-     */
-    List<DepartmentInfoVO> getLevel4DepartmentsUnderLevel3(@Param("level3DeptCode") String level3DeptCode);
 }
 
