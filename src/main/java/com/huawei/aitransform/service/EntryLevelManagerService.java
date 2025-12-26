@@ -34,7 +34,7 @@ public class EntryLevelManagerService {
     private ExpertCertStatisticsService expertCertStatisticsService;
 
     /**
-     * 同步有效的PL和TM数据到目标表
+     * 同步有效的PL、TM和项目经理数据到目标表
      * 
      * @return 同步结果
      */
@@ -43,17 +43,17 @@ public class EntryLevelManagerService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            logger.info("开始同步基层主管（PL/TM）数据");
+            logger.info("开始同步基层主管（PL/TM/项目经理）数据");
             
-            // 1. 查询所有状态为有效的PL和TM人员
+            // 1. 查询所有状态为有效的PL、TM和项目经理人员
             List<EntryLevelManager> validList = entryLevelManagerMapper.selectValidPlAndTm();
             int totalCount = validList != null ? validList.size() : 0;
-            logger.info("查询到状态为有效的PL和TM人员总数：{}", totalCount);
+            logger.info("查询到状态为有效的PL、TM和项目经理人员总数：{}", totalCount);
             
-            // 2. 查询所有任期结束的PL和TM
+            // 2. 查询所有任期结束的PL、TM和项目经理
             List<EntryLevelManager> expiredList = entryLevelManagerMapper.selectExpiredPlAndTm();
             int expiredCount = expiredList != null ? expiredList.size() : 0;
-            logger.info("查询到任期结束的PL和TM人员总数：{}", expiredCount);
+            logger.info("查询到任期结束的PL、TM和项目经理人员总数：{}", expiredCount);
             
             // 3. 根据employee_number剔除任期结束的数据
             final Set<String> expiredEmployeeNumbers;
@@ -66,7 +66,7 @@ public class EntryLevelManagerService {
                 expiredEmployeeNumbers = java.util.Collections.emptySet();
             }
             
-            // 过滤出有效的PL和TM数据
+            // 过滤出有效的PL、TM和项目经理数据
             List<EntryLevelManager> finalValidList = null;
             if (validList != null && !validList.isEmpty()) {
                 if (!expiredEmployeeNumbers.isEmpty()) {
@@ -80,7 +80,7 @@ public class EntryLevelManagerService {
             }
             
             int validCount = finalValidList != null ? finalValidList.size() : 0;
-            logger.info("计算得到当前有效的PL和TM人员总数：{}", validCount);
+            logger.info("计算得到当前有效的PL、TM和项目经理人员总数：{}", validCount);
             
             // 4. 查询目标表中所有已存在的employee_number，用于后续删除不在有效列表中的数据
             List<String> allExistingEmployeeNumbers = entryLevelManagerMapper.selectAllEmployeeNumbers();
@@ -222,11 +222,11 @@ public class EntryLevelManagerService {
                 }
             }
             
-            logger.info("同步完成，共同步{}条有效PL/TM数据，删除{}条无效数据", syncedCount, deletedCount);
+            logger.info("同步完成，共同步{}条有效PL/TM/项目经理数据，删除{}条无效数据", syncedCount, deletedCount);
             
             // 构建返回结果
             result.put("success", true);
-            result.put("message", String.format("同步成功，共同步%d条有效PL/TM数据，删除%d条无效数据", syncedCount, deletedCount));
+            result.put("message", String.format("同步成功，共同步%d条有效PL/TM/项目经理数据，删除%d条无效数据", syncedCount, deletedCount));
             result.put("totalCount", totalCount);
             result.put("expiredCount", expiredCount);
             result.put("validCount", validCount);

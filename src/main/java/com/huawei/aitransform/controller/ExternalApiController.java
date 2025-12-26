@@ -134,15 +134,15 @@ public class ExternalApiController {
     }
 
     /**
-     * 同步基层主管（PL/TM）数据
+     * 同步基层主管（PL/TM/项目经理）数据
      * 
-     * 从 t_entry_level_manager_sync 表中筛选出当前有效的PL和TM数据，并同步至 t_entry_level_manager 表中。
+     * 从 t_entry_level_manager_sync 表中筛选出当前有效的PL、TM和项目经理数据，并同步至 t_entry_level_manager 表中。
      * 
      * 业务逻辑：
-     * 1. 查询所有状态为有效的PL和TM人员（status='Y'）
-     * 2. 查询所有任期结束的PL和TM（status='N'）
-     * 3. 从状态为有效的PL和TM中剔除任期结束的数据，得到当前有效的PL和TM信息
-     * 4. 将有效PL和TM的完整数据更新到 t_entry_level_manager 表中
+     * 1. 查询所有状态为有效的PL、TM和项目经理人员（status='Y'）
+     * 2. 查询所有任期结束的PL、TM和项目经理（status='N'）
+     * 3. 从状态为有效的PL、TM和项目经理中剔除任期结束的数据，得到当前有效的PL、TM和项目经理信息
+     * 4. 将有效PL、TM和项目经理的完整数据更新到 t_entry_level_manager 表中
      * 
      * @return 同步结果信息（包含同步的数据数量）
      */

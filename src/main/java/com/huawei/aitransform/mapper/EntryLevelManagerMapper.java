@@ -14,14 +14,14 @@ import java.util.List;
 public interface EntryLevelManagerMapper {
 
     /**
-     * 查询所有状态为有效的PL和TM人员
-     * @return PL和TM人员列表
+     * 查询所有状态为有效的PL、TM和项目经理人员
+     * @return PL、TM和项目经理人员列表
      */
     List<EntryLevelManager> selectValidPlAndTm();
 
     /**
-     * 查询所有任期结束的PL和TM
-     * @return 任期结束的PL和TM人员列表
+     * 查询所有任期结束的PL、TM和项目经理
+     * @return 任期结束的PL、TM和项目经理人员列表
      */
     List<EntryLevelManager> selectExpiredPlAndTm();
 

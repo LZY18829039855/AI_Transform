@@ -33,24 +33,24 @@
         <result column="is_cert_standard" property="isCertStandard" jdbcType="INTEGER"/>
     </resultMap>
 
-    <!-- 查询所有状态为有效的PL和TM人员 -->
+    <!-- 查询所有状态为有效的PL、TM和项目经理人员 -->
     <select id="selectValidPlAndTm" resultMap="BaseResultMap">
         SELECT s.* 
         FROM t_entry_level_manager_sync s 
         JOIN t_employee_sync t ON t.employee_number = s.employee_number 
-        WHERE s.job_name_cn IN ('PL', 'TM')
+        WHERE s.job_name_cn IN ('PL', 'TM', '项目经理')
           AND t.period_id = '20251222'
           AND s.l1_department_code = '075774'
           AND s.status = 'Y'
         GROUP BY s.employee_number
     </select>
 
-    <!-- 查询所有任期结束的PL和TM -->
+    <!-- 查询所有任期结束的PL、TM和项目经理 -->
     <select id="selectExpiredPlAndTm" resultMap="BaseResultMap">
         SELECT s.* 
         FROM t_entry_level_manager_sync s 
         JOIN t_employee_sync t ON t.employee_number = s.employee_number 
-        WHERE s.job_name_cn IN ('PL', 'TM')
+        WHERE s.job_name_cn IN ('PL', 'TM', '项目经理')
           AND t.period_id = '20251222'
           AND s.l1_department_code = '075774'
           AND s.status = 'N'
