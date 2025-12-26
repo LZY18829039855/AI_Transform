@@ -196,5 +196,25 @@ public interface CadreMapper {
      * @return L3汇总统计数据
      */
     com.huawei.aitransform.entity.L2L3StatisticsVO getL4SummaryL3Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 查询所有干部及其最小部门ID
+     * @return 干部信息列表（包含account和mini_departname_id）
+     */
+    List<com.huawei.aitransform.entity.CadreDepartmentRefreshVO> getAllCadreWithMiniDepartment();
+
+    /**
+     * 批量更新干部的部门编码字段
+     * @param cadreList 干部部门信息列表
+     * @return 更新的记录数
+     */
+    int batchUpdateCadreDepartmentCodes(@Param("cadreList") List<com.huawei.aitransform.entity.CadreDepartmentRefreshVO> cadreList);
+
+    /**
+     * 单个更新干部的部门编码字段
+     * @param cadre 干部部门信息
+     * @return 更新的记录数
+     */
+    int updateCadreDepartmentCodes(com.huawei.aitransform.entity.CadreDepartmentRefreshVO cadre);
 }
 

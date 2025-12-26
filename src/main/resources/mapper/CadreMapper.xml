@@ -1013,5 +1013,56 @@
         </where>
     </select>
 
+    <!-- 查询所有干部及其最小部门ID -->
+    <select id="getAllCadreWithMiniDepartment" resultType="com.huawei.aitransform.entity.CadreDepartmentRefreshVO">
+        SELECT 
+            account,
+            mini_departname_id AS miniDepartnameId
+        FROM t_cadre
+        WHERE account IS NOT NULL
+          AND account != ''
+          AND mini_departname_id IS NOT NULL
+          AND mini_departname_id != ''
+    </select>
+
+    <!-- 批量更新干部的部门编码字段 -->
+    <update id="batchUpdateCadreDepartmentCodes">
+        UPDATE t_cadre
+        SET l2_department_code = CASE account
+            <foreach collection="cadreList" item="cadre">
+                WHEN #{cadre.account} THEN #{cadre.l2DepartmentCode}
+            </foreach>
+        END,
+        l3_department_code = CASE account
+            <foreach collection="cadreList" item="cadre">
+                WHEN #{cadre.account} THEN #{cadre.l3DepartmentCode}
+            </foreach>
+        END,
+        l4_department_code = CASE account
+            <foreach collection="cadreList" item="cadre">
+                WHEN #{cadre.account} THEN #{cadre.l4DepartmentCode}
+            </foreach>
+        END,
+        l5_department_code = CASE account
+            <foreach collection="cadreList" item="cadre">
+                WHEN #{cadre.account} THEN #{cadre.l5DepartmentCode}
+            </foreach>
+        END
+        WHERE account IN
+        <foreach collection="cadreList" item="cadre" open="(" separator="," close=")">
+            #{cadre.account}
+        </foreach>
+    </update>
+
+    <!-- 单个更新干部的部门编码字段 -->
+    <update id="updateCadreDepartmentCodes">
+        UPDATE t_cadre
+        SET l2_department_code = #{l2DepartmentCode},
+            l3_department_code = #{l3DepartmentCode},
+            l4_department_code = #{l4DepartmentCode},
+            l5_department_code = #{l5DepartmentCode}
+        WHERE account = #{account}
+    </update>
+
 </mapper>
 

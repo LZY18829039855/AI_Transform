@@ -7,10 +7,16 @@
 **接口描述**：统计云核心网产品线下面所有三级部门以及研发管理部下面所有四级部门的干部总岗位数，以及L2/L3干部岗位总数、L2/L3干部岗位占比，以及L2干部中软件类与非软件类的数量，L3干部下面软件类与非软件类的数量。
 
 **业务逻辑**：
-1. 统计范围：
+1. 查询方法：
+   - **第一步**：从`t_cadre`表中查询所有干部信息（包括`account`、`mini_departname_id`、`position_ai_maturity`、`cadre_competence_category`等字段）
+   - **第二步**：对于每个干部，根据其`mini_departname_id`关联`department_info_hrms`表，通过`parent_dept_code`字段向上查找上级部门，直到找到三级部门（`dept_level = '3'`）
+   - **第三步**：对于研发管理部（030681）下的干部，还需要查找其四级部门（`dept_level = '4'`）
+   - **第四步**：根据每个干部的三级部门ID和四级部门ID（如果有）对人员进行分类
+   - **第五步**：按照分类结果统计各类干部人数
+2. 统计范围：
    - 云核心网产品线（部门编码：031562）下面所有三级部门的干部岗位
    - 研发管理部（部门编码：030681）下面所有四级部门的干部岗位
-2. 统计维度：
+3. 统计维度：
    - 干部总岗位数：统计所有符合条件的干部岗位总数
    - L2/L3干部岗位总数：统计`position_ai_maturity`为'L2'或'L3'的干部岗位总数
    - L2/L3干部岗位占比：L2/L3干部岗位总数 / 干部总岗位数
@@ -18,7 +24,7 @@
    - L2干部非软件类数量：统计`position_ai_maturity`为'L2'且`cadre_competence_category`不为'软件类'的干部岗位数
    - L3干部软件类数量：统计`position_ai_maturity`为'L3'且`cadre_competence_category`为'软件类'的干部岗位数
    - L3干部非软件类数量：统计`position_ai_maturity`为'L3'且`cadre_competence_category`不为'软件类'的干部岗位数
-3. **按部门维度组织响应数据**：
+4. **按部门维度组织响应数据**：
    - 汇总数据（`summary`）：包含云核心网产品线下面所有三级部门以及研发管理部下面所有四级部门的整体统计数据
    - 部门列表（`departmentList`）：按云核心网产品线下的三级部门和研发管理部下的四级部门组织，每个部门包含该部门的统计数据
    - **重要**：所有在`t_cadre`表中有干部数据的部门都会出现在列表中
@@ -171,351 +177,292 @@ GET /cadre-cert-statistics/cadre-position-overview
 
 ## 业务逻辑详细说明
 
-### 1. 统计范围确定
+### 1. 查询方法说明
 
-#### 1.1 云核心网产品线下的所有三级部门
+#### 1.1 新的查询逻辑
 
 **说明**：
 - `t_cadre`表中没有各级部门的编码字段，只有`mini_departname_id`字段（最小部门编码）
 - 需要通过`mini_departname_id`关联`department_info_hrms`表来获取部门层级信息
 - **重要查询逻辑**：
-  1. 从`department_info_hrms`表中查询云核心网产品线（031562）下的所有三级部门编码列表
-  2. 对于每个三级部门，查询该三级部门及其下所有四级、五级部门的`dept_code`（即`mini_departname_id`）列表
-  3. **关键点**：查询时需要包含该三级部门本身的`dept_code`、该三级部门下所有四级部门的`dept_code`、该三级部门下所有五级部门的`dept_code`
-  4. **原因**：因为有些干部的最小部门（`mini_departname_id`）可能为三级部门、四级部门或五级部门，所以需要将这些部门的`dept_code`都加入到查询列表中
-  5. **注意**：六级部门没有干部数据，所以不需要查询六级部门
-  6. 在`t_cadre`表中查询`mini_departname_id`在这些列表中的干部数据，按三级部门分组统计
+  1. **第一步**：从`t_cadre`表中查询所有干部信息（包括`account`、`mini_departname_id`、`position_ai_maturity`、`cadre_competence_category`等字段）
+  2. **第二步**：对于每个干部，根据其`mini_departname_id`关联`department_info_hrms`表，通过`parent_dept_code`字段向上查找上级部门，直到找到三级部门（`dept_level = '3'`）
+  3. **第三步**：对于研发管理部（030681）下的干部，还需要查找其四级部门（`dept_level = '4'`）
+  4. **第四步**：根据每个干部的三级部门ID和四级部门ID（如果有）对人员进行分类
+  5. **第五步**：按照分类结果统计各类干部人数
 
 **实现方式**：
-- 使用`DepartmentInfoMapper`的方法查询云核心网产品线（031562）下的所有三级部门
-- 对于每个三级部门，查询该三级部门本身的`dept_code` + 该三级部门下所有四级部门的`dept_code` + 该三级部门下所有五级部门的`dept_code`，组成查询列表
-- 在`t_cadre`表中使用`WHERE mini_departname_id IN (...)`查询这些部门的干部数据
+- 查询所有干部数据：`SELECT * FROM t_cadre WHERE account IS NOT NULL AND account != ''`
+- 对于每个干部的`mini_departname_id`，通过`department_info_hrms`表的`parent_dept_code`字段递归向上查找，直到找到`dept_level = '3'`的部门
+- 对于研发管理部（030681）下的干部，还需要查找`dept_level = '4'`的部门
+- 在内存中根据三级部门ID和四级部门ID对干部进行分类
+- 统计每个部门（三级部门或四级部门）的干部人数
 
-#### 1.2 研发管理部下的所有四级部门
+#### 1.2 统计范围确定
 
-**说明**：
-- `t_cadre`表中没有各级部门的编码字段，只有`mini_departname_id`字段（最小部门编码）
-- 需要通过`mini_departname_id`关联`department_info_hrms`表来获取部门层级信息
-- **重要**：统计四级部门的干部数量时，四级下面的五级部门的干部也算该四级部门的
-- **重要查询逻辑**：
-  1. 从`department_info_hrms`表中查询研发管理部（030681）下的所有四级部门编码列表
-  2. 对于每个四级部门，查询该四级部门及其下所有五级部门的`dept_code`（即`mini_departname_id`）列表
-  3. **关键点**：查询时需要包含该四级部门本身的`dept_code`、该四级部门下所有五级部门的`dept_code`
-  4. **原因**：因为有些干部的最小部门（`mini_departname_id`）可能为四级部门或五级部门，所以需要将这些部门的`dept_code`都加入到查询列表中
-  5. 在`t_cadre`表中查询`mini_departname_id`在这些列表中的干部数据，按四级部门分组统计
+**云核心网产品线下的所有三级部门**：
+- 通过向上查找部门层级，找到所有干部所属的三级部门
+- 只统计云核心网产品线（031562）下的三级部门
+- 如果干部的三级部门不在云核心网产品线下，则排除
 
-**实现方式**：
-- 使用`DepartmentInfoMapper`的方法查询研发管理部（030681）下的所有四级部门
-- 对于每个四级部门，查询该四级部门本身的`dept_code` + 该四级部门下所有五级部门的`dept_code`，组成查询列表
-- 在`t_cadre`表中使用`WHERE mini_departname_id IN (...)`查询这些部门的干部数据
+**研发管理部下的所有四级部门**：
+- 对于研发管理部（030681）下的干部，需要查找其四级部门
+- 统计研发管理部（030681）下所有四级部门的干部数据
+- 如果干部的四级部门不在研发管理部下，则排除
 
 ### 2. 统计云核心网产品线下各三级部门的干部岗位数据
 
 #### 2.1 统计各三级部门的总体数据
 
-**SQL逻辑**：
+**查询逻辑**：
 ```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 步骤1：查询云核心网产品线（031562）下的所有三级部门及其下所有子部门的mini_departname_id列表
--- （这一步在应用层完成，通过DepartmentInfoMapper查询）
-
--- 步骤2：对于每个三级部门，统计该部门及其下所有子部门的干部数据
+-- 步骤1：查询所有干部信息
 SELECT 
-    -- 通过关联department_info_hrms表获取三级部门编码和名称
-    MAX(dept.l3_dept_code) AS deptCode,
-    MAX(dept.l3_dept_name) AS deptName,
-    COUNT(*) AS totalPositionCount,
-    SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
-    CASE 
-        WHEN COUNT(*) = 0 THEN 0.0
-        ELSE ROUND(SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
-    END AS l2L3PositionRatio
+    c.account,
+    c.mini_departname_id,
+    c.position_ai_maturity,
+    c.cadre_competence_category
 FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该三级部门本身的dept_code + 该三级部门下所有四级部门的dept_code + 该三级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 注意：六级部门没有干部数据，所以不需要查询六级部门
-)
-GROUP BY dept.l3_dept_code
-ORDER BY dept.l3_dept_code
+WHERE c.account IS NOT NULL 
+  AND c.account != ''
 ```
 
+**步骤2：对于每个干部，向上查找三级部门**
+```sql
+-- 通过递归向上查找，找到每个干部所属的三级部门
+-- 使用LEFT JOIN多次关联，向上查找直到找到dept_level = '3'的部门
+SELECT 
+    c.account,
+    c.mini_departname_id,
+    c.position_ai_maturity,
+    c.cadre_competence_category,
+    CASE 
+        WHEN dept.dept_level = '3' THEN dept.dept_code
+        WHEN d1.dept_level = '3' THEN d1.dept_code
+        WHEN d2.dept_level = '3' THEN d2.dept_code
+        WHEN d3.dept_level = '3' THEN d3.dept_code
+        ELSE NULL
+    END AS l3_dept_code,
+    CASE 
+        WHEN dept.dept_level = '3' THEN dept.dept_name
+        WHEN d1.dept_level = '3' THEN d1.dept_name
+        WHEN d2.dept_level = '3' THEN d2.dept_name
+        WHEN d3.dept_level = '3' THEN d3.dept_name
+        ELSE NULL
+    END AS l3_dept_name
+FROM t_cadre c
+INNER JOIN department_info_hrms dept ON (
+    c.mini_departname_id = dept.dept_code 
+    AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+LEFT JOIN department_info_hrms d1 ON (
+    dept.parent_dept_code = d1.dept_code 
+    AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+LEFT JOIN department_info_hrms d2 ON (
+    d1.parent_dept_code = d2.dept_code 
+    AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+LEFT JOIN department_info_hrms d3 ON (
+    d2.parent_dept_code = d3.dept_code 
+    AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+WHERE c.account IS NOT NULL 
+  AND c.account != ''
+  AND (
+    dept.dept_level = '3' 
+    OR d1.dept_level = '3' 
+    OR d2.dept_level = '3' 
+    OR d3.dept_level = '3'
+  )
+```
+
+**步骤3：在应用层对干部进行分类统计**
+- 过滤出云核心网产品线（031562）下的三级部门
+- 按三级部门分组统计：
+  - 干部总岗位数
+  - L2/L3干部岗位总数
+  - L2/L3干部岗位占比
+  - L2干部软件类数量
+  - L2干部非软件类数量
+  - L3干部软件类数量
+  - L3干部非软件类数量
+
 **说明**：
-- 需要先通过`DepartmentInfoMapper`查询云核心网产品线（031562）下的所有三级部门
-- 对于每个三级部门，查询该三级部门本身的`dept_code` + 该三级部门下所有四级部门的`dept_code` + 该三级部门下所有五级部门的`dept_code`，组成查询列表
-- **重要**：因为有些干部的最小部门（`mini_departname_id`）可能为三级部门、四级部门或五级部门，所以需要将这些部门的`dept_code`都加入到查询列表中
-- 在`t_cadre`表中使用`WHERE mini_departname_id IN (...)`查询这些部门的干部数据
-- 通过关联`department_info_hrms`表获取三级部门的编码和名称
-- **注意**：六级部门没有干部数据，所以不需要查询六级部门
+- 先查询所有干部信息，然后通过`department_info_hrms`表的`parent_dept_code`字段向上查找，直到找到三级部门
+- 在应用层根据三级部门ID对干部进行分类统计
+- 只统计云核心网产品线（031562）下的三级部门
 
 #### 2.2 统计各三级部门的L2干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
-SELECT 
-    MAX(dept.l3_dept_code) AS deptCode,
-    COUNT(*) AS l2TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该三级部门本身的dept_code + 该三级部门下所有四级部门的dept_code + 该三级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 注意：六级部门没有干部数据，所以不需要查询六级部门
-)
-  AND c.position_ai_maturity = 'L2'
-GROUP BY dept.l3_dept_code
-ORDER BY dept.l3_dept_code
-```
+**查询逻辑**：
+- 使用与2.1相同的查询方法，先查询所有干部信息并向上查找到三级部门
+- 在应用层过滤出`position_ai_maturity = 'L2'`的干部
+- 按三级部门分组统计：
+  - L2干部总数
+  - L2干部软件类数量（`cadre_competence_category = '软件类'`）
+  - L2干部非软件类数量（`cadre_competence_category != '软件类'` 或 `cadre_competence_category IS NULL`）
 
 #### 2.3 统计各三级部门的L3干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
-SELECT 
-    MAX(dept.l3_dept_code) AS deptCode,
-    COUNT(*) AS l3TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该三级部门本身的dept_code + 该三级部门下所有四级部门的dept_code + 该三级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 注意：六级部门没有干部数据，所以不需要查询六级部门
-)
-  AND c.position_ai_maturity = 'L3'
-GROUP BY dept.l3_dept_code
-ORDER BY dept.l3_dept_code
-```
+**查询逻辑**：
+- 使用与2.1相同的查询方法，先查询所有干部信息并向上查找到三级部门
+- 在应用层过滤出`position_ai_maturity = 'L3'`的干部
+- 按三级部门分组统计：
+  - L3干部总数
+  - L3干部软件类数量（`cadre_competence_category = '软件类'`）
+  - L3干部非软件类数量（`cadre_competence_category != '软件类'` 或 `cadre_competence_category IS NULL`）
 
 ### 3. 统计研发管理部下各四级部门的干部岗位数据
 
 #### 3.1 统计各四级部门的总体数据
 
-**SQL逻辑**：
+**查询逻辑**：
 ```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 重要：统计四级部门的干部数量时，四级下面的五级部门的干部也算该四级部门的
+-- 步骤1：查询所有干部信息，并向上查找到三级部门和四级部门
 SELECT 
-    MAX(dept.l4_dept_code) AS deptCode,
-    MAX(dept.l4_dept_name) AS deptName,
-    COUNT(*) AS totalPositionCount,
-    SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
+    c.account,
+    c.mini_departname_id,
+    c.position_ai_maturity,
+    c.cadre_competence_category,
     CASE 
-        WHEN COUNT(*) = 0 THEN 0.0
-        ELSE ROUND(SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
-    END AS l2L3PositionRatio
+        WHEN dept.dept_level = '3' THEN dept.dept_code
+        WHEN d1.dept_level = '3' THEN d1.dept_code
+        WHEN d2.dept_level = '3' THEN d2.dept_code
+        WHEN d3.dept_level = '3' THEN d3.dept_code
+        ELSE NULL
+    END AS l3_dept_code,
+    CASE 
+        WHEN dept.dept_level = '4' THEN dept.dept_code
+        WHEN d1.dept_level = '4' THEN d1.dept_code
+        WHEN d2.dept_level = '4' THEN d2.dept_code
+        ELSE NULL
+    END AS l4_dept_code,
+    CASE 
+        WHEN dept.dept_level = '4' THEN dept.dept_name
+        WHEN d1.dept_level = '4' THEN d1.dept_name
+        WHEN d2.dept_level = '4' THEN d2.dept_name
+        ELSE NULL
+    END AS l4_dept_name
 FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该四级部门本身的dept_code + 该四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
+INNER JOIN department_info_hrms dept ON (
+    c.mini_departname_id = dept.dept_code 
+    AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
 )
-GROUP BY dept.l4_dept_code
-ORDER BY dept.l4_dept_code
+LEFT JOIN department_info_hrms d1 ON (
+    dept.parent_dept_code = d1.dept_code 
+    AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+LEFT JOIN department_info_hrms d2 ON (
+    d1.parent_dept_code = d2.dept_code 
+    AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+LEFT JOIN department_info_hrms d3 ON (
+    d2.parent_dept_code = d3.dept_code 
+    AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+)
+WHERE c.account IS NOT NULL 
+  AND c.account != ''
+  AND (
+    CASE 
+        WHEN dept.dept_level = '3' THEN dept.dept_code
+        WHEN d1.dept_level = '3' THEN d1.dept_code
+        WHEN d2.dept_level = '3' THEN d2.dept_code
+        WHEN d3.dept_level = '3' THEN d3.dept_code
+        ELSE NULL
+    END = '030681'
+  )
+  AND (
+    CASE 
+        WHEN dept.dept_level = '4' THEN dept.dept_code
+        WHEN d1.dept_level = '4' THEN d1.dept_code
+        WHEN d2.dept_level = '4' THEN d2.dept_code
+        ELSE NULL
+    END IS NOT NULL
+  )
 ```
 
+**步骤2：在应用层对干部进行分类统计**
+- 过滤出研发管理部（030681）下的四级部门
+- 按四级部门分组统计：
+  - 干部总岗位数
+  - L2/L3干部岗位总数
+  - L2/L3干部岗位占比
+  - L2干部软件类数量
+  - L2干部非软件类数量
+  - L3干部软件类数量
+  - L3干部非软件类数量
+
 **说明**：
-- 需要先通过`DepartmentInfoMapper`查询研发管理部（030681）下的所有四级部门
-- 对于每个四级部门，查询该四级部门本身的`dept_code` + 该四级部门下所有五级部门的`dept_code`，组成查询列表（即`mini_departname_id`列表）
-- **重要**：因为有些干部的最小部门（`mini_departname_id`）可能为四级部门或五级部门，所以需要将这些部门的`dept_code`都加入到查询列表中
-- 在`t_cadre`表中使用`WHERE mini_departname_id IN (...)`查询这些部门的干部数据
-- 通过关联`department_info_hrms`表获取四级部门的编码和名称
-- **重要**：统计时包含该四级部门及其下所有五级部门的干部数据
+- 先查询所有干部信息，然后通过`department_info_hrms`表的`parent_dept_code`字段向上查找，找到三级部门（研发管理部030681）和四级部门
+- 在应用层根据四级部门ID对干部进行分类统计
+- 只统计研发管理部（030681）下的四级部门
 
 #### 3.2 统计各四级部门的L2干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 重要：统计四级部门的干部数量时，四级下面的五级部门的干部也算该四级部门的
-SELECT 
-    MAX(dept.l4_dept_code) AS deptCode,
-    COUNT(*) AS l2TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该四级部门本身的dept_code + 该四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
-)
-  AND c.position_ai_maturity = 'L2'
-GROUP BY dept.l4_dept_code
-ORDER BY dept.l4_dept_code
-```
+**查询逻辑**：
+- 使用与3.1相同的查询方法，先查询所有干部信息并向上查找到三级部门和四级部门
+- 在应用层过滤出`position_ai_maturity = 'L2'`的干部
+- 按四级部门分组统计：
+  - L2干部总数
+  - L2干部软件类数量（`cadre_competence_category = '软件类'`）
+  - L2干部非软件类数量（`cadre_competence_category != '软件类'` 或 `cadre_competence_category IS NULL`）
 
 #### 3.3 统计各四级部门的L3干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 重要：统计四级部门的干部数量时，四级下面的五级部门的干部也算该四级部门的
-SELECT 
-    MAX(dept.l4_dept_code) AS deptCode,
-    COUNT(*) AS l3TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 该四级部门本身的dept_code + 该四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
-)
-  AND c.position_ai_maturity = 'L3'
-GROUP BY dept.l4_dept_code
-ORDER BY dept.l4_dept_code
-```
+**查询逻辑**：
+- 使用与3.1相同的查询方法，先查询所有干部信息并向上查找到三级部门和四级部门
+- 在应用层过滤出`position_ai_maturity = 'L3'`的干部
+- 按四级部门分组统计：
+  - L3干部总数
+  - L3干部软件类数量（`cadre_competence_category = '软件类'`）
+  - L3干部非软件类数量（`cadre_competence_category != '软件类'` 或 `cadre_competence_category IS NULL`）
 
 ### 4. 统计汇总数据
 
 #### 4.1 统计云核心网产品线下所有三级部门以及研发管理部下面所有四级部门的整体数据
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 步骤1：查询云核心网产品线（031562）下所有三级部门及其下所有子部门的mini_departname_id列表
--- （这一步在应用层完成，通过DepartmentInfoMapper查询）
-
--- 步骤2：统计云核心网产品线（031562）下所有三级部门的干部岗位（不包括研发管理部下的四级部门，避免重复统计）
-SELECT 
-    COUNT(*) AS totalPositionCount,
-    SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
-    CASE 
-        WHEN COUNT(*) = 0 THEN 0.0
-        ELSE ROUND(SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
-    END AS l2L3PositionRatio
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 云核心网产品线（031562）下所有三级部门本身的dept_code + 这些三级部门下所有四级部门的dept_code + 这些三级部门下所有五级部门的dept_code
-    -- 但排除研发管理部（030681）下的四级部门及其子部门
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 注意：六级部门没有干部数据，所以不需要查询六级部门
-)
-  AND (
-    -- 所有三级部门的数据（不包括研发管理部下的四级部门数据）
-    (dept.l3_dept_code != '030681')
-    OR
-    -- 研发管理部（030681）的数据，但只统计三级部门级别的数据，不包括四级部门数据
-    (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
-  )
-UNION ALL
--- 统计研发管理部（030681）下所有四级部门及其下所有五级部门的干部岗位
-SELECT 
-    COUNT(*) AS totalPositionCount,
-    SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
-    CASE 
-        WHEN COUNT(*) = 0 THEN 0.0
-        ELSE ROUND(SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
-    END AS l2L3PositionRatio
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.mini_departname_id IN (
-    -- 研发管理部（030681）下所有四级部门本身的dept_code + 这些四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
-)
-  AND dept.l3_dept_code = '030681'
-  AND dept.l4_dept_code IS NOT NULL
-```
+**查询逻辑**：
+- 使用与2.1和3.1相同的查询方法，先查询所有干部信息并向上查找到三级部门和四级部门
+- 在应用层合并统计：
+  1. 云核心网产品线（031562）下所有三级部门的干部岗位（不包括研发管理部下的四级部门数据，避免重复统计）
+  2. 研发管理部（030681）下所有四级部门及其下所有五级部门的干部岗位
+- 汇总统计：
+  - 干部总岗位数 = 所有三级部门干部总数 + 研发管理部四级部门干部总数
+  - L2/L3干部岗位总数 = 所有三级部门L2/L3干部总数 + 研发管理部四级部门L2/L3干部总数
+  - L2/L3干部岗位占比 = L2/L3干部岗位总数 / 干部总岗位数
 
 **说明**：
 - 汇总数据包括两部分：
   1. 云核心网产品线（031562）下所有三级部门的干部岗位（不包括研发管理部下的四级部门数据，避免重复统计）
   2. 研发管理部（030681）下所有四级部门及其下所有五级部门的干部岗位
 - 在应用层将两部分数据合并计算汇总结果
-- **重要**：统计四级部门时，需要包含该四级部门及其下所有五级部门的干部数据
 
 #### 4.2 统计汇总的L2干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 统计云核心网产品线（031562）下所有三级部门的L2干部（不包括研发管理部下的四级部门）
-SELECT 
-    COUNT(*) AS l2TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.position_ai_maturity = 'L2'
-  AND c.mini_departname_id IN (
-    -- 云核心网产品线（031562）下所有三级部门及其下所有子部门的mini_departname_id列表
-    -- 但排除研发管理部（030681）下的四级部门及其子部门
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-)
-  AND (
-    (dept.l3_dept_code != '030681')
-    OR
-    (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
-  )
-UNION ALL
--- 统计研发管理部（030681）下所有四级部门及其下所有五级部门的L2干部
-SELECT 
-    COUNT(*) AS l2TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.position_ai_maturity = 'L2'
-  AND c.mini_departname_id IN (
-    -- 研发管理部（030681）下所有四级部门本身的dept_code + 这些四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
-)
-  AND dept.l3_dept_code = '030681'
-  AND dept.l4_dept_code IS NOT NULL
-```
+**查询逻辑**：
+- 使用与2.2和3.2相同的查询方法，先查询所有干部信息并向上查找到三级部门和四级部门
+- 在应用层过滤出`position_ai_maturity = 'L2'`的干部
+- 合并统计：
+  1. 云核心网产品线（031562）下所有三级部门的L2干部（不包括研发管理部下的四级部门）
+  2. 研发管理部（030681）下所有四级部门的L2干部
+- 汇总统计：
+  - L2干部总数 = 所有三级部门L2干部总数 + 研发管理部四级部门L2干部总数
+  - L2干部软件类数量 = 所有三级部门L2软件类数量 + 研发管理部四级部门L2软件类数量
+  - L2干部非软件类数量 = 所有三级部门L2非软件类数量 + 研发管理部四级部门L2非软件类数量
 
 #### 4.3 统计汇总的L3干部数据（按软件类/非软件类）
 
-**SQL逻辑**：
-```sql
--- t_cadre表只有mini_departname_id字段，需要通过department_info_hrms表获取部门层级
--- 统计云核心网产品线（031562）下所有三级部门的L3干部（不包括研发管理部下的四级部门）
-SELECT 
-    COUNT(*) AS l3TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.position_ai_maturity = 'L3'
-  AND c.mini_departname_id IN (
-    -- 云核心网产品线（031562）下所有三级部门及其下所有子部门的mini_departname_id列表
-    -- 但排除研发管理部（030681）下的四级部门及其子部门
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-)
-  AND (
-    (dept.l3_dept_code != '030681')
-    OR
-    (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
-  )
-UNION ALL
--- 统计研发管理部（030681）下所有四级部门及其下所有五级部门的L3干部
-SELECT 
-    COUNT(*) AS l3TotalCount,
-    SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
-    SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
-FROM t_cadre c
-INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
-WHERE c.position_ai_maturity = 'L3'
-  AND c.mini_departname_id IN (
-    -- 研发管理部（030681）下所有四级部门本身的dept_code + 这些四级部门下所有五级部门的dept_code
-    -- （在应用层通过DepartmentInfoMapper查询得到）
-    -- 因为有些干部的最小部门可能为四级部门或五级部门，所以需要将这些部门的dept_code都加入到查询列表中
-)
-  AND dept.l3_dept_code = '030681'
-  AND dept.l4_dept_code IS NOT NULL
-```
+**查询逻辑**：
+- 使用与2.3和3.3相同的查询方法，先查询所有干部信息并向上查找到三级部门和四级部门
+- 在应用层过滤出`position_ai_maturity = 'L3'`的干部
+- 合并统计：
+  1. 云核心网产品线（031562）下所有三级部门的L3干部（不包括研发管理部下的四级部门）
+  2. 研发管理部（030681）下所有四级部门的L3干部
+- 汇总统计：
+  - L3干部总数 = 所有三级部门L3干部总数 + 研发管理部四级部门L3干部总数
+  - L3干部软件类数量 = 所有三级部门L3软件类数量 + 研发管理部四级部门L3软件类数量
+  - L3干部非软件类数量 = 所有三级部门L3非软件类数量 + 研发管理部四级部门L3非软件类数量
 
 ### 5. 数据说明
 
@@ -529,14 +476,14 @@ WHERE c.position_ai_maturity = 'L3'
 - 其他值或`NULL`：非软件类干部
 
 **统计范围**：
-- 云核心网产品线下的所有三级部门：通过`mini_departname_id`关联`department_info_hrms`表，查询云核心网产品线（031562）下的所有三级部门及其下所有四级、五级部门的干部数据
-- 研发管理部下的四级部门：通过`mini_departname_id`关联`department_info_hrms`表，查询研发管理部（030681）下的所有四级部门及其下所有五级部门的干部数据
+- 云核心网产品线下的所有三级部门：先查询所有干部信息，然后通过`mini_departname_id`关联`department_info_hrms`表，向上查找每个干部所属的三级部门，只统计云核心网产品线（031562）下的三级部门
+- 研发管理部下的四级部门：先查询所有干部信息，然后通过`mini_departname_id`关联`department_info_hrms`表，向上查找每个干部所属的三级部门（研发管理部030681）和四级部门，只统计研发管理部（030681）下的四级部门
 - **重要**：
   1. `t_cadre`表中没有各级部门的编码字段，只有`mini_departname_id`字段（最小部门编码）
-  2. 需要通过`mini_departname_id`关联`department_info_hrms`表来获取部门层级信息
-  3. **查询三级部门时**：需要包含该三级部门本身的`dept_code` + 该三级部门下所有四级部门的`dept_code` + 该三级部门下所有五级部门的`dept_code`，因为有些干部的最小部门可能为三级、四级或五级部门
-  4. **查询四级部门时**：需要包含该四级部门本身的`dept_code` + 该四级部门下所有五级部门的`dept_code`，因为有些干部的最小部门可能为四级或五级部门
-  5. **注意**：六级部门没有干部数据，所以不需要查询六级部门
+  2. 需要通过`mini_departname_id`关联`department_info_hrms`表，通过`parent_dept_code`字段向上查找上级部门，直到找到三级部门（`dept_level = '3'`）
+  3. **查询三级部门时**：对于每个干部，从其`mini_departname_id`开始，通过`parent_dept_code`向上查找，直到找到`dept_level = '3'`的部门，然后判断该三级部门是否属于云核心网产品线（031562）
+  4. **查询四级部门时**：对于研发管理部（030681）下的干部，在找到三级部门后，继续向上查找或向下查找，找到`dept_level = '4'`的部门
+  5. **注意**：在应用层根据三级部门ID和四级部门ID对干部进行分类统计
   6. 研发管理部（030681）作为三级部门时，如果其下有四级部门数据，则三级部门级别的数据只统计四级部门编码为NULL的记录，避免与四级部门数据重复
 
 **部门返回规则**：
@@ -548,34 +495,40 @@ WHERE c.position_ai_maturity = 'L3'
 ## 注意事项
 
 1. **数据去重**：如果同一员工有多条干部记录，需要根据业务需求决定统计策略（是否按员工去重，还是按记录统计）
-2. **统计范围**：
-   - 云核心网产品线下的所有三级部门：包括研发管理部（030681）作为三级部门时的数据（但只统计`l4_department_code`为空或NULL的记录）
-   - 研发管理部下的四级部门：只统计`l3_department_code = '030681'`且`l4_department_code`不为空的记录
+2. **查询方法**：
+   - 先查询所有干部信息，然后通过`mini_departname_id`关联`department_info_hrms`表，向上查找每个干部所属的三级部门
+   - 对于研发管理部（030681）下的干部，还需要查找其四级部门
+   - 在应用层根据三级部门ID和四级部门ID对干部进行分类统计
+3. **统计范围**：
+   - 云核心网产品线下的所有三级部门：通过向上查找部门层级，找到所有干部所属的三级部门，只统计云核心网产品线（031562）下的三级部门，包括研发管理部（030681）作为三级部门时的数据（但只统计四级部门编码为NULL的记录）
+   - 研发管理部下的四级部门：通过向上查找部门层级，找到研发管理部（030681）下的四级部门，只统计`l3_dept_code = '030681'`且`l4_dept_code`不为空的记录
    - 汇总数据：合并云核心网产品线（031562）下所有三级部门（不包括研发管理部下的四级部门）和研发管理部下所有四级部门的数据
-3. **软件类与非软件类区分**：
+4. **软件类与非软件类区分**：
    - 软件类：`cadre_competence_category = '软件类'`
    - 非软件类：`cadre_competence_category != '软件类'` 或 `cadre_competence_category IS NULL`
-4. **占比计算**：
+5. **占比计算**：
    - L2/L3干部岗位占比 = L2/L3干部岗位总数 / 干部总岗位数
    - 当总岗位数为0时，占比应返回0.0
    - 占比保留4位小数，前端可根据需要格式化显示（如保留2位小数或百分比形式）
-5. **性能考虑**：如果数据量较大，建议在相关字段上建立索引：
-   - `l3_department_code`
-   - `l4_department_code`
+6. **性能考虑**：如果数据量较大，建议在相关字段上建立索引：
+   - `mini_departname_id`
+   - `parent_dept_code`
+   - `dept_level`
    - `position_ai_maturity`
    - `cadre_competence_category`
-6. **日志记录**：建议记录查询操作的详细日志，便于问题排查
+7. **日志记录**：建议记录查询操作的详细日志，便于问题排查
 
 ## 待确认事项
 
 1. **统计粒度**：如果同一员工有多条干部记录，是按员工去重统计还是按记录统计？
-2. **t_cadre表字段确认**：
+2. **t_cadre表和department_info_hrms表字段确认**：
    - **已确认**：`t_cadre`表中没有各级部门的编码字段，只有`mini_departname_id`字段（最小部门编码）
-   - 需要通过`mini_departname_id`关联`department_info_hrms`表来获取部门层级信息
+   - 需要通过`mini_departname_id`关联`department_info_hrms`表，通过`parent_dept_code`字段向上查找上级部门
    - 需要确认`department_info_hrms`表的字段结构，特别是：
      - `dept_code`：部门编码（对应`t_cadre.mini_departname_id`）
-     - `l2_dept_code`、`l3_dept_code`、`l4_dept_code`：各级部门编码
-     - `l2_dept_name`、`l3_dept_name`、`l4_dept_name`：各级部门名称
+     - `parent_dept_code`：上级部门编码（用于向上查找）
+     - `dept_level`：部门层级（'3'表示三级部门，'4'表示四级部门等）
+     - `dept_name`：部门名称
      - `update_time`：更新时间（用于获取最新数据）
 3. **研发管理部数据处理**：
    - 研发管理部（030681）作为三级部门时，如果其下有四级部门数据，三级部门级别的统计是否只统计`l4_department_code`为空或NULL的记录？

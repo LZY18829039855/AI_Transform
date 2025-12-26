@@ -24,7 +24,7 @@
             parent_dept_code AS parentDeptCode
         FROM department_info_hrms
         WHERE dept_code = #{deptCode}
-        AND DATE(update_time) = '2025-11-18'
+        AND DATE(update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
         LIMIT 1
     </select>
 

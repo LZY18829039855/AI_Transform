@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.service.CadreDepartmentRefreshService;
 import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,6 +23,9 @@ public class ExternalApiController {
 
     @Autowired
     private EntryLevelManagerService entryLevelManagerService;
+
+    @Autowired
+    private CadreDepartmentRefreshService cadreDepartmentRefreshService;
 
     /**
      * 更新L2、L3专家的认证达标情况
@@ -150,6 +154,41 @@ public class ExternalApiController {
     public ResponseEntity<Result<Object>> syncEntryLevelManager() {
         try {
             java.util.Map<String, Object> result = entryLevelManagerService.syncEntryLevelManager();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 刷新干部部门信息
+     * 
+     * 从干部表的最小部门ID（mini_departname_id）开始，向上查询父级部门直到二级部门，
+     * 并将查询到的部门编码更新到干部表的对应字段中。
+     * 
+     * 业务逻辑：
+     * 1. 查询所有干部及其最小部门ID（mini_departname_id）
+     * 2. 对于每个干部，从最小部门ID开始，通过parent_dept_code向上查询父级部门，直到找到二级部门
+     * 3. 根据部门级别（dept_level）填充对应的字段：
+     *    - l2_department_code：二级部门编码
+     *    - l3_department_code：三级部门编码
+     *    - l4_department_code：四级部门编码
+     *    - l5_department_code：五级部门编码
+     * 4. 批量更新干部表的部门编码字段
+     * 
+     * 注意：干部的最小部门可能是五级、四级或三级，需要向上查询到二级部门为止
+     * 
+     * @return 刷新结果信息（包含处理的干部数量、成功数量、失败数量等）
+     */
+    @PostMapping("/refresh-cadre-department-info")
+    public ResponseEntity<Result<Object>> refreshCadreDepartmentInfo() {
+        try {
+            java.util.Map<String, Object> result = cadreDepartmentRefreshService.refreshCadreDepartmentInfo();
             Boolean success = (Boolean) result.get("success");
             if (success != null && success) {
                 return ResponseEntity.ok(Result.success((String) result.get("message"), result));
