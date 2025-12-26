@@ -107,5 +107,19 @@ public interface EntryLevelManagerMapper {
      * @return 研发管理部汇总统计数据
      */
     PlTmDepartmentStatisticsVO selectPlTmStatisticsSummary(@Param("l3DepartmentCode") String l3DepartmentCode);
+
+    /**
+     * 统计研发管理部下各四级部门的PM（项目经理）任职与认证数据
+     * @param l3DepartmentCode 三级部门编码（研发管理部：030681）
+     * @return 各四级部门PM统计数据列表
+     */
+    List<PlTmDepartmentStatisticsVO> selectPmStatisticsByL4Department(@Param("l3DepartmentCode") String l3DepartmentCode);
+
+    /**
+     * 统计研发管理部整体的PM（项目经理）任职与认证数据
+     * @param l3DepartmentCode 三级部门编码（研发管理部：030681）
+     * @return 研发管理部PM汇总统计数据
+     */
+    PlTmDepartmentStatisticsVO selectPmStatisticsSummary(@Param("l3DepartmentCode") String l3DepartmentCode);
 }
 

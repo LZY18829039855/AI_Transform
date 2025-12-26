@@ -1,9 +1,11 @@
 package com.huawei.aitransform.service;
 
 import com.huawei.aitransform.constant.DepartmentConstants;
+import com.huawei.aitransform.entity.DepartmentStatisticsVO;
 import com.huawei.aitransform.entity.EntryLevelManager;
 import com.huawei.aitransform.entity.PlTmCertStatisticsResponseVO;
 import com.huawei.aitransform.entity.PlTmDepartmentStatisticsVO;
+import com.huawei.aitransform.entity.StatisticsDataVO;
 import com.huawei.aitransform.mapper.EntryLevelManagerMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -14,6 +16,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -244,51 +247,137 @@ public class EntryLevelManagerService {
     }
 
     /**
-     * 查询PL、TM任职与认证统计数据
-     * 统计研发管理部下各四级部门以及研发管理部整体的PL/TM总人数、通过任职标准的人数及占比、通过认证标准的人数及占比
+     * 查询PL、TM、PM（项目经理）任职与认证统计数据
+     * 按部门维度返回，每个部门包含PL/TM和PM两套统计数据
+     * PL和TM合并统计，PM单独统计
      * 
-     * @return PL/TM任职与认证统计响应数据
+     * @return PL/TM/PM任职与认证统计响应数据
      */
     public PlTmCertStatisticsResponseVO getPlTmCertStatistics() {
-        logger.info("开始查询PL/TM任职与认证统计数据");
+        logger.info("开始查询PL/TM/PM任职与认证统计数据");
         
         try {
             // 研发管理部部门编码
             String l3DepartmentCode = DepartmentConstants.R_D_MANAGEMENT_DEPT_CODE;
             
-            // 1. 查询各四级部门统计数据
-            List<PlTmDepartmentStatisticsVO> departmentList = entryLevelManagerMapper.selectPlTmStatisticsByL4Department(l3DepartmentCode);
-            if (departmentList == null) {
-                departmentList = new ArrayList<>();
+            // 1. 查询各四级部门PL/TM统计数据
+            List<PlTmDepartmentStatisticsVO> plTmDepartmentList = entryLevelManagerMapper.selectPlTmStatisticsByL4Department(l3DepartmentCode);
+            if (plTmDepartmentList == null) {
+                plTmDepartmentList = new ArrayList<>();
             }
-            logger.info("查询到{}个四级部门的统计数据", departmentList.size());
+            logger.info("查询到{}个四级部门的PL/TM统计数据", plTmDepartmentList.size());
             
-            // 2. 查询研发管理部汇总数据
-            PlTmDepartmentStatisticsVO summary = entryLevelManagerMapper.selectPlTmStatisticsSummary(l3DepartmentCode);
-            if (summary == null) {
-                // 如果没有数据，创建一个空的汇总对象
-                summary = new PlTmDepartmentStatisticsVO();
-                summary.setDeptCode(l3DepartmentCode);
-                summary.setDeptName("研发管理部");
-                summary.setTotalCount(0);
-                summary.setQualifiedCount(0);
-                summary.setQualifiedRatio(0.0);
-                summary.setCertCount(0);
-                summary.setCertRatio(0.0);
+            // 2. 查询各四级部门PM统计数据
+            List<PlTmDepartmentStatisticsVO> pmDepartmentList = entryLevelManagerMapper.selectPmStatisticsByL4Department(l3DepartmentCode);
+            if (pmDepartmentList == null) {
+                pmDepartmentList = new ArrayList<>();
             }
-            logger.info("研发管理部汇总数据：总人数={}, 任职达标人数={}, 认证达标人数={}", 
-                summary.getTotalCount(), summary.getQualifiedCount(), summary.getCertCount());
+            logger.info("查询到{}个四级部门的PM统计数据", pmDepartmentList.size());
             
-            // 3. 构建响应对象
+            // 3. 合并部门列表（去重），构建部门Map，key为部门编码
+            Map<String, DepartmentStatisticsVO> departmentMap = new LinkedHashMap<>();
+            
+            // 添加PL/TM的部门数据
+            for (PlTmDepartmentStatisticsVO plTmDept : plTmDepartmentList) {
+                String deptCode = plTmDept.getDeptCode();
+                DepartmentStatisticsVO deptStat = departmentMap.get(deptCode);
+                if (deptStat == null) {
+                    deptStat = new DepartmentStatisticsVO(deptCode, plTmDept.getDeptName());
+                    departmentMap.put(deptCode, deptStat);
+                }
+                // 设置PL/TM统计数据
+                StatisticsDataVO plTmData = new StatisticsDataVO(
+                    plTmDept.getTotalCount(),
+                    plTmDept.getQualifiedCount(),
+                    plTmDept.getQualifiedRatio(),
+                    plTmDept.getCertCount(),
+                    plTmDept.getCertRatio()
+                );
+                deptStat.setPlTm(plTmData);
+            }
+            
+            // 添加PM的部门数据
+            for (PlTmDepartmentStatisticsVO pmDept : pmDepartmentList) {
+                String deptCode = pmDept.getDeptCode();
+                DepartmentStatisticsVO deptStat = departmentMap.get(deptCode);
+                if (deptStat == null) {
+                    deptStat = new DepartmentStatisticsVO(deptCode, pmDept.getDeptName());
+                    departmentMap.put(deptCode, deptStat);
+                }
+                // 设置PM统计数据
+                StatisticsDataVO pmData = new StatisticsDataVO(
+                    pmDept.getTotalCount(),
+                    pmDept.getQualifiedCount(),
+                    pmDept.getQualifiedRatio(),
+                    pmDept.getCertCount(),
+                    pmDept.getCertRatio()
+                );
+                deptStat.setPm(pmData);
+            }
+            
+            // 对于只有PL/TM或只有PM的部门，补充空数据
+            for (DepartmentStatisticsVO deptStat : departmentMap.values()) {
+                if (deptStat.getPlTm() == null) {
+                    deptStat.setPlTm(new StatisticsDataVO(0, 0, 0.0, 0, 0.0));
+                }
+                if (deptStat.getPm() == null) {
+                    deptStat.setPm(new StatisticsDataVO(0, 0, 0.0, 0, 0.0));
+                }
+            }
+            
+            // 转换为列表
+            List<DepartmentStatisticsVO> departmentList = new ArrayList<>(departmentMap.values());
+            logger.info("合并后共有{}个四级部门", departmentList.size());
+            
+            // 4. 查询研发管理部PL/TM汇总数据
+            PlTmDepartmentStatisticsVO plTmSummary = entryLevelManagerMapper.selectPlTmStatisticsSummary(l3DepartmentCode);
+            StatisticsDataVO plTmSummaryData;
+            if (plTmSummary == null) {
+                plTmSummaryData = new StatisticsDataVO(0, 0, 0.0, 0, 0.0);
+            } else {
+                plTmSummaryData = new StatisticsDataVO(
+                    plTmSummary.getTotalCount(),
+                    plTmSummary.getQualifiedCount(),
+                    plTmSummary.getQualifiedRatio(),
+                    plTmSummary.getCertCount(),
+                    plTmSummary.getCertRatio()
+                );
+            }
+            logger.info("研发管理部PL/TM汇总数据：总人数={}, 任职达标人数={}, 认证达标人数={}", 
+                plTmSummaryData.getTotalCount(), plTmSummaryData.getQualifiedCount(), plTmSummaryData.getCertCount());
+            
+            // 5. 查询研发管理部PM汇总数据
+            PlTmDepartmentStatisticsVO pmSummary = entryLevelManagerMapper.selectPmStatisticsSummary(l3DepartmentCode);
+            StatisticsDataVO pmSummaryData;
+            if (pmSummary == null) {
+                pmSummaryData = new StatisticsDataVO(0, 0, 0.0, 0, 0.0);
+            } else {
+                pmSummaryData = new StatisticsDataVO(
+                    pmSummary.getTotalCount(),
+                    pmSummary.getQualifiedCount(),
+                    pmSummary.getQualifiedRatio(),
+                    pmSummary.getCertCount(),
+                    pmSummary.getCertRatio()
+                );
+            }
+            logger.info("研发管理部PM汇总数据：总人数={}, 任职达标人数={}, 认证达标人数={}", 
+                pmSummaryData.getTotalCount(), pmSummaryData.getQualifiedCount(), pmSummaryData.getCertCount());
+            
+            // 6. 构建汇总数据
+            DepartmentStatisticsVO summary = new DepartmentStatisticsVO(l3DepartmentCode, "研发管理部");
+            summary.setPlTm(plTmSummaryData);
+            summary.setPm(pmSummaryData);
+            
+            // 7. 构建响应对象
             PlTmCertStatisticsResponseVO response = new PlTmCertStatisticsResponseVO();
             response.setSummary(summary);
             response.setDepartmentList(departmentList);
             
-            logger.info("PL/TM任职与认证统计数据查询完成");
+            logger.info("PL/TM/PM任职与认证统计数据查询完成");
             return response;
             
         } catch (Exception e) {
-            logger.error("查询PL/TM任职与认证统计数据失败", e);
+            logger.error("查询PL/TM/PM任职与认证统计数据失败", e);
             throw e;
         }
     }

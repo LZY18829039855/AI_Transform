@@ -20,10 +20,12 @@ public class EntryLevelManagerController {
     private EntryLevelManagerService entryLevelManagerService;
 
     /**
-     * 查询PL、TM任职与认证数据
-     * 统计研发管理部下各四级部门以及研发管理部整体的PL/TM总人数、通过任职标准的人数及占比、通过认证标准的人数及占比
+     * 查询PL、TM、PM（项目经理）任职与认证数据
+     * 按部门维度返回，每个部门包含PL/TM和PM两套统计数据
+     * PL和TM合并统计，PM单独统计
+     * 统计研发管理部下各四级部门以及研发管理部整体的PL/TM总人数、PM总人数、通过任职标准的人数及占比、通过认证标准的人数及占比
      * 
-     * @return PL/TM任职与认证统计数据
+     * @return PL/TM/PM任职与认证统计数据
      */
     @GetMapping("/pl-tm-cert-statistics")
     public ResponseEntity<Result<PlTmCertStatisticsResponseVO>> getPlTmCertStatistics() {

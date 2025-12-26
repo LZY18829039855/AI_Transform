@@ -345,9 +345,15 @@
             l4_department_cn_name AS deptName,
             COUNT(*) AS totalCount,
             SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount,
-            ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4) AS qualifiedRatio,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS qualifiedRatio,
             SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certCount,
-            ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4) AS certRatio
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS certRatio
         FROM t_entry_level_manager
         WHERE l3_department_code = #{l3DepartmentCode}
           AND job_name_cn IN ('PL', 'TM')
@@ -376,6 +382,52 @@
         FROM t_entry_level_manager
         WHERE l3_department_code = #{l3DepartmentCode}
           AND job_name_cn IN ('PL', 'TM')
+    </select>
+
+    <!-- 统计研发管理部下各四级部门的PM（项目经理）任职与认证数据 -->
+    <select id="selectPmStatisticsByL4Department" resultMap="PlTmDepartmentStatisticsResultMap">
+        SELECT 
+            l4_department_code AS deptCode,
+            l4_department_cn_name AS deptName,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS qualifiedRatio,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS certRatio
+        FROM t_entry_level_manager
+        WHERE l3_department_code = #{l3DepartmentCode}
+          AND job_name_cn = '项目经理'
+          AND l4_department_code IS NOT NULL
+          AND l4_department_code != ''
+        GROUP BY l4_department_code, l4_department_cn_name
+        ORDER BY l4_department_code
+    </select>
+
+    <!-- 统计研发管理部整体的PM（项目经理）任职与认证数据 -->
+    <select id="selectPmStatisticsSummary" resultMap="PlTmDepartmentStatisticsResultMap">
+        SELECT 
+            #{l3DepartmentCode} AS deptCode,
+            MAX(l3_department_cn_name) AS deptName,
+            COUNT(*) AS totalCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS qualifiedRatio,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certCount,
+            CASE 
+                WHEN COUNT(*) = 0 THEN 0.0
+                ELSE ROUND(SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) * 1.0 / COUNT(*), 4)
+            END AS certRatio
+        FROM t_entry_level_manager
+        WHERE l3_department_code = #{l3DepartmentCode}
+          AND job_name_cn = '项目经理'
     </select>
 
 </mapper>
