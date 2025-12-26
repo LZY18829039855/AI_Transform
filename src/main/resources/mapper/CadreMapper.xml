@@ -506,8 +506,8 @@
     <!-- 统计各三级部门的干部岗位数据 -->
     <select id="getL3DepartmentPositionStatistics" resultType="com.huawei.aitransform.entity.DepartmentPositionStatisticsVO">
         SELECT 
-            MAX(dept.l3_dept_code) AS deptCode,
-            MAX(dept.l3_dept_name) AS deptName,
+            MAX(l3_dept.dept_code) AS deptCode,
+            MAX(l3_dept.dept_name) AS deptName,
             'L3' AS deptLevel,
             COUNT(*) AS totalPositionCount,
             SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
@@ -517,6 +517,18 @@
             END AS l2L3PositionRatio
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -524,21 +536,33 @@
                     #{deptCode}
                 </foreach>
             </if>
-            AND dept.l3_dept_code IS NOT NULL
+            AND l3_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l3_dept_code
-        ORDER BY dept.l3_dept_code
+        GROUP BY l3_dept.dept_code
+        ORDER BY l3_dept.dept_code
     </select>
 
     <!-- 统计各三级部门的L2干部数据（按软件类/非软件类） -->
     <select id="getL3DepartmentL2Statistics" resultType="com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO">
         SELECT 
-            MAX(dept.l3_dept_code) AS deptCode,
+            MAX(l3_dept.dept_code) AS deptCode,
             COUNT(*) AS l2TotalCount,
             SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -547,21 +571,33 @@
                 </foreach>
             </if>
             AND c.position_ai_maturity = 'L2'
-            AND dept.l3_dept_code IS NOT NULL
+            AND l3_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l3_dept_code
-        ORDER BY dept.l3_dept_code
+        GROUP BY l3_dept.dept_code
+        ORDER BY l3_dept.dept_code
     </select>
 
     <!-- 统计各三级部门的L3干部数据（按软件类/非软件类） -->
     <select id="getL3DepartmentL3Statistics" resultType="com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO">
         SELECT 
-            MAX(dept.l3_dept_code) AS deptCode,
+            MAX(l3_dept.dept_code) AS deptCode,
             COUNT(*) AS l3TotalCount,
             SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -570,17 +606,17 @@
                 </foreach>
             </if>
             AND c.position_ai_maturity = 'L3'
-            AND dept.l3_dept_code IS NOT NULL
+            AND l3_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l3_dept_code
-        ORDER BY dept.l3_dept_code
+        GROUP BY l3_dept.dept_code
+        ORDER BY l3_dept.dept_code
     </select>
 
     <!-- 统计各四级部门的干部岗位数据 -->
     <select id="getL4DepartmentPositionStatistics" resultType="com.huawei.aitransform.entity.DepartmentPositionStatisticsVO">
         SELECT 
-            MAX(dept.l4_dept_code) AS deptCode,
-            MAX(dept.l4_dept_name) AS deptName,
+            MAX(l4_dept.dept_code) AS deptCode,
+            MAX(l4_dept.dept_name) AS deptName,
             'L4' AS deptLevel,
             COUNT(*) AS totalPositionCount,
             SUM(CASE WHEN c.position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) AS l2L3PositionCount,
@@ -590,6 +626,16 @@
             END AS l2L3PositionRatio
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -597,21 +643,31 @@
                     #{deptCode}
                 </foreach>
             </if>
-            AND dept.l4_dept_code IS NOT NULL
+            AND l4_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l4_dept_code
-        ORDER BY dept.l4_dept_code
+        GROUP BY l4_dept.dept_code
+        ORDER BY l4_dept.dept_code
     </select>
 
     <!-- 统计各四级部门的L2干部数据（按软件类/非软件类） -->
     <select id="getL4DepartmentL2Statistics" resultType="com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO">
         SELECT 
-            MAX(dept.l4_dept_code) AS deptCode,
+            MAX(l4_dept.dept_code) AS deptCode,
             COUNT(*) AS l2TotalCount,
             SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l2SoftwareCount,
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l2NonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -620,21 +676,31 @@
                 </foreach>
             </if>
             AND c.position_ai_maturity = 'L2'
-            AND dept.l4_dept_code IS NOT NULL
+            AND l4_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l4_dept_code
-        ORDER BY dept.l4_dept_code
+        GROUP BY l4_dept.dept_code
+        ORDER BY l4_dept.dept_code
     </select>
 
     <!-- 统计各四级部门的L3干部数据（按软件类/非软件类） -->
     <select id="getL4DepartmentL3Statistics" resultType="com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO">
         SELECT 
-            MAX(dept.l4_dept_code) AS deptCode,
+            MAX(l4_dept.dept_code) AS deptCode,
             COUNT(*) AS l3TotalCount,
             SUM(CASE WHEN c.cadre_competence_category = '软件类' THEN 1 ELSE 0 END) AS l3SoftwareCount,
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS l3NonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -643,10 +709,10 @@
                 </foreach>
             </if>
             AND c.position_ai_maturity = 'L3'
-            AND dept.l4_dept_code IS NOT NULL
+            AND l4_dept.dept_code IS NOT NULL
         </where>
-        GROUP BY dept.l4_dept_code
-        ORDER BY dept.l4_dept_code
+        GROUP BY l4_dept.dept_code
+        ORDER BY l4_dept.dept_code
     </select>
 
     <!-- 统计汇总数据（云核心网产品线下所有三级部门，不包括研发管理部下的四级部门） -->
@@ -660,6 +726,26 @@
             END AS l2L3PositionRatio
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -668,14 +754,14 @@
                 </foreach>
             </if>
             AND (
-                (dept.l3_dept_code != '030681')
+                (l3_dept.dept_code != '030681')
                 OR
-                (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
+                (l3_dept.dept_code = '030681' AND l4_dept.dept_code IS NULL)
             )
             <if test="excludeL4DeptCodes != null and excludeL4DeptCodes.size() > 0">
                 AND (
-                    dept.l4_dept_code IS NULL
-                    OR dept.l4_dept_code NOT IN
+                    l4_dept.dept_code IS NULL
+                    OR l4_dept.dept_code NOT IN
                     <foreach collection="excludeL4DeptCodes" item="deptCode" open="(" separator="," close=")">
                         #{deptCode}
                     </foreach>
@@ -692,6 +778,26 @@
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS nonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             c.position_ai_maturity = 'L2'
             <if test="deptCodes != null and deptCodes.size() > 0">
@@ -701,14 +807,14 @@
                 </foreach>
             </if>
             AND (
-                (dept.l3_dept_code != '030681')
+                (l3_dept.dept_code != '030681')
                 OR
-                (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
+                (l3_dept.dept_code = '030681' AND l4_dept.dept_code IS NULL)
             )
             <if test="excludeL4DeptCodes != null and excludeL4DeptCodes.size() > 0">
                 AND (
-                    dept.l4_dept_code IS NULL
-                    OR dept.l4_dept_code NOT IN
+                    l4_dept.dept_code IS NULL
+                    OR l4_dept.dept_code NOT IN
                     <foreach collection="excludeL4DeptCodes" item="deptCode" open="(" separator="," close=")">
                         #{deptCode}
                     </foreach>
@@ -725,6 +831,26 @@
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS nonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d3 ON (d2.parent_dept_code = d3.dept_code AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (
+                (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+                OR (d3.dept_level = '3' AND l3_dept.dept_code = d3.dept_code)
+            )
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             c.position_ai_maturity = 'L3'
             <if test="deptCodes != null and deptCodes.size() > 0">
@@ -734,14 +860,14 @@
                 </foreach>
             </if>
             AND (
-                (dept.l3_dept_code != '030681')
+                (l3_dept.dept_code != '030681')
                 OR
-                (dept.l3_dept_code = '030681' AND dept.l4_dept_code IS NULL)
+                (l3_dept.dept_code = '030681' AND l4_dept.dept_code IS NULL)
             )
             <if test="excludeL4DeptCodes != null and excludeL4DeptCodes.size() > 0">
                 AND (
-                    dept.l4_dept_code IS NULL
-                    OR dept.l4_dept_code NOT IN
+                    l4_dept.dept_code IS NULL
+                    OR l4_dept.dept_code NOT IN
                     <foreach collection="excludeL4DeptCodes" item="deptCode" open="(" separator="," close=")">
                         #{deptCode}
                     </foreach>
@@ -761,6 +887,22 @@
             END AS l2L3PositionRatio
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             <if test="deptCodes != null and deptCodes.size() > 0">
                 c.mini_departname_id IN
@@ -768,8 +910,8 @@
                     #{deptCode}
                 </foreach>
             </if>
-            AND dept.l3_dept_code = '030681'
-            AND dept.l4_dept_code IS NOT NULL
+            AND l3_dept.dept_code = '030681'
+            AND l4_dept.dept_code IS NOT NULL
         </where>
     </select>
 
@@ -781,6 +923,22 @@
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS nonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             c.position_ai_maturity = 'L2'
             <if test="deptCodes != null and deptCodes.size() > 0">
@@ -789,8 +947,8 @@
                     #{deptCode}
                 </foreach>
             </if>
-            AND dept.l3_dept_code = '030681'
-            AND dept.l4_dept_code IS NOT NULL
+            AND l3_dept.dept_code = '030681'
+            AND l4_dept.dept_code IS NOT NULL
         </where>
     </select>
 
@@ -802,6 +960,22 @@
             SUM(CASE WHEN c.cadre_competence_category != '软件类' OR c.cadre_competence_category IS NULL THEN 1 ELSE 0 END) AS nonSoftwareCount
         FROM t_cadre c
         INNER JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d1 ON (dept.parent_dept_code = d1.dept_code AND DATE(d1.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms d2 ON (d1.parent_dept_code = d2.dept_code AND DATE(d2.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms))
+        LEFT JOIN department_info_hrms l3_dept ON (
+            (dept.dept_level = '3' AND l3_dept.dept_code = dept.dept_code)
+            OR (d1.dept_level = '3' AND l3_dept.dept_code = d1.dept_code)
+            OR (d2.dept_level = '3' AND l3_dept.dept_code = d2.dept_code)
+            AND DATE(l3_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
+        LEFT JOIN department_info_hrms l4_dept ON (
+            (
+                (dept.dept_level = '4' AND l4_dept.dept_code = dept.dept_code)
+                OR (d1.dept_level = '4' AND l4_dept.dept_code = d1.dept_code)
+                OR (d2.dept_level = '4' AND l4_dept.dept_code = d2.dept_code)
+            )
+            AND DATE(l4_dept.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        )
         <where>
             c.position_ai_maturity = 'L3'
             <if test="deptCodes != null and deptCodes.size() > 0">
@@ -810,8 +984,8 @@
                     #{deptCode}
                 </foreach>
             </if>
-            AND dept.l3_dept_code = '030681'
-            AND dept.l4_dept_code IS NOT NULL
+            AND l3_dept.dept_code = '030681'
+            AND l4_dept.dept_code IS NOT NULL
         </where>
     </select>
 
