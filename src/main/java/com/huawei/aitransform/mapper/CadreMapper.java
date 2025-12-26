@@ -103,5 +103,98 @@ public interface CadreMapper {
      * @return 干部认证信息列表
      */
     List<CadreQualificationVO> getL2L3CadreWithCertInfo();
+
+    /**
+     * 统计各三级部门的干部岗位数据
+     * @param deptCodes 部门编码列表（包含三级部门及其下所有四级、五级部门的dept_code）
+     * @return 三级部门统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentPositionStatisticsVO> getL3DepartmentPositionStatistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计各三级部门的L2干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表（包含三级部门及其下所有四级、五级部门的dept_code）
+     * @return 三级部门L2统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO> getL3DepartmentL2Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计各三级部门的L3干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表（包含三级部门及其下所有四级、五级部门的dept_code）
+     * @return 三级部门L3统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO> getL3DepartmentL3Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计各四级部门的干部岗位数据
+     * @param deptCodes 部门编码列表（包含四级部门及其下所有五级部门的dept_code）
+     * @return 四级部门统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentPositionStatisticsVO> getL4DepartmentPositionStatistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计各四级部门的L2干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表（包含四级部门及其下所有五级部门的dept_code）
+     * @return 四级部门L2统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO> getL4DepartmentL2Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计各四级部门的L3干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表（包含四级部门及其下所有五级部门的dept_code）
+     * @return 四级部门L3统计数据列表
+     */
+    List<com.huawei.aitransform.entity.DepartmentL2L3StatisticsVO> getL4DepartmentL3Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计汇总数据（云核心网产品线下所有三级部门，不包括研发管理部下的四级部门）
+     * @param deptCodes 部门编码列表
+     * @param excludeL4DeptCodes 需要排除的四级部门编码列表（研发管理部下的四级部门）
+     * @return 汇总统计数据
+     */
+    com.huawei.aitransform.entity.SummaryStatisticsVO getSummaryPositionStatistics(
+            @Param("deptCodes") List<String> deptCodes,
+            @Param("excludeL4DeptCodes") List<String> excludeL4DeptCodes);
+
+    /**
+     * 统计汇总的L2干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表
+     * @param excludeL4DeptCodes 需要排除的四级部门编码列表（研发管理部下的四级部门）
+     * @return L2汇总统计数据
+     */
+    com.huawei.aitransform.entity.L2L3StatisticsVO getSummaryL2Statistics(
+            @Param("deptCodes") List<String> deptCodes,
+            @Param("excludeL4DeptCodes") List<String> excludeL4DeptCodes);
+
+    /**
+     * 统计汇总的L3干部数据（按软件类/非软件类）
+     * @param deptCodes 部门编码列表
+     * @param excludeL4DeptCodes 需要排除的四级部门编码列表（研发管理部下的四级部门）
+     * @return L3汇总统计数据
+     */
+    com.huawei.aitransform.entity.L2L3StatisticsVO getSummaryL3Statistics(
+            @Param("deptCodes") List<String> deptCodes,
+            @Param("excludeL4DeptCodes") List<String> excludeL4DeptCodes);
+
+    /**
+     * 统计研发管理部下所有四级部门的汇总数据
+     * @param deptCodes 部门编码列表（研发管理部下所有四级部门及其下所有五级部门的dept_code）
+     * @return 汇总统计数据
+     */
+    com.huawei.aitransform.entity.SummaryStatisticsVO getL4SummaryPositionStatistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计研发管理部下所有四级部门的L2汇总数据
+     * @param deptCodes 部门编码列表（研发管理部下所有四级部门及其下所有五级部门的dept_code）
+     * @return L2汇总统计数据
+     */
+    com.huawei.aitransform.entity.L2L3StatisticsVO getL4SummaryL2Statistics(@Param("deptCodes") List<String> deptCodes);
+
+    /**
+     * 统计研发管理部下所有四级部门的L3汇总数据
+     * @param deptCodes 部门编码列表（研发管理部下所有四级部门及其下所有五级部门的dept_code）
+     * @return L3汇总统计数据
+     */
+    com.huawei.aitransform.entity.L2L3StatisticsVO getL4SummaryL3Statistics(@Param("deptCodes") List<String> deptCodes);
 }
 

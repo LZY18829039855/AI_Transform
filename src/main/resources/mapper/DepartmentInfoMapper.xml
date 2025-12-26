@@ -113,5 +113,33 @@
         ORDER BY d.dept_code
     </select>
 
+    <!-- 查询指定2级部门下的所有三级部门 -->
+    <select id="getLevel3DepartmentsUnderLevel2" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT DISTINCT
+            d3.dept_code AS deptCode,
+            d3.dept_name AS deptName,
+            d3.dept_level AS deptLevel,
+            d3.parent_dept_code AS parentDeptCode
+        FROM department_info_hrms d3
+        WHERE d3.dept_level = '3'
+        AND d3.parent_dept_code = #{level2DeptCode}
+        AND DATE(d3.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        ORDER BY d3.dept_code
+    </select>
+
+    <!-- 查询指定3级部门下的所有四级部门 -->
+    <select id="getLevel4DepartmentsUnderLevel3" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT DISTINCT
+            d4.dept_code AS deptCode,
+            d4.dept_name AS deptName,
+            d4.dept_level AS deptLevel,
+            d4.parent_dept_code AS parentDeptCode
+        FROM department_info_hrms d4
+        WHERE d4.dept_level = '4'
+        AND d4.parent_dept_code = #{level3DeptCode}
+        AND DATE(d4.update_time) = (SELECT MAX(DATE(update_time)) FROM department_info_hrms)
+        ORDER BY d4.dept_code
+    </select>
+
 </mapper>
 
