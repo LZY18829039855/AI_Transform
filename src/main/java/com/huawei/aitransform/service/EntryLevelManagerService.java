@@ -363,8 +363,15 @@ public class EntryLevelManagerService {
             logger.info("研发管理部PM汇总数据：总人数={}, 任职达标人数={}, 认证达标人数={}", 
                 pmSummaryData.getTotalCount(), pmSummaryData.getQualifiedCount(), pmSummaryData.getCertCount());
             
-            // 6. 构建汇总数据
-            DepartmentStatisticsVO summary = new DepartmentStatisticsVO(l3DepartmentCode, "研发管理部");
+            // 6. 构建汇总数据，从查询结果中获取部门名称
+            // 优先使用 plTmSummary 的部门名称，如果为空则使用 pmSummary 的部门名称，都为空则使用默认值
+            String summaryDeptName = "云核心网研发管理部"; // 默认值
+            if (plTmSummary != null && plTmSummary.getDeptName() != null && !plTmSummary.getDeptName().trim().isEmpty()) {
+                summaryDeptName = plTmSummary.getDeptName();
+            } else if (pmSummary != null && pmSummary.getDeptName() != null && !pmSummary.getDeptName().trim().isEmpty()) {
+                summaryDeptName = pmSummary.getDeptName();
+            }
+            DepartmentStatisticsVO summary = new DepartmentStatisticsVO(l3DepartmentCode, summaryDeptName);
             summary.setPlTm(plTmSummaryData);
             summary.setPm(pmSummaryData);
             
