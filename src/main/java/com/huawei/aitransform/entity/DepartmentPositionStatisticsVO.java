@@ -49,6 +49,11 @@ public class DepartmentPositionStatisticsVO implements Serializable {
      */
     private L2L3StatisticsVO l3Statistics;
 
+    /**
+     * 子部门列表（例如：研发管理部下的四级部门）
+     */
+    private java.util.List<DepartmentPositionStatisticsVO> children;
+
     public DepartmentPositionStatisticsVO() {
     }
 
@@ -114,6 +119,14 @@ public class DepartmentPositionStatisticsVO implements Serializable {
 
     public void setL3Statistics(L2L3StatisticsVO l3Statistics) {
         this.l3Statistics = l3Statistics;
+    }
+
+    public java.util.List<DepartmentPositionStatisticsVO> getChildren() {
+        return children;
+    }
+
+    public void setChildren(java.util.List<DepartmentPositionStatisticsVO> children) {
+        this.children = children;
     }
 }
 
