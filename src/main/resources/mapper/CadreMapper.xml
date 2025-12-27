@@ -554,5 +554,32 @@
         WHERE account = #{account}
     </update>
 
-</mapper>
+    <!-- 根据三级部门编码统计干部岗位数据 -->
+    <select id="getCadreStatisticsByL3DeptCode" resultType="com.huawei.aitransform.entity.CadreStatisticsCountVO">
+        SELECT 
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l2SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l2NonSoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l3SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l3NonSoftwareCount
+        FROM t_cadre 
+        WHERE l3_department_code = #{deptCode}
+        <!-- 特殊处理研发管理部（030681）：如果是三级部门查询，且为研发管理部，则排除其下属的四级部门数据（即只统计l4为空的） -->
+        <if test="deptCode == '030681'">
+            AND (l4_department_code IS NULL OR l4_department_code = '')
+        </if>
+    </select>
 
+    <!-- 根据四级部门编码统计干部岗位数据 -->
+    <select id="getCadreStatisticsByL4DeptCode" resultType="com.huawei.aitransform.entity.CadreStatisticsCountVO">
+        SELECT 
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l2SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l2NonSoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l3SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l3NonSoftwareCount
+        FROM t_cadre 
+        WHERE l4_department_code = #{deptCode}
+    </select>
+
+</mapper>
