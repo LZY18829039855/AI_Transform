@@ -9,7 +9,7 @@
         SELECT DISTINCT account
         FROM t_cadre
         <where>
-            <if test="deptCodes != null and deptCodes.size() > 0">
+            <if test="deptCodes != null and deptCodes.size() &gt; 0">
                 mini_departname_id IN
                 <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                     #{deptCode}
@@ -28,7 +28,7 @@
             COALESCE(cadre_competence_category, '未知') AS competenceCategory
         FROM t_cadre
         <where>
-            <if test="deptCodes != null and deptCodes.size() > 0">
+            <if test="deptCodes != null and deptCodes.size() &gt; 0">
                 mini_departname_id IN
                 <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                     #{deptCode}
@@ -51,7 +51,7 @@
             COALESCE(is_cert_standard, 0) AS isCertStandard
         FROM t_cadre
         <where>
-            <if test="deptCodes != null and deptCodes.size() > 0">
+            <if test="deptCodes != null and deptCodes.size() &gt; 0">
                 mini_departname_id IN
                 <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                     #{deptCode}
@@ -141,7 +141,7 @@
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.period_id = 20251126
-        <if test="deptCodes != null and deptCodes.size() > 0">
+        <if test="deptCodes != null and deptCodes.size() &gt; 0">
             AND c.mini_departname_id IN
             <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                 #{deptCode}
@@ -297,7 +297,7 @@
         </choose>
         LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.period_id = 20251126
-        <if test="deptCodes != null and deptCodes.size() > 0">
+        <if test="deptCodes != null and deptCodes.size() &gt; 0">
             AND c.mini_departname_id IN
             <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">
                 #{deptCode}
