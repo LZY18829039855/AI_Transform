@@ -53,80 +53,97 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                 // 统计每个三级部门的数据
                 CadreStatisticsCountVO countVO = cadreMapper.getCadreStatisticsByL3DeptCode(dept.getDeptCode());
                 
-                // 处理研发管理部作为三级部门时的特殊逻辑
-                // 如果是研发管理部（作为三级部门），需要排除下属四级部门的数据吗？
-                // 根据文档：研发管理部作为三级部门时，如果其下有四级部门数据，则三级部门级别的数据只统计l4_department_code为NULL的记录
-                // 但是我们的SQL是 WHERE l3_department_code = #{deptCode}，这已经包含了所有属于该三级部门的数据
-                // 而研发管理部下的四级部门数据的 l3_department_code 也是 030681
-                // 因此，如果直接统计 l3_department_code = '030681'，会包含其下所有四级部门的数据
-                // 文档中提到：汇总数据包括两部分：1. 云核心网产品线（031562）下所有三级部门的干部岗位（使用`l3_department_code`字段，不包括研发管理部下的四级部门数据，避免重复统计）
-                // 这是一个潜在的问题点。
-                // 如果研发管理部（030681）在 l3Depts 列表中，我们在这里统计了它。
-                // 后面我们又会统计研发管理部下的四级部门。
-                // 如果我们在这里统计了 030681，那么它包含了所有下属四级部门的数据。
-                // 为了避免重复，我们需要区分。
-                
-                // 但是文档业务逻辑中描述：
-                // 汇总数据：累加所有部门的统计数据
-                // 部门列表：所有三级部门 + 研发管理部下的四级部门
-                
-                // 让我们看看 CadreMapper.xml 中的查询逻辑：
-                // getCadreStatisticsByL3DeptCode: WHERE l3_department_code = #{deptCode}
-                
-                // 如果 030681 是三级部门，那么它的数据会被统计。
-                // 如果我们后续还要统计 030681 下的四级部门，那么在展示上，030681 作为一个条目，其下的四级部门作为其他条目。
-                // 这可能会导致混淆。通常三级部门列表应该包含 030681。
-                
-                // 根据文档：
-                // 研发管理部（030681）作为三级部门时，如果其下有四级部门数据，则三级部门级别的数据只统计l4_department_code为NULL的记录
-                
-                // 所以，对于研发管理部（030681），我们需要特殊的查询逻辑吗？
-                // 目前的 SQL 是统计所有 l3_department_code = deptCode 的数据。
-                // 如果 deptCode 是 030681，那么它包含 l4_department_code 为空的和不为空的。
-                // 如果我们把 030681 当作普通三级部门处理，那么它显示的是汇总数据。
-                // 如果我们要把 030681 拆分成 "研发管理部(本部)" 和 "下属四级部门"，那么对于本部，应该只统计 l4 为空的。
-                
-                // 但是 Mapper 中没有提供只统计 l4 为空的接口。
-                // 考虑到文档中的说明：
-                // "研发管理部（030681）作为三级部门时，如果其下有四级部门数据，则三级部门级别的数据只统计l4_department_code为NULL的记录"
-                // 这意味着我们需要一个特殊的查询，或者在 SQL 中处理。
-                
-                // 简单起见，且遵循“先查询对应的三级以及四级部门信息”的步骤，
-                // 如果 l3Depts 中包含 030681，我们需要注意。
-                // 通常 030681 是三级部门。
-                
-                // 既然 Mapper 只能统计 l3_department_code = ?，如果对于 030681 需要特殊处理，可能需要修改 Mapper 或 SQL。
-                // 但当前指令是“修改接口文档”后的代码生成。
-                // 文档里写了：
-                // "研发管理部（030681）作为三级部门时，如果其下有四级部门数据，则三级部门级别的数据只统计l4_department_code为NULL的记录"
-                
-                // 让我们修改 Mapper SQL 来支持这一点，或者在 Service 层处理。
-                // 由于 Mapper 已经生成，我不想改 Mapper 签名。
-                // 但是 SQL 逻辑是 WHERE l3_department_code = #{deptCode}。
-                
-                // 如果是 030681，我们需要 WHERE l3_department_code = '030681' AND l4_department_code IS NULL。
-                // 这可以通过在 Mapper 中添加一个特殊方法，或者修改 getCadreStatisticsByL3DeptCode 方法，增加一个 excludeL4 参数？
-                // 或者在 SQL 中判断，如果 deptCode = '030681' 则加上 AND l4_department_code IS NULL？
-                
-                // 鉴于 Mapper XML 已经写入，我可以直接修改 XML 文件。
-                // 让我们修改 getCadreStatisticsByL3DeptCode 的 SQL。
-                
                 if (countVO != null) {
-                    // 如果是研发管理部，并且我们稍后会单独统计其四级部门，那么这里是否应该排除四级部门的数据？
-                    // 文档说要排除。但是当前的 Mapper SQL 没有排除。
-                    // 我将在代码生成后，再次修改 Mapper XML 来实现这个逻辑。
+                    // 如果是研发管理部（030681），需要排除下属四级部门的数据
+                    // 对于研发管理部，汇总数据应该由两部分组成：
+                    // 1. 研发管理部本部的数据（l4_department_code IS NULL） -> 这部分作为三级部门展示
+                    // 2. 研发管理部下属四级部门的数据 -> 这部分作为四级部门展示
                     
-                    // 暂时先按现有 Mapper 使用，稍后修复 SQL。
+                    // 但是当前的 getCadreStatisticsByL3DeptCode 查询是 WHERE l3_department_code = #{deptCode}
+                    // 这会包含该三级部门下的所有数据（包括已分配到四级部门的数据）
+                    
+                    // 如果我们想要让 研发管理部（作为三级部门列表中的一项）只显示未分配到四级部门的人员：
+                    // 那么我们需要修改查询逻辑或者在这里做减法。
+                    // 但是，如果业务含义是“三级部门统计该部门下所有人”，那么应该包含四级部门的人。
+                    // 可是，如果列表中同时展示了“研发管理部”和“研发管理部下的四级部门”，
+                    // 那么用户看列表时，可能会把它们加起来，导致重复计算。
+                    // 通常做法：父级部门行只显示直属（未下钻）的人员，或者父级部门行显示汇总（此时不应该和子级部门简单累加）。
+                    
+                    // 根据之前的修改，Mapper 中的 getCadreStatisticsByL3DeptCode 已经去掉了对 030681 的特殊过滤。
+                    // 这意味着 countVO 包含了 030681 下的所有人（包括四级部门的人）。
+                    
+                    // 如果我们希望列表中的“研发管理部”行只显示直属人员（不含四级部门人员），
+                    // 那么我们需要用 总数 - 四级部门总数。
+                    // 或者，修改 Mapper，对于 030681 加上 AND l4_department_code IS NULL。
+                    // 用户刚才说：“对于研发管理部本身，只统计那些未归属到具体四级部门（即 L4 部门为空）的干部。这里不对，统计三级部门下面的干部数据时，直接使用下面的过滤条件即可：WHERE l3_department_code = #{deptCode}，不需要对四级部门的ID做过滤限制”
+                    
+                    // 理解用户的意思：
+                    // 用户认为之前的“只统计 L4 为空”是错误的。
+                    // 用户希望“直接使用 WHERE l3_department_code = #{deptCode}”。
+                    // 这意味着：在统计三级部门（包括研发管理部）时，包含其下所有四级部门的数据。
+                    
+                    // 那么，问题来了：如果列表中有“研发管理部”（包含所有人），又有“研发管理部下属四级部门”，
+                    // 那么汇总 totalSum 时，如果简单累加 departmentList 中的所有项，就会重复计算。
+                    
+                    // 让我们检查汇总逻辑。
+                    // totalSum 是在遍历过程中累加的。
+                    
+                    // 策略调整：
+                    // 1. 三级部门列表（l3Depts）中包含研发管理部。
+                    // 2. 我们遍历 l3Depts，计算 countVO（包含其下所有四级部门）。
+                    // 3. 将其加入 departmentList。
+                    // 4. 累加到 totalSum。
+                    // 5. 然后，我们遍历研发管理部下的四级部门（l4Depts）。
+                    // 6. 计算 countVO。
+                    // 7. 将其加入 departmentList。
+                    // 8. 累加到 totalSum。
+                    
+                    // 显然，这样 totalSum 会重复计算研发管理部下四级部门的人员。
+                    // 因为这些人员既在 l3_department_code='030681' 中统计了一次，又在 l4_department_code='xxxx' 中统计了一次。
+                    
+                    // 修正汇总逻辑：
+                    // 只有当部门不是研发管理部（030681）时，才将其 countVO 累加到 totalSum。
+                    // 对于研发管理部，我们不累加它的 countVO 到 totalSum（因为我们稍后会通过累加其下的四级部门 + 本部直属人员来计算？或者直接取研发管理部的 countVO 作为该部门的总数？）
+                    
+                    // 另一种理解：
+                    // 用户说“统计三级部门...直接使用 WHERE l3_department_code = #{deptCode}”。
+                    // 这可能只是指接口返回的列表中的每一行的统计口径。
+                    // 至于 Summary（汇总数据），应该由所有不重叠的部分组成。
+                    // 即：所有非研发管理部的三级部门 + 研发管理部。
+                    // 或者：所有非研发管理部的三级部门 + 研发管理部下的四级部门 + 研发管理部直属（无四级部门）。
+                    
+                    // 如果用户的意图是：列表展示归列表展示，汇总归汇总。
+                    // 列表展示：
+                    // - 研发管理部：显示所有（含四级）。
+                    // - 研发管理部下某四级部门：显示该四级部门。
+                    // 汇总数据：
+                    // - 应该是整个云核心网产品线的数据。
+                    // - 即：所有三级部门（包括研发管理部）的总和。
+                    // - 因为研发管理部的数据已经包含了其下四级部门的数据。
+                    // - 所以，只要把所有 l3Depts 的数据累加，就得到了总数。
+                    // - 此时，不需要再累加 l4Depts 的数据到 totalSum。
+                    
+                    // 但是，l4Depts 的数据确实添加到了 departmentList 中供前端展示。
+                    
+                    // 所以，正确的逻辑应该是：
+                    // 遍历 l3Depts：
+                    //   - 计算 countVO (包含所有)。
+                    //   - 加入 departmentList。
+                    //   - 累加 totalSum。
+                    // 遍历 l4Depts：
+                    //   - 计算 countVO。
+                    //   - 加入 departmentList。
+                    //   - **不**累加 totalSum（因为已经在对应的三级部门中累加过了）。
+                    
+                    // 这样 Summary 是正确的（基于所有三级部门的全集）。
+                    // 列表也是用户想要的（三级部门包含所有）。
                     
                     DepartmentPositionStatisticsVO deptVO = createDepartmentPositionStatisticsVO(
                             dept.getDeptCode(), dept.getDeptName(), "L3", countVO);
                     departmentList.add(deptVO);
                     
                     // 累加汇总数据
-                    // 注意：如果这里包含 030681 且没有排除四级部门，且后续又加了四级部门，那么汇总数据会重复。
-                    // 所以必须解决这个问题。
-                    
-                    // 假设我稍后会修改 Mapper。
+                    // 只有在处理三级部门时累加，这样就覆盖了整个产品线（包括研发管理部及其下属）
                     totalSum += countVO.getTotalCount();
                     l2SoftwareSum += countVO.getL2SoftwareCount();
                     l2NonSoftwareSum += countVO.getL2NonSoftwareCount();
@@ -146,12 +163,7 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                             dept.getDeptCode(), dept.getDeptName(), "L4", countVO);
                     departmentList.add(deptVO);
                     
-                    // 累加汇总数据
-                    totalSum += countVO.getTotalCount();
-                    l2SoftwareSum += countVO.getL2SoftwareCount();
-                    l2NonSoftwareSum += countVO.getL2NonSoftwareCount();
-                    l3SoftwareSum += countVO.getL3SoftwareCount();
-                    l3NonSoftwareSum += countVO.getL3NonSoftwareCount();
+                    // 这里不再累加到汇总数据，因为这些数据已经包含在“研发管理部”这个三级部门的统计中了
                 }
             }
         }
