@@ -578,4 +578,30 @@
         WHERE l4_department_code = #{deptCode}
     </select>
 
+    <!-- 根据三级部门编码统计干部AI任职认证数据 -->
+    <select id="getCadreAiCertStatisticsByL3DeptCode" resultType="com.huawei.aitransform.entity.CadreAiCertCountVO">
+        SELECT 
+            COUNT(*) as totalCadreCount,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) as l2L3Count,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as softwareL2Count,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as softwareL3Count,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as nonSoftwareL2L3Count,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') AND is_qualifications_standard = 1 AND is_cert_standard = 1 THEN 1 ELSE 0 END) as qualifiedL2L3Count
+        FROM t_cadre 
+        WHERE l3_department_code = #{deptCode}
+    </select>
+
+    <!-- 根据四级部门编码统计干部AI任职认证数据 -->
+    <select id="getCadreAiCertStatisticsByL4DeptCode" resultType="com.huawei.aitransform.entity.CadreAiCertCountVO">
+        SELECT 
+            COUNT(*) as totalCadreCount,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') THEN 1 ELSE 0 END) as l2L3Count,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as softwareL2Count,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as softwareL3Count,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as nonSoftwareL2L3Count,
+            SUM(CASE WHEN position_ai_maturity IN ('L2', 'L3') AND is_qualifications_standard = 1 AND is_cert_standard = 1 THEN 1 ELSE 0 END) as qualifiedL2L3Count
+        FROM t_cadre 
+        WHERE l4_department_code = #{deptCode}
+    </select>
+
 </mapper>

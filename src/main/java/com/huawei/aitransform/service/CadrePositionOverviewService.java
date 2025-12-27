@@ -1,5 +1,6 @@
 package com.huawei.aitransform.service;
 
+import com.huawei.aitransform.entity.CadreAiCertOverviewResponseVO;
 import com.huawei.aitransform.entity.CadrePositionOverviewResponseVO;
 
 /**
@@ -13,5 +14,12 @@ public interface CadrePositionOverviewService {
      * @return 统计结果
      */
     CadrePositionOverviewResponseVO getCadrePositionOverview();
+
+    /**
+     * 获取干部AI任职认证统计数据
+     *
+     * @return 统计结果
+     */
+    CadreAiCertOverviewResponseVO getCadreAiCertificationOverview();
 }
 

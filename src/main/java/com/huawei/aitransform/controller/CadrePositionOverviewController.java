@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.entity.CadreAiCertOverviewResponseVO;
 import com.huawei.aitransform.entity.CadrePositionOverviewResponseVO;
 import com.huawei.aitransform.service.CadrePositionOverviewService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,14 @@ public class CadrePositionOverviewController {
     @GetMapping("/cadre-position-overview")
     public Result<CadrePositionOverviewResponseVO> getCadrePositionOverview() {
         return Result.success(cadrePositionOverviewService.getCadrePositionOverview());
+    }
+
+    /**
+     * 统计干部AI任职认证数据
+     */
+    @GetMapping("/cadre-ai-certification-overview")
+    public Result<CadreAiCertOverviewResponseVO> getCadreAiCertificationOverview() {
+        return Result.success(cadrePositionOverviewService.getCadreAiCertificationOverview());
     }
 }
 

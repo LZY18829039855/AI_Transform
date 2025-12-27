@@ -138,5 +138,19 @@ public interface CadreMapper {
      * @return 统计结果
      */
     com.huawei.aitransform.entity.CadreStatisticsCountVO getCadreStatisticsByL4DeptCode(@Param("deptCode") String deptCode);
+
+    /**
+     * 根据三级部门编码统计干部AI任职认证数据
+     * @param deptCode 三级部门编码
+     * @return 统计结果
+     */
+    com.huawei.aitransform.entity.CadreAiCertCountVO getCadreAiCertStatisticsByL3DeptCode(@Param("deptCode") String deptCode);
+
+    /**
+     * 根据四级部门编码统计干部AI任职认证数据
+     * @param deptCode 四级部门编码
+     * @return 统计结果
+     */
+    com.huawei.aitransform.entity.CadreAiCertCountVO getCadreAiCertStatisticsByL4DeptCode(@Param("deptCode") String deptCode);
 }
 
