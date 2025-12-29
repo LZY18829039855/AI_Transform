@@ -518,29 +518,29 @@
     <!-- 批量更新干部的部门编码字段 -->
     <update id="batchUpdateCadreDepartmentCodes">
         UPDATE t_cadre
-        SET l2_department_code = CASE account
+        SET l2_department_code = CASE
             <foreach collection="cadreList" item="cadre">
-                WHEN #{cadre.account} THEN #{cadre.l2DepartmentCode}
+                WHEN account = #{cadre.account} AND mini_departname_id = #{cadre.miniDepartnameId} THEN #{cadre.l2DepartmentCode}
             </foreach>
         END,
-        l3_department_code = CASE account
+        l3_department_code = CASE
             <foreach collection="cadreList" item="cadre">
-                WHEN #{cadre.account} THEN #{cadre.l3DepartmentCode}
+                WHEN account = #{cadre.account} AND mini_departname_id = #{cadre.miniDepartnameId} THEN #{cadre.l3DepartmentCode}
             </foreach>
         END,
-        l4_department_code = CASE account
+        l4_department_code = CASE
             <foreach collection="cadreList" item="cadre">
-                WHEN #{cadre.account} THEN #{cadre.l4DepartmentCode}
+                WHEN account = #{cadre.account} AND mini_departname_id = #{cadre.miniDepartnameId} THEN #{cadre.l4DepartmentCode}
             </foreach>
         END,
-        l5_department_code = CASE account
+        l5_department_code = CASE
             <foreach collection="cadreList" item="cadre">
-                WHEN #{cadre.account} THEN #{cadre.l5DepartmentCode}
+                WHEN account = #{cadre.account} AND mini_departname_id = #{cadre.miniDepartnameId} THEN #{cadre.l5DepartmentCode}
             </foreach>
         END
-        WHERE account IN
+        WHERE (account, mini_departname_id) IN
         <foreach collection="cadreList" item="cadre" open="(" separator="," close=")">
-            #{cadre.account}
+            (#{cadre.account}, #{cadre.miniDepartnameId})
         </foreach>
     </update>
 
@@ -552,6 +552,7 @@
             l4_department_code = #{l4DepartmentCode},
             l5_department_code = #{l5DepartmentCode}
         WHERE account = #{account}
+          AND mini_departname_id = #{miniDepartnameId}
     </update>
 
     <!-- 根据三级部门编码统计干部岗位数据 -->
