@@ -328,9 +328,9 @@
     <select id="getL2L3CadreWithHighestQualification" resultType="com.huawei.aitransform.entity.CadreQualificationVO">
         SELECT 
             c.account AS employeeNumber,
-            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
+            c.position_ai_maturity AS aiMaturity,
             q.competence_rating_cn AS highestQualificationLevel,
-            COALESCE(c.cadre_competence_category, '未知') AS jobCategory,
+            c.cadre_competence_category AS jobCategory,
             CASE 
                 WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 
@@ -442,9 +442,19 @@
     <update id="batchUpdateCertStandard">
         UPDATE t_cadre
         SET is_cert_standard = 1
-        WHERE account IN
-        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
-            #{employeeNumber}
+        WHERE
+        <foreach collection="cadreList" item="item" separator=" OR ">
+            (account = #{item.employeeNumber}
+            AND position_ai_maturity = #{item.aiMaturity}
+            <choose>
+                <when test="item.jobCategory != null">
+                    AND cadre_competence_category = #{item.jobCategory}
+                </when>
+                <otherwise>
+                    AND cadre_competence_category IS NULL
+                </otherwise>
+            </choose>
+            )
         </foreach>
     </update>
 
@@ -452,9 +462,19 @@
     <update id="batchResetCertStandard">
         UPDATE t_cadre
         SET is_cert_standard = 0
-        WHERE account IN
-        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
-            #{employeeNumber}
+        WHERE
+        <foreach collection="cadreList" item="item" separator=" OR ">
+            (account = #{item.employeeNumber}
+            AND position_ai_maturity = #{item.aiMaturity}
+            <choose>
+                <when test="item.jobCategory != null">
+                    AND cadre_competence_category = #{item.jobCategory}
+                </when>
+                <otherwise>
+                    AND cadre_competence_category IS NULL
+                </otherwise>
+            </choose>
+            )
         </foreach>
     </update>
 
@@ -462,8 +482,8 @@
     <select id="getL2L3CadreWithCertInfo" resultType="com.huawei.aitransform.entity.CadreQualificationVO">
         SELECT 
             c.account AS employeeNumber,
-            COALESCE(c.position_ai_maturity, '未知') AS aiMaturity,
-            COALESCE(c.cadre_competence_category, '未知') AS jobCategory,
+            c.position_ai_maturity AS aiMaturity,
+            c.cadre_competence_category AS jobCategory,
             CASE 
                 WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 

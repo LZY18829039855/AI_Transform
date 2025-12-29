@@ -86,17 +86,17 @@ public interface CadreMapper {
 
     /**
      * 批量更新干部的is_cert_standard字段为1
-     * @param employeeNumbers 需要更新为达标的干部工号列表
+     * @param cadreList 需要更新为达标的干部列表
      * @return 更新的记录数
      */
-    int batchUpdateCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+    int batchUpdateCertStandard(@Param("cadreList") List<CadreQualificationVO> cadreList);
 
     /**
      * 批量将干部的is_cert_standard字段重置为0
-     * @param employeeNumbers 需要重置的干部工号列表
+     * @param cadreList 需要重置的干部列表
      * @return 更新的记录数
      */
-    int batchResetCertStandard(@Param("employeeNumbers") List<String> employeeNumbers);
+    int batchResetCertStandard(@Param("cadreList") List<CadreQualificationVO> cadreList);
 
     /**
      * 查询所有L2、L3干部及其专业级证书和专业级科目二通过情况

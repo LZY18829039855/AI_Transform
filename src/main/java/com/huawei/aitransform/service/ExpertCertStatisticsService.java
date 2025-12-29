@@ -2727,10 +2727,13 @@ public class ExpertCertStatisticsService {
             
             // 2. 收集所有L2、L3干部的工号（用于重置）
             List<String> allL2L3EmployeeNumbers = new ArrayList<>();
+            // 收集所有L2、L3干部VO（用于Cert重置）
+            List<CadreQualificationVO> allL2L3Cadres = new ArrayList<>();
+            
             // 3. 收集任职达标的干部工号
             List<String> qualifiedEmployeeNumbers = new ArrayList<>();
-            // 4. 收集认证达标的干部工号
-            List<String> certQualifiedEmployeeNumbers = new ArrayList<>();
+            // 4. 收集认证达标的干部VO
+            List<CadreQualificationVO> certQualifiedCadres = new ArrayList<>();
             
             int l2QualifiedCount = 0;
             int l3QualifiedCount = 0;
@@ -2755,6 +2758,7 @@ public class ExpertCertStatisticsService {
                 }
                 
                 allL2L3EmployeeNumbers.add(employeeNumber);
+                allL2L3Cadres.add(cadre);
                 
                 // 判断任职是否达标
                 boolean isQualified = false;
@@ -2840,7 +2844,7 @@ public class ExpertCertStatisticsService {
                 }
                 
                 if (isCertQualified) {
-                    certQualifiedEmployeeNumbers.add(employeeNumber);
+                    certQualifiedCadres.add(cadre);
                 }
             }
             
@@ -2856,14 +2860,14 @@ public class ExpertCertStatisticsService {
             }
             
             // 8. 先重置所有L2、L3干部的is_cert_standard字段为0
-            if (!allL2L3EmployeeNumbers.isEmpty()) {
-                cadreMapper.batchResetCertStandard(allL2L3EmployeeNumbers);
+            if (!allL2L3Cadres.isEmpty()) {
+                cadreMapper.batchResetCertStandard(allL2L3Cadres);
             }
             
             // 9. 批量更新认证达标的干部is_cert_standard字段为1
             int updatedCertCount = 0;
-            if (!certQualifiedEmployeeNumbers.isEmpty()) {
-                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedEmployeeNumbers);
+            if (!certQualifiedCadres.isEmpty()) {
+                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedCadres);
             }
             
             // 10. 构建返回结果
@@ -2879,8 +2883,8 @@ public class ExpertCertStatisticsService {
             result.put("l3QualifiedCount", l3QualifiedCount);
             result.put("l3UnqualifiedCount", l3UnqualifiedCount);
             // 认证达标统计
-            result.put("certQualifiedCount", certQualifiedEmployeeNumbers.size());
-            result.put("certUnqualifiedCount", allL2L3EmployeeNumbers.size() - certQualifiedEmployeeNumbers.size());
+            result.put("certQualifiedCount", certQualifiedCadres.size());
+            result.put("certUnqualifiedCount", allL2L3Cadres.size() - certQualifiedCadres.size());
             result.put("updatedCertCount", updatedCertCount);
             result.put("l2CertQualifiedCount", l2CertQualifiedCount);
             result.put("l2CertUnqualifiedCount", l2CertUnqualifiedCount);
@@ -2927,10 +2931,10 @@ public class ExpertCertStatisticsService {
                 return result;
             }
             
-            // 2. 收集所有L2、L3干部的工号（用于重置）
-            List<String> allL2L3EmployeeNumbers = new ArrayList<>();
-            // 3. 收集认证达标的干部工号
-            List<String> certQualifiedEmployeeNumbers = new ArrayList<>();
+            // 2. 收集所有L2、L3干部（用于重置）
+            List<CadreQualificationVO> allL2L3Cadres = new ArrayList<>();
+            // 3. 收集认证达标的干部
+            List<CadreQualificationVO> certQualifiedCadres = new ArrayList<>();
             
             int l2CertQualifiedCount = 0;
             int l3CertQualifiedCount = 0;
@@ -2954,7 +2958,7 @@ public class ExpertCertStatisticsService {
                     continue;
                 }
                 
-                allL2L3EmployeeNumbers.add(employeeNumber);
+                allL2L3Cadres.add(cadre);
                 
                 // 判断认证是否达标
                 boolean isCertQualified = false;
@@ -2973,7 +2977,7 @@ public class ExpertCertStatisticsService {
                 }
                 
                 if (isCertQualified) {
-                    certQualifiedEmployeeNumbers.add(employeeNumber);
+                    certQualifiedCadres.add(cadre);
                     if ("L2".equals(aiMaturity)) {
                         l2CertQualifiedCount++;
                     } else if ("L3".equals(aiMaturity)) {
@@ -2989,22 +2993,22 @@ public class ExpertCertStatisticsService {
             }
             
             // 5. 先重置所有L2、L3干部的is_cert_standard字段为0
-            if (!allL2L3EmployeeNumbers.isEmpty()) {
-                cadreMapper.batchResetCertStandard(allL2L3EmployeeNumbers);
+            if (!allL2L3Cadres.isEmpty()) {
+                cadreMapper.batchResetCertStandard(allL2L3Cadres);
             }
             
             // 6. 批量更新认证达标的干部is_cert_standard字段为1
             int updatedCertCount = 0;
-            if (!certQualifiedEmployeeNumbers.isEmpty()) {
-                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedEmployeeNumbers);
+            if (!certQualifiedCadres.isEmpty()) {
+                updatedCertCount = cadreMapper.batchUpdateCertStandard(certQualifiedCadres);
             }
             
             // 7. 构建返回结果
             result.put("success", true);
             result.put("message", "更新成功");
-            result.put("totalCount", allL2L3EmployeeNumbers.size());
-            result.put("certQualifiedCount", certQualifiedEmployeeNumbers.size());
-            result.put("certUnqualifiedCount", allL2L3EmployeeNumbers.size() - certQualifiedEmployeeNumbers.size());
+            result.put("totalCount", allL2L3Cadres.size());
+            result.put("certQualifiedCount", certQualifiedCadres.size());
+            result.put("certUnqualifiedCount", allL2L3Cadres.size() - certQualifiedCadres.size());
             result.put("updatedCertCount", updatedCertCount);
             result.put("l2CertQualifiedCount", l2CertQualifiedCount);
             result.put("l2CertUnqualifiedCount", l2CertUnqualifiedCount);
