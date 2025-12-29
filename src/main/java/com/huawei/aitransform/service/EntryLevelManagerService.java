@@ -327,6 +327,35 @@ public class EntryLevelManagerService {
             
             // 转换为列表
             List<DepartmentStatisticsVO> departmentList = new ArrayList<>(departmentMap.values());
+            
+            // 按照指定顺序排序
+            List<String> sortOrder = java.util.Arrays.asList(
+                "分组核心网产品部",
+                "云核心网CS&IMS产品部",
+                "融合视频产品部",
+                "云核心网软件平台部",
+                "云核心网解决方案增值开发部",
+                "云核心网解决方案部",
+                "云核心网架构与设计部",
+                "云核心网技术规划部",
+                "云核心网研究部",
+                "云核心网产品工程与IT装备部"
+            );
+
+            departmentList.sort((o1, o2) -> {
+                String name1 = o1.getDeptName() != null ? o1.getDeptName().trim() : "";
+                String name2 = o2.getDeptName() != null ? o2.getDeptName().trim() : "";
+                
+                int index1 = sortOrder.indexOf(name1);
+                int index2 = sortOrder.indexOf(name2);
+                
+                // 如果都不在列表中，保持原顺序（这里简化处理，都排在最后）
+                if (index1 == -1) index1 = Integer.MAX_VALUE;
+                if (index2 == -1) index2 = Integer.MAX_VALUE;
+                
+                return Integer.compare(index1, index2);
+            });
+
             logger.info("合并后共有{}个四级部门", departmentList.size());
             
             // 4. 查询研发管理部PL/TM汇总数据
