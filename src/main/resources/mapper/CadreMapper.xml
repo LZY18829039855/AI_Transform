@@ -422,9 +422,19 @@
     <update id="batchUpdateQualificationStandard">
         UPDATE t_cadre
         SET is_qualifications_standard = 1
-        WHERE account IN
-        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
-            #{employeeNumber}
+        WHERE
+        <foreach collection="cadreList" item="item" separator=" OR ">
+            (account = #{item.employeeNumber}
+            AND position_ai_maturity = #{item.aiMaturity}
+            <choose>
+                <when test="item.jobCategory != null">
+                    AND cadre_competence_category = #{item.jobCategory}
+                </when>
+                <otherwise>
+                    AND cadre_competence_category IS NULL
+                </otherwise>
+            </choose>
+            )
         </foreach>
     </update>
 
@@ -432,9 +442,19 @@
     <update id="batchResetQualificationStandard">
         UPDATE t_cadre
         SET is_qualifications_standard = 0
-        WHERE account IN
-        <foreach collection="employeeNumbers" item="employeeNumber" open="(" separator="," close=")">
-            #{employeeNumber}
+        WHERE
+        <foreach collection="cadreList" item="item" separator=" OR ">
+            (account = #{item.employeeNumber}
+            AND position_ai_maturity = #{item.aiMaturity}
+            <choose>
+                <when test="item.jobCategory != null">
+                    AND cadre_competence_category = #{item.jobCategory}
+                </when>
+                <otherwise>
+                    AND cadre_competence_category IS NULL
+                </otherwise>
+            </choose>
+            )
         </foreach>
     </update>
 
