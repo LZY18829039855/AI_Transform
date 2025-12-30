@@ -31,6 +31,16 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
 
         // 1. 获取源数据 (t_employee_sync + 达标计算)
         List<EmployeeSyncDataVO> sourceList = employeeMapper.getEmployeeSyncData(periodId);
+        
+        // 校验源数据量，如果小于2000条则认为数据异常，中止同步
+        if (sourceList == null || sourceList.size() < 2000) {
+            Map<String, Object> errorResult = new HashMap<>();
+            errorResult.put("periodId", periodId);
+            errorResult.put("success", false);
+            errorResult.put("message", "Source data count is too low (" + (sourceList == null ? 0 : sourceList.size()) + "), sync aborted.");
+            return errorResult;
+        }
+
         Map<String, EmployeeSyncDataVO> sourceMap = sourceList.stream()
                 .collect(Collectors.toMap(EmployeeSyncDataVO::getEmployeeNumber, Function.identity(), (k1, k2) -> k1));
 
@@ -74,6 +84,8 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         }
 
         Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("message", "Sync completed successfully");
         result.put("periodId", periodId);
         result.put("totalSource", sourceList.size());
         result.put("insertCount", insertCount);
