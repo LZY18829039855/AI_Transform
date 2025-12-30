@@ -659,9 +659,155 @@
         WHERE employee_number = #{employeeNumber}
     </update>
 
-    <!-- 删除员工数据 -->
-    <delete id="deleteEmployee">
-        DELETE FROM t_employee WHERE employee_number = #{employeeNumber}
+    <!-- 批量插入员工数据 -->
+    <insert id="batchInsertEmployees" parameterType="java.util.List">
+        INSERT INTO t_employee (
+            employee_number, last_name, 
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode, 
+            lowestdeptid, 
+            firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, 
+            lowestdept, 
+            job_type, job_category, job_subcategory, 
+            period_id, updated_time, 
+            is_qualifications_standard, is_cert_standard
+        ) VALUES 
+        <foreach collection="list" item="item" separator=",">
+        (
+            #{item.employeeNumber}, #{item.lastName}, 
+            #{item.firstdeptcode}, #{item.seconddeptcode}, #{item.thirddeptcode}, #{item.fourthdeptcode}, #{item.fifthdeptcode}, #{item.sixthdeptcode}, 
+            #{item.lowestDeptId}, 
+            #{item.firstdept}, #{item.seconddept}, #{item.thirddept}, #{item.fourthdept}, #{item.fifthdept}, #{item.sixthdept}, 
+            #{item.lowestDept}, 
+            #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory}, 
+            #{item.periodId}, NOW(), 
+            #{item.isQualificationsStandard}, #{item.isCertStandard}
+        )
+        </foreach>
+    </insert>
+
+    <!-- 批量更新员工数据 (使用CASE WHEN) -->
+    <update id="batchUpdateEmployees" parameterType="java.util.List">
+        UPDATE t_employee
+        <trim prefix="SET" suffixOverrides=",">
+            <trim prefix="last_name = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.lastName}
+                </foreach>
+            </trim>
+            <trim prefix="firstdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.firstdeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="seconddeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.seconddeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="thirddeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.thirddeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="fourthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.fourthdeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="fifthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.fifthdeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="sixthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.sixthdeptcode}
+                </foreach>
+            </trim>
+            <trim prefix="lowestdeptid = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.lowestDeptId}
+                </foreach>
+            </trim>
+            <trim prefix="firstdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.firstdept}
+                </foreach>
+            </trim>
+            <trim prefix="seconddept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.seconddept}
+                </foreach>
+            </trim>
+            <trim prefix="thirddept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.thirddept}
+                </foreach>
+            </trim>
+            <trim prefix="fourthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.fourthdept}
+                </foreach>
+            </trim>
+            <trim prefix="fifthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.fifthdept}
+                </foreach>
+            </trim>
+            <trim prefix="sixthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.sixthdept}
+                </foreach>
+            </trim>
+            <trim prefix="lowestdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.lowestDept}
+                </foreach>
+            </trim>
+            <trim prefix="job_type = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.jobType}
+                </foreach>
+            </trim>
+            <trim prefix="job_category = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.jobCategory}
+                </foreach>
+            </trim>
+            <trim prefix="job_subcategory = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.jobSubcategory}
+                </foreach>
+            </trim>
+            <trim prefix="period_id = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.periodId}
+                </foreach>
+            </trim>
+            <trim prefix="is_qualifications_standard = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.isQualificationsStandard}
+                </foreach>
+            </trim>
+            <trim prefix="is_cert_standard = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.isCertStandard}
+                </foreach>
+            </trim>
+            updated_time = NOW()
+        </trim>
+        WHERE employee_number IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.employeeNumber}
+        </foreach>
+    </update>
+
+    <!-- 批量删除员工数据 -->
+    <delete id="batchDeleteEmployees" parameterType="java.util.List">
+        DELETE FROM t_employee WHERE employee_number IN
+        <foreach collection="list" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
     </delete>
 
 </mapper>

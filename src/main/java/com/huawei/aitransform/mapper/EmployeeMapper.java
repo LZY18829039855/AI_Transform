@@ -41,10 +41,22 @@ public interface EmployeeMapper {
     void updateEmployee(EmployeePO employeePO);
 
     /**
-     * 从 t_employee 表中删除员工
-     * @param employeeNumber 工号
+     * 批量插入员工数据到 t_employee
+     * @param employeePOs 员工PO列表
      */
-    void deleteEmployee(@Param("employeeNumber") String employeeNumber);
+    void batchInsertEmployees(List<EmployeePO> employeePOs);
+
+    /**
+     * 批量更新 t_employee 表中的员工数据
+     * @param employeePOs 员工PO列表
+     */
+    void batchUpdateEmployees(List<EmployeePO> employeePOs);
+
+    /**
+     * 批量从 t_employee 表中删除员工
+     * @param employeeNumbers 工号列表
+     */
+    void batchDeleteEmployees(List<String> employeeNumbers);
 
     /**
      * 根据部门层级和部门ID列表查询员工工号列表

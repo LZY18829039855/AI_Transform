@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,10 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         int updateCount = 0;
         int deleteCount = 0;
         int ignoreCount = 0;
+        
+        List<EmployeePO> insertList = new ArrayList<>();
+        List<EmployeePO> updateList = new ArrayList<>();
+        List<String> deleteList = new ArrayList<>();
 
         // 3. 遍历源数据，判断新增或更新
         for (EmployeeSyncDataVO sourceVO : sourceList) {
@@ -61,14 +66,12 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
             if (targetPO == null) {
                 // 新增
                 EmployeePO newPO = convertToPO(sourceVO);
-                employeeMapper.insertEmployee(newPO);
-                insertCount++;
+                insertList.add(newPO);
             } else {
                 // 判断是否需要更新 (忽略 periodId 和 updatedTime)
                 if (isDifferent(sourceVO, targetPO)) {
                     EmployeePO updatePO = convertToPO(sourceVO);
-                    employeeMapper.updateEmployee(updatePO);
-                    updateCount++;
+                    updateList.add(updatePO);
                 } else {
                     ignoreCount++;
                 }
@@ -76,11 +79,45 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
                 targetMap.remove(sourceVO.getEmployeeNumber());
             }
         }
-
+        
         // 4. 处理删除 (目标Map中剩余的)
-        for (String employeeNumber : targetMap.keySet()) {
-            employeeMapper.deleteEmployee(employeeNumber);
-            deleteCount++;
+        deleteList.addAll(targetMap.keySet());
+        
+        // 5. 批量执行数据库操作
+        // 批量插入
+        if (!insertList.isEmpty()) {
+            // 分批处理，每批1000条
+            int batchSize = 1000;
+            for (int i = 0; i < insertList.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, insertList.size());
+                List<EmployeePO> subList = insertList.subList(i, end);
+                employeeMapper.batchInsertEmployees(subList);
+            }
+            insertCount = insertList.size();
+        }
+        
+        // 批量更新
+        if (!updateList.isEmpty()) {
+            // 分批处理，每批1000条
+            int batchSize = 1000;
+            for (int i = 0; i < updateList.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, updateList.size());
+                List<EmployeePO> subList = updateList.subList(i, end);
+                employeeMapper.batchUpdateEmployees(subList);
+            }
+            updateCount = updateList.size();
+        }
+        
+        // 批量删除
+        if (!deleteList.isEmpty()) {
+            // 分批处理，每批1000条
+            int batchSize = 1000;
+            for (int i = 0; i < deleteList.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, deleteList.size());
+                List<String> subList = deleteList.subList(i, end);
+                employeeMapper.batchDeleteEmployees(subList);
+            }
+            deleteCount = deleteList.size();
         }
 
         Map<String, Object> result = new HashMap<>();
