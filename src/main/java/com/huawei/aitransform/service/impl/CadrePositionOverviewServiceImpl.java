@@ -127,14 +127,6 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         CadreAiCertOverviewResponseVO response = new CadreAiCertOverviewResponseVO();
         List<CadreAiCertStatisticsVO> departmentList = new ArrayList<>();
 
-        // 汇总数据统计变量
-        int totalSum = 0;
-        int l2L3Sum = 0;
-        int l2SoftwareSum = 0;
-        int l3SoftwareSum = 0;
-        int nonSoftwareL2L3Sum = 0;
-        int qualifiedL2L3Sum = 0;
-
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
@@ -164,34 +156,45 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                     }
 
                     departmentList.add(deptVO);
-
-                    // 累加汇总数据
-                    // 只有在处理三级部门时累加，这样就覆盖了整个产品线（包括研发管理部及其下属）
-                    totalSum += countVO.getTotalCadreCount();
-                    l2L3Sum += countVO.getL2L3Count();
-                    l2SoftwareSum += countVO.getSoftwareL2Count();
-                    l3SoftwareSum += countVO.getSoftwareL3Count();
-                    nonSoftwareL2L3Sum += countVO.getNonSoftwareL2L3Count();
-                    qualifiedL2L3Sum += countVO.getQualifiedL2L3Count();
                 }
             }
         }
 
         response.setDepartmentList(departmentList);
 
-        // 3. 构建汇总数据
+        // 3. 构建汇总数据（直接统计二级部门：云核心网产品线）
+        CadreAiCertCountVO summaryCountVO = cadreMapper.getCadreAiCertStatisticsByL2DeptCode(CLOUD_CORE_PRODUCT_LINE_CODE);
+        
         CadreAiCertStatisticsVO summary = new CadreAiCertStatisticsVO();
-        summary.setTotalCadreCount(totalSum);
-        summary.setL2L3Count(l2L3Sum);
-        summary.setSoftwareL2Count(l2SoftwareSum);
-        summary.setSoftwareL3Count(l3SoftwareSum);
-        summary.setNonSoftwareL2L3Count(nonSoftwareL2L3Sum);
-        summary.setQualifiedL2L3Count(qualifiedL2L3Sum);
-
-        if (totalSum > 0) {
-            BigDecimal ratio = new BigDecimal(qualifiedL2L3Sum).divide(new BigDecimal(totalSum), 4, RoundingMode.HALF_UP);
-            summary.setQualifiedL2L3Ratio(ratio.doubleValue());
+        if (summaryCountVO != null) {
+            int totalSum = summaryCountVO.getTotalCadreCount() != null ? summaryCountVO.getTotalCadreCount() : 0;
+            int l2L3Sum = summaryCountVO.getL2L3Count() != null ? summaryCountVO.getL2L3Count() : 0;
+            int l2SoftwareSum = summaryCountVO.getSoftwareL2Count() != null ? summaryCountVO.getSoftwareL2Count() : 0;
+            int l3SoftwareSum = summaryCountVO.getSoftwareL3Count() != null ? summaryCountVO.getSoftwareL3Count() : 0;
+            int nonSoftwareL2L3Sum = summaryCountVO.getNonSoftwareL2L3Count() != null ? summaryCountVO.getNonSoftwareL2L3Count() : 0;
+            int qualifiedL2L3Sum = summaryCountVO.getQualifiedL2L3Count() != null ? summaryCountVO.getQualifiedL2L3Count() : 0;
+    
+            summary.setTotalCadreCount(totalSum);
+            summary.setL2L3Count(l2L3Sum);
+            summary.setSoftwareL2Count(l2SoftwareSum);
+            summary.setSoftwareL3Count(l3SoftwareSum);
+            summary.setNonSoftwareL2L3Count(nonSoftwareL2L3Sum);
+            summary.setQualifiedL2L3Count(qualifiedL2L3Sum);
+    
+            if (totalSum > 0) {
+                BigDecimal ratio = new BigDecimal(qualifiedL2L3Sum).divide(new BigDecimal(totalSum), 4, RoundingMode.HALF_UP);
+                summary.setQualifiedL2L3Ratio(ratio.doubleValue());
+            } else {
+                summary.setQualifiedL2L3Ratio(0.0);
+            }
         } else {
+            // 如果查不到数据，初始化为0
+            summary.setTotalCadreCount(0);
+            summary.setL2L3Count(0);
+            summary.setSoftwareL2Count(0);
+            summary.setSoftwareL3Count(0);
+            summary.setNonSoftwareL2L3Count(0);
+            summary.setQualifiedL2L3Count(0);
             summary.setQualifiedL2L3Ratio(0.0);
         }
 
