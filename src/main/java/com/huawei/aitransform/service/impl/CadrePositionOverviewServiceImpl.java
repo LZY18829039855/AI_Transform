@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -34,6 +35,23 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
      */
     private static final String R_AND_D_MANAGEMENT_DEPT_CODE = "030681";
 
+    /**
+     * 部门排序列表
+     */
+    private static final List<String> DEPARTMENT_ORDER = Arrays.asList(
+            "分组核心网产品部",
+            "云核心网CS&IMS产品部",
+            "融合视频产品部",
+            "云核心网软件平台部",
+            "云核心网解决方案增值开发部",
+            "云核心网解决方案部",
+            "云核心网架构与设计部",
+            "云核心网技术规划部",
+            "云核心网研究部",
+            "云核心网产品工程与IT装备部",
+            "云核心网产品流程与质量部"
+    );
+
     @Override
     public CadrePositionOverviewResponseVO getCadrePositionOverview() {
         CadrePositionOverviewResponseVO response = new CadrePositionOverviewResponseVO();
@@ -42,6 +60,24 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
+            // 对部门进行排序
+            l3Depts.sort((o1, o2) -> {
+                String name1 = o1.getDeptName();
+                String name2 = o2.getDeptName();
+                int index1 = DEPARTMENT_ORDER.indexOf(name1);
+                int index2 = DEPARTMENT_ORDER.indexOf(name2);
+
+                if (index1 != -1 && index2 != -1) {
+                    return Integer.compare(index1, index2);
+                } else if (index1 != -1) {
+                    return -1; // o1 在列表中，排前面
+                } else if (index2 != -1) {
+                    return 1; // o2 在列表中，排前面
+                } else {
+                    return 0; // 都不在列表中，保持原序
+                }
+            });
+
             for (DepartmentInfoVO dept : l3Depts) {
                 // 统计每个三级部门的数据
                 CadreStatisticsCountVO countVO = cadreMapper.getCadreStatisticsByL3DeptCode(dept.getDeptCode());
@@ -130,6 +166,24 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
+            // 对部门进行排序
+            l3Depts.sort((o1, o2) -> {
+                String name1 = o1.getDeptName();
+                String name2 = o2.getDeptName();
+                int index1 = DEPARTMENT_ORDER.indexOf(name1);
+                int index2 = DEPARTMENT_ORDER.indexOf(name2);
+
+                if (index1 != -1 && index2 != -1) {
+                    return Integer.compare(index1, index2);
+                } else if (index1 != -1) {
+                    return -1; // o1 在列表中，排前面
+                } else if (index2 != -1) {
+                    return 1; // o2 在列表中，排前面
+                } else {
+                    return 0; // 都不在列表中，保持原序
+                }
+            });
+
             for (DepartmentInfoVO dept : l3Depts) {
                 // 统计每个三级部门的数据
                 CadreAiCertCountVO countVO = cadreMapper.getCadreAiCertStatisticsByL3DeptCode(dept.getDeptCode());
