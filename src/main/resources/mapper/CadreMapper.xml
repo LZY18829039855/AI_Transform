@@ -595,6 +595,18 @@
           AND mini_departname_id = #{miniDepartnameId}
     </update>
 
+    <!-- 根据二级部门编码统计干部岗位数据 -->
+    <select id="getCadreStatisticsByL2DeptCode" resultType="com.huawei.aitransform.entity.CadreStatisticsCountVO">
+        SELECT 
+            COUNT(*) as totalCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l2SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L2' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l2NonSoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND cadre_competence_category = '软件类' THEN 1 ELSE 0 END) as l3SoftwareCount,
+            SUM(CASE WHEN position_ai_maturity = 'L3' AND (cadre_competence_category != '软件类' OR cadre_competence_category IS NULL) THEN 1 ELSE 0 END) as l3NonSoftwareCount
+        FROM t_cadre 
+        WHERE l2_department_code = #{deptCode}
+    </select>
+
     <!-- 根据三级部门编码统计干部岗位数据 -->
     <select id="getCadreStatisticsByL3DeptCode" resultType="com.huawei.aitransform.entity.CadreStatisticsCountVO">
         SELECT 

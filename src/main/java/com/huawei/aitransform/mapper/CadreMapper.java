@@ -126,6 +126,13 @@ public interface CadreMapper {
     int updateCadreDepartmentCodes(com.huawei.aitransform.entity.CadreDepartmentRefreshVO cadre);
 
     /**
+     * 根据二级部门编码统计干部岗位数据
+     * @param deptCode 二级部门编码
+     * @return 统计结果
+     */
+    com.huawei.aitransform.entity.CadreStatisticsCountVO getCadreStatisticsByL2DeptCode(@Param("deptCode") String deptCode);
+
+    /**
      * 根据三级部门编码统计干部岗位数据
      * @param deptCode 三级部门编码
      * @return 统计结果

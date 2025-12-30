@@ -39,13 +39,6 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         CadrePositionOverviewResponseVO response = new CadrePositionOverviewResponseVO();
         List<DepartmentPositionStatisticsVO> departmentList = new ArrayList<>();
 
-        // 汇总数据统计变量
-        int totalSum = 0;
-        int l2SoftwareSum = 0;
-        int l2NonSoftwareSum = 0;
-        int l3SoftwareSum = 0;
-        int l3NonSoftwareSum = 0;
-
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
@@ -75,45 +68,54 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                     }
 
                     departmentList.add(deptVO);
-                    
-                    // 累加汇总数据
-                    // 只有在处理三级部门时累加，这样就覆盖了整个产品线（包括研发管理部及其下属）
-                    totalSum += countVO.getTotalCount();
-                    l2SoftwareSum += countVO.getL2SoftwareCount();
-                    l2NonSoftwareSum += countVO.getL2NonSoftwareCount();
-                    l3SoftwareSum += countVO.getL3SoftwareCount();
-                    l3NonSoftwareSum += countVO.getL3NonSoftwareCount();
                 }
             }
         }
 
         response.setDepartmentList(departmentList);
 
-        // 3. 构建汇总数据
+        // 3. 构建汇总数据（直接统计二级部门：云核心网产品线）
+        CadreStatisticsCountVO summaryCountVO = cadreMapper.getCadreStatisticsByL2DeptCode(CLOUD_CORE_PRODUCT_LINE_CODE);
+        
         SummaryStatisticsVO summary = new SummaryStatisticsVO();
-        summary.setTotalPositionCount(totalSum);
-        
-        int l2L3Total = l2SoftwareSum + l2NonSoftwareSum + l3SoftwareSum + l3NonSoftwareSum;
-        summary.setL2L3PositionCount(l2L3Total);
-        
-        if (totalSum > 0) {
-            BigDecimal ratio = new BigDecimal(l2L3Total).divide(new BigDecimal(totalSum), 4, RoundingMode.HALF_UP);
-            summary.setL2L3PositionRatio(ratio.doubleValue());
+        if (summaryCountVO != null) {
+            int totalSum = summaryCountVO.getTotalCount() != null ? summaryCountVO.getTotalCount() : 0;
+            int l2SoftwareSum = summaryCountVO.getL2SoftwareCount() != null ? summaryCountVO.getL2SoftwareCount() : 0;
+            int l2NonSoftwareSum = summaryCountVO.getL2NonSoftwareCount() != null ? summaryCountVO.getL2NonSoftwareCount() : 0;
+            int l3SoftwareSum = summaryCountVO.getL3SoftwareCount() != null ? summaryCountVO.getL3SoftwareCount() : 0;
+            int l3NonSoftwareSum = summaryCountVO.getL3NonSoftwareCount() != null ? summaryCountVO.getL3NonSoftwareCount() : 0;
+            
+            summary.setTotalPositionCount(totalSum);
+            
+            int l2L3Total = l2SoftwareSum + l2NonSoftwareSum + l3SoftwareSum + l3NonSoftwareSum;
+            summary.setL2L3PositionCount(l2L3Total);
+            
+            if (totalSum > 0) {
+                BigDecimal ratio = new BigDecimal(l2L3Total).divide(new BigDecimal(totalSum), 4, RoundingMode.HALF_UP);
+                summary.setL2L3PositionRatio(ratio.doubleValue());
+            } else {
+                summary.setL2L3PositionRatio(0.0);
+            }
+    
+            L2L3StatisticsVO l2Stats = new L2L3StatisticsVO();
+            l2Stats.setTotalCount(l2SoftwareSum + l2NonSoftwareSum);
+            l2Stats.setSoftwareCount(l2SoftwareSum);
+            l2Stats.setNonSoftwareCount(l2NonSoftwareSum);
+            summary.setL2Statistics(l2Stats);
+    
+            L2L3StatisticsVO l3Stats = new L2L3StatisticsVO();
+            l3Stats.setTotalCount(l3SoftwareSum + l3NonSoftwareSum);
+            l3Stats.setSoftwareCount(l3SoftwareSum);
+            l3Stats.setNonSoftwareCount(l3NonSoftwareSum);
+            summary.setL3Statistics(l3Stats);
         } else {
+            // 如果查不到数据，初始化为0
+            summary.setTotalPositionCount(0);
+            summary.setL2L3PositionCount(0);
             summary.setL2L3PositionRatio(0.0);
+            summary.setL2Statistics(new L2L3StatisticsVO());
+            summary.setL3Statistics(new L2L3StatisticsVO());
         }
-
-        L2L3StatisticsVO l2Stats = new L2L3StatisticsVO();
-        l2Stats.setTotalCount(l2SoftwareSum + l2NonSoftwareSum);
-        l2Stats.setSoftwareCount(l2SoftwareSum);
-        l2Stats.setNonSoftwareCount(l2NonSoftwareSum);
-        summary.setL2Statistics(l2Stats);
-
-        L2L3StatisticsVO l3Stats = new L2L3StatisticsVO();
-        l3Stats.setTotalCount(l3SoftwareSum + l3NonSoftwareSum);
-        l3Stats.setSoftwareCount(l3SoftwareSum);
-        l3Stats.setNonSoftwareCount(l3NonSoftwareSum);
-        summary.setL3Statistics(l3Stats);
 
         response.setSummary(summary);
 
