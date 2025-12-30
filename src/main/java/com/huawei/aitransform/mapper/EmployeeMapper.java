@@ -1,13 +1,13 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.EmployeePO;
+import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.entity.EmployeeDetailVO;
 import com.huawei.aitransform.entity.EmployeeWithCategoryVO;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
-
-import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 
 /**
  * 员工信息Mapper接口
@@ -21,6 +21,30 @@ public interface EmployeeMapper {
      * @return 员工同步数据列表
      */
     List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId);
+
+    /**
+     * 获取 t_employee 表全量数据
+     * @return 员工PO列表
+     */
+    List<EmployeePO> getAllEmployees();
+
+    /**
+     * 插入员工数据到 t_employee
+     * @param employeePO 员工PO
+     */
+    void insertEmployee(EmployeePO employeePO);
+
+    /**
+     * 更新 t_employee 表中的员工数据
+     * @param employeePO 员工PO
+     */
+    void updateEmployee(EmployeePO employeePO);
+
+    /**
+     * 从 t_employee 表中删除员工
+     * @param employeeNumber 工号
+     */
+    void deleteEmployee(@Param("employeeNumber") String employeeNumber);
 
     /**
      * 根据部门层级和部门ID列表查询员工工号列表
