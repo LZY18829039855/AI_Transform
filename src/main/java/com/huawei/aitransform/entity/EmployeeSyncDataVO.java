@@ -51,5 +51,32 @@ public class EmployeeSyncDataVO {
 
     @JsonProperty("is_cert_standard")
     private Integer isCertStandard;
+
+    @JsonProperty("cert_title")
+    private String certTitle;
+
+    @JsonProperty("is_passed_subject2")
+    private Integer isPassedSubject2;
+
+    @JsonProperty("competence_family_cn")
+    private String competenceFamilyCn;
+
+    @JsonProperty("competence_category_cn")
+    private String competenceCategoryCn;
+
+    @JsonProperty("competence_subcategory_cn")
+    private String competenceSubcategoryCn;
+
+    @JsonProperty("direction_cn_name")
+    private String directionCnName;
+
+    @JsonProperty("competence_rating_cn")
+    private String competenceRatingCn;
+
+    @JsonProperty("competence_from")
+    private String competenceFrom;
+
+    @JsonProperty("competence_to")
+    private String competenceTo;
 }
 

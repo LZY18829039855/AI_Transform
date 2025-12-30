@@ -570,7 +570,16 @@
             CASE 
                 WHEN MAX(cert.employee_number) IS NOT NULL THEN 1 
                 ELSE 0 
-            END AS isCertStandard
+            END AS isCertStandard,
+            SUBSTRING_INDEX(GROUP_CONCAT(cert.cer_title ORDER BY cert.start_time DESC SEPARATOR '||'), '||', 1) AS cert_title,
+            MAX(CASE WHEN exam.emp_num IS NOT NULL THEN 1 ELSE 0 END) AS is_passed_subject2,
+            ANY_VALUE(q_detail.competence_family_cn) AS competence_family_cn,
+            ANY_VALUE(q_detail.competence_category_cn) AS competence_category_cn,
+            ANY_VALUE(q_detail.competence_subcategory_cn) AS competence_subcategory_cn,
+            ANY_VALUE(q_detail.direction_cn_name) AS direction_cn_name,
+            ANY_VALUE(q_detail.competence_rating_cn) AS competence_rating_cn,
+            ANY_VALUE(q_detail.competence_from) AS competence_from,
+            ANY_VALUE(q_detail.competence_to) AS competence_to
         FROM t_employee_sync e
         LEFT JOIN t_qualifications q ON (
             e.employee_number = q.employee_number
@@ -589,6 +598,48 @@
                 '华为研究类能力认证（专业级，AI算法技术）',
                 '华为研究类能力认证（专业级，AI决策推理）',
                 '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        )
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE is_pass = 1
+            AND exam_name IS NOT NULL
+            AND exam_name != ''
+        ) exam ON (e.employee_number = exam.emp_num)
+        LEFT JOIN t_qualifications q_detail ON (
+            e.employee_number = q_detail.employee_number
+            AND q_detail.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND q_detail.competence_from = (
+                SELECT q2.competence_from
+                FROM t_qualifications q2
+                WHERE q2.employee_number = e.employee_number
+                AND q2.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                ORDER BY 
+                    CASE 
+                        WHEN q2.competence_rating_cn = '8级' THEN 1
+                        WHEN q2.competence_rating_cn = '7级' THEN 2
+                        WHEN q2.competence_rating_cn = '6级' THEN 3
+                        WHEN q2.competence_rating_cn = '5级' THEN 4
+                        WHEN q2.competence_rating_cn = '4级' THEN 5
+                        WHEN q2.competence_rating_cn = '3级' THEN 6
+                        WHEN q2.competence_rating_cn = '2级' THEN 7
+                        WHEN q2.competence_rating_cn = '1级' THEN 8
+                        WHEN q2.competence_rating_cn = '初级' THEN 9
+                        ELSE 10
+                    END,
+                    q2.competence_from DESC
+                LIMIT 1
             )
         )
         WHERE e.period_id = #{periodId}
@@ -610,7 +661,16 @@
             period_id AS periodId,
             updated_time AS updatedTime,
             is_qualifications_standard AS isQualificationsStandard,
-            is_cert_standard AS isCertStandard
+            is_cert_standard AS isCertStandard,
+            cert_title AS certTitle,
+            is_passed_subject2 AS isPassedSubject2,
+            competence_family_cn AS competenceFamilyCn,
+            competence_category_cn AS competenceCategoryCn,
+            competence_subcategory_cn AS competenceSubcategoryCn,
+            direction_cn_name AS directionCnName,
+            competence_rating_cn AS competenceRatingCn,
+            competence_from AS competenceFrom,
+            competence_to AS competenceTo
         FROM t_employee
     </select>
 
@@ -624,7 +684,11 @@
             lowestdept, 
             job_type, job_category, job_subcategory, 
             period_id, updated_time, 
-            is_qualifications_standard, is_cert_standard
+            is_qualifications_standard, is_cert_standard,
+            cert_title, is_passed_subject2,
+            competence_family_cn, competence_category_cn, competence_subcategory_cn,
+            direction_cn_name, competence_rating_cn,
+            competence_from, competence_to
         ) VALUES (
             #{employeeNumber}, #{lastName}, 
             #{firstdeptcode}, #{seconddeptcode}, #{thirddeptcode}, #{fourthdeptcode}, #{fifthdeptcode}, #{sixthdeptcode}, 
@@ -633,7 +697,11 @@
             #{lowestDept}, 
             #{jobType}, #{jobCategory}, #{jobSubcategory}, 
             #{periodId}, NOW(), 
-            #{isQualificationsStandard}, #{isCertStandard}
+            #{isQualificationsStandard}, #{isCertStandard},
+            #{certTitle}, #{isPassedSubject2},
+            #{competenceFamilyCn}, #{competenceCategoryCn}, #{competenceSubcategoryCn},
+            #{directionCnName}, #{competenceRatingCn},
+            #{competenceFrom}, #{competenceTo}
         )
     </insert>
 
@@ -655,7 +723,16 @@
             period_id = #{periodId}, 
             updated_time = NOW(),
             is_qualifications_standard = #{isQualificationsStandard},
-            is_cert_standard = #{isCertStandard}
+            is_cert_standard = #{isCertStandard},
+            cert_title = #{certTitle},
+            is_passed_subject2 = #{isPassedSubject2},
+            competence_family_cn = #{competenceFamilyCn},
+            competence_category_cn = #{competenceCategoryCn},
+            competence_subcategory_cn = #{competenceSubcategoryCn},
+            direction_cn_name = #{directionCnName},
+            competence_rating_cn = #{competenceRatingCn},
+            competence_from = #{competenceFrom},
+            competence_to = #{competenceTo}
         WHERE employee_number = #{employeeNumber}
     </update>
 
@@ -669,7 +746,11 @@
             lowestdept, 
             job_type, job_category, job_subcategory, 
             period_id, updated_time, 
-            is_qualifications_standard, is_cert_standard
+            is_qualifications_standard, is_cert_standard,
+            cert_title, is_passed_subject2,
+            competence_family_cn, competence_category_cn, competence_subcategory_cn,
+            direction_cn_name, competence_rating_cn,
+            competence_from, competence_to
         ) VALUES 
         <foreach collection="list" item="item" separator=",">
         (
@@ -680,7 +761,11 @@
             #{item.lowestDept}, 
             #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory}, 
             #{item.periodId}, NOW(), 
-            #{item.isQualificationsStandard}, #{item.isCertStandard}
+            #{item.isQualificationsStandard}, #{item.isCertStandard},
+            #{item.certTitle}, #{item.isPassedSubject2},
+            #{item.competenceFamilyCn}, #{item.competenceCategoryCn}, #{item.competenceSubcategoryCn},
+            #{item.directionCnName}, #{item.competenceRatingCn},
+            #{item.competenceFrom}, #{item.competenceTo}
         )
         </foreach>
     </insert>
@@ -792,6 +877,51 @@
             <trim prefix="is_cert_standard = CASE" suffix="END,">
                 <foreach collection="list" item="item">
                     WHEN employee_number = #{item.employeeNumber} THEN #{item.isCertStandard}
+                </foreach>
+            </trim>
+            <trim prefix="cert_title = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.certTitle}
+                </foreach>
+            </trim>
+            <trim prefix="is_passed_subject2 = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.isPassedSubject2}
+                </foreach>
+            </trim>
+            <trim prefix="competence_family_cn = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceFamilyCn}
+                </foreach>
+            </trim>
+            <trim prefix="competence_category_cn = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceCategoryCn}
+                </foreach>
+            </trim>
+            <trim prefix="competence_subcategory_cn = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceSubcategoryCn}
+                </foreach>
+            </trim>
+            <trim prefix="direction_cn_name = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.directionCnName}
+                </foreach>
+            </trim>
+            <trim prefix="competence_rating_cn = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceRatingCn}
+                </foreach>
+            </trim>
+            <trim prefix="competence_from = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceFrom}
+                </foreach>
+            </trim>
+            <trim prefix="competence_to = CASE" suffix="END,">
+                <foreach collection="list" item="item">
+                    WHEN employee_number = #{item.employeeNumber} THEN #{item.competenceTo}
                 </foreach>
             </trim>
             updated_time = NOW(),

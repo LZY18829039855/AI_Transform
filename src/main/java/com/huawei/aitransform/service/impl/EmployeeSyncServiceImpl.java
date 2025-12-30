@@ -157,6 +157,15 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         po.setPeriodId(vo.getPeriodId());
         po.setIsQualificationsStandard(vo.getIsQualificationsStandard());
         po.setIsCertStandard(vo.getIsCertStandard());
+        po.setCertTitle(vo.getCertTitle());
+        po.setIsPassedSubject2(vo.getIsPassedSubject2());
+        po.setCompetenceFamilyCn(vo.getCompetenceFamilyCn());
+        po.setCompetenceCategoryCn(vo.getCompetenceCategoryCn());
+        po.setCompetenceSubcategoryCn(vo.getCompetenceSubcategoryCn());
+        po.setDirectionCnName(vo.getDirectionCnName());
+        po.setCompetenceRatingCn(vo.getCompetenceRatingCn());
+        po.setCompetenceFrom(vo.getCompetenceFrom());
+        po.setCompetenceTo(vo.getCompetenceTo());
         return po;
     }
 
@@ -183,6 +192,16 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         // 注意：isQualificationsStandard 和 isCertStandard 可能为null，需要处理
         if (!Objects.equals(source.getIsQualificationsStandard(), target.getIsQualificationsStandard())) return true;
         if (!Objects.equals(source.getIsCertStandard(), target.getIsCertStandard())) return true;
+
+        if (!Objects.equals(source.getCertTitle(), target.getCertTitle())) return true;
+        if (!Objects.equals(source.getIsPassedSubject2(), target.getIsPassedSubject2())) return true;
+        if (!Objects.equals(source.getCompetenceFamilyCn(), target.getCompetenceFamilyCn())) return true;
+        if (!Objects.equals(source.getCompetenceCategoryCn(), target.getCompetenceCategoryCn())) return true;
+        if (!Objects.equals(source.getCompetenceSubcategoryCn(), target.getCompetenceSubcategoryCn())) return true;
+        if (!Objects.equals(source.getDirectionCnName(), target.getDirectionCnName())) return true;
+        if (!Objects.equals(source.getCompetenceRatingCn(), target.getCompetenceRatingCn())) return true;
+        if (!Objects.equals(source.getCompetenceFrom(), target.getCompetenceFrom())) return true;
+        if (!Objects.equals(source.getCompetenceTo(), target.getCompetenceTo())) return true;
         
         return false;
     }

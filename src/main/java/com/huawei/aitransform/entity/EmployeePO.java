@@ -38,5 +38,23 @@ public class EmployeePO {
     private Integer isQualificationsStandard;
 
     private Integer isCertStandard;
+
+    private String certTitle;
+
+    private Integer isPassedSubject2;
+
+    private String competenceFamilyCn;
+
+    private String competenceCategoryCn;
+
+    private String competenceSubcategoryCn;
+
+    private String directionCnName;
+
+    private String competenceRatingCn;
+
+    private String competenceFrom;
+
+    private String competenceTo;
 }
 
