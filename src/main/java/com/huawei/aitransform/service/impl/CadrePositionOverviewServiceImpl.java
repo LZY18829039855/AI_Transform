@@ -60,24 +60,6 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
-            // 对部门进行排序
-            l3Depts.sort((o1, o2) -> {
-                String name1 = o1.getDeptName();
-                String name2 = o2.getDeptName();
-                int index1 = DEPARTMENT_ORDER.indexOf(name1);
-                int index2 = DEPARTMENT_ORDER.indexOf(name2);
-
-                if (index1 != -1 && index2 != -1) {
-                    return Integer.compare(index1, index2);
-                } else if (index1 != -1) {
-                    return -1; // o1 在列表中，排前面
-                } else if (index2 != -1) {
-                    return 1; // o2 在列表中，排前面
-                } else {
-                    return 0; // 都不在列表中，保持原序
-                }
-            });
-
             for (DepartmentInfoVO dept : l3Depts) {
                 // 统计每个三级部门的数据
                 CadreStatisticsCountVO countVO = cadreMapper.getCadreStatisticsByL3DeptCode(dept.getDeptCode());
@@ -90,6 +72,24 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                     if (R_AND_D_MANAGEMENT_DEPT_CODE.equals(dept.getDeptCode())) {
                         List<DepartmentInfoVO> l4Depts = departmentInfoMapper.getLevel4DepartmentsUnderParent(R_AND_D_MANAGEMENT_DEPT_CODE);
                         if (l4Depts != null) {
+                            // 对四级部门进行排序
+                            l4Depts.sort((o1, o2) -> {
+                                String name1 = o1.getDeptName();
+                                String name2 = o2.getDeptName();
+                                int index1 = DEPARTMENT_ORDER.indexOf(name1);
+                                int index2 = DEPARTMENT_ORDER.indexOf(name2);
+
+                                if (index1 != -1 && index2 != -1) {
+                                    return Integer.compare(index1, index2);
+                                } else if (index1 != -1) {
+                                    return -1; // o1 在列表中，排前面
+                                } else if (index2 != -1) {
+                                    return 1; // o2 在列表中，排前面
+                                } else {
+                                    return 0; // 都不在列表中，保持原序
+                                }
+                            });
+
                             List<DepartmentPositionStatisticsVO> children = new ArrayList<>();
                             for (DepartmentInfoVO l4Dept : l4Depts) {
                                 CadreStatisticsCountVO l4CountVO = cadreMapper.getCadreStatisticsByL4DeptCode(l4Dept.getDeptCode());
@@ -166,24 +166,6 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
         // 1. 获取云核心网产品线下的所有三级部门
         List<DepartmentInfoVO> l3Depts = departmentInfoMapper.getLevel3DepartmentsUnderParent(CLOUD_CORE_PRODUCT_LINE_CODE);
         if (l3Depts != null) {
-            // 对部门进行排序
-            l3Depts.sort((o1, o2) -> {
-                String name1 = o1.getDeptName();
-                String name2 = o2.getDeptName();
-                int index1 = DEPARTMENT_ORDER.indexOf(name1);
-                int index2 = DEPARTMENT_ORDER.indexOf(name2);
-
-                if (index1 != -1 && index2 != -1) {
-                    return Integer.compare(index1, index2);
-                } else if (index1 != -1) {
-                    return -1; // o1 在列表中，排前面
-                } else if (index2 != -1) {
-                    return 1; // o2 在列表中，排前面
-                } else {
-                    return 0; // 都不在列表中，保持原序
-                }
-            });
-
             for (DepartmentInfoVO dept : l3Depts) {
                 // 统计每个三级部门的数据
                 CadreAiCertCountVO countVO = cadreMapper.getCadreAiCertStatisticsByL3DeptCode(dept.getDeptCode());
@@ -196,6 +178,24 @@ public class CadrePositionOverviewServiceImpl implements CadrePositionOverviewSe
                     if (R_AND_D_MANAGEMENT_DEPT_CODE.equals(dept.getDeptCode())) {
                         List<DepartmentInfoVO> l4Depts = departmentInfoMapper.getLevel4DepartmentsUnderParent(R_AND_D_MANAGEMENT_DEPT_CODE);
                         if (l4Depts != null) {
+                            // 对四级部门进行排序
+                            l4Depts.sort((o1, o2) -> {
+                                String name1 = o1.getDeptName();
+                                String name2 = o2.getDeptName();
+                                int index1 = DEPARTMENT_ORDER.indexOf(name1);
+                                int index2 = DEPARTMENT_ORDER.indexOf(name2);
+
+                                if (index1 != -1 && index2 != -1) {
+                                    return Integer.compare(index1, index2);
+                                } else if (index1 != -1) {
+                                    return -1; // o1 在列表中，排前面
+                                } else if (index2 != -1) {
+                                    return 1; // o2 在列表中，排前面
+                                } else {
+                                    return 0; // 都不在列表中，保持原序
+                                }
+                            });
+
                             List<CadreAiCertStatisticsVO> children = new ArrayList<>();
                             for (DepartmentInfoVO l4Dept : l4Depts) {
                                 CadreAiCertCountVO l4CountVO = cadreMapper.getCadreAiCertStatisticsByL4DeptCode(l4Dept.getDeptCode());
