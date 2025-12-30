@@ -632,7 +632,7 @@
             #{firstdept}, #{seconddept}, #{thirddept}, #{fourthdept}, #{fifthdept}, #{sixthdept}, 
             #{lowestDept}, 
             #{jobType}, #{jobCategory}, #{jobSubcategory}, 
-            #{periodId}, #{updatedTime}, 
+            #{periodId}, NOW(), 
             #{isQualificationsStandard}, #{isCertStandard}
         )
     </insert>
@@ -653,7 +653,7 @@
             job_category = #{jobCategory}, 
             job_subcategory = #{jobSubcategory},
             period_id = #{periodId}, 
-            updated_time = #{updatedTime},
+            updated_time = NOW(),
             is_qualifications_standard = #{isQualificationsStandard},
             is_cert_standard = #{isCertStandard}
         WHERE employee_number = #{employeeNumber}

@@ -9,8 +9,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,8 +44,6 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         int deleteCount = 0;
         int ignoreCount = 0;
 
-        String currentTime = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").format(new Date());
-
         // 3. 遍历源数据，判断新增或更新
         for (EmployeeSyncDataVO sourceVO : sourceList) {
             EmployeePO targetPO = targetMap.get(sourceVO.getEmployeeNumber());
@@ -55,14 +51,12 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
             if (targetPO == null) {
                 // 新增
                 EmployeePO newPO = convertToPO(sourceVO);
-                newPO.setUpdatedTime(currentTime);
                 employeeMapper.insertEmployee(newPO);
                 insertCount++;
             } else {
                 // 判断是否需要更新 (忽略 periodId 和 updatedTime)
                 if (isDifferent(sourceVO, targetPO)) {
                     EmployeePO updatePO = convertToPO(sourceVO);
-                    updatePO.setUpdatedTime(currentTime);
                     employeeMapper.updateEmployee(updatePO);
                     updateCount++;
                 } else {
