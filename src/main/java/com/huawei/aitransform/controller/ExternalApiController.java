@@ -2,6 +2,7 @@ package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.service.CadreDepartmentRefreshService;
+import com.huawei.aitransform.service.EmployeeSyncService;
 import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -9,6 +10,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
 
 /**
  * 外部接口控制器
@@ -26,6 +30,30 @@ public class ExternalApiController {
 
     @Autowired
     private CadreDepartmentRefreshService cadreDepartmentRefreshService;
+
+    @Autowired
+    private EmployeeSyncService employeeSyncService;
+
+    /**
+     * 对外开放数据同步更新接口
+     * 同步 t_employee_sync 表数据到 t_employee 表
+     * 
+     * @return 同步结果统计
+     */
+    @PostMapping("/sync-employee-data")
+    public ResponseEntity<Result<java.util.Map<String, Object>>> syncEmployeeData() {
+        try {
+            // 自动推算period_id：当前日期减2天，格式yyyyMMdd
+            LocalDate targetDate = LocalDate.now().minusDays(2);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String periodId = targetDate.format(formatter);
+            
+            java.util.Map<String, Object> result = employeeSyncService.syncEmployeeData(periodId);
+            return ResponseEntity.ok(Result.success("同步成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
 
     /**
      * 更新L2、L3专家的认证达标情况

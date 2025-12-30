@@ -533,5 +533,136 @@
         ORDER BY e.employee_number, COALESCE(q.competence_from, '1900-01-01')
     </select>
 
+    <!-- 获取全员同步数据 -->
+    <select id="getEmployeeSyncData" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
+        SELECT 
+            e.employee_number AS employeeNumber,
+            e.last_name AS lastName,
+            e.firstdeptcode,
+            e.seconddeptcode,
+            e.thirddeptcode,
+            e.fourthdeptcode,
+            e.fifthdeptcode,
+            e.sixthdeptcode,
+            e.lowest_dept_number AS lowestDeptNumber,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS firstdept,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS seconddept,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS thirddept,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS fourthdept,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS fifthdept,
+            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS sixthdept,
+            e.lowest_dept AS lowestDept,
+            SUBSTRING_INDEX(e.job_category, '-', 1) AS jobType,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE e.job_category
+            END AS jobCategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS jobSubcategory,
+            e.period_id AS periodId,
+            CASE 
+                WHEN MAX(q.employee_number) IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isQualificationsStandard,
+            CASE 
+                WHEN MAX(cert.employee_number) IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isCertStandard
+        FROM t_employee_sync e
+        LEFT JOIN t_qualifications q ON (
+            e.employee_number = q.employee_number
+            AND q.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+        )
+        LEFT JOIN dwr_t_cert_record_t cert ON (
+            e.employee_number = cert.employee_number
+            AND (cert.status = 1 OR cert.approved_status = 1)
+            AND cert.cer_title IN (
+                '华为研究类能力认证（专业级，AI算法技术）',
+                '华为研究类能力认证（专业级，AI决策推理）',
+                '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        )
+        WHERE e.period_id = #{periodId}
+        GROUP BY e.employee_number
+    </select>
+
+    <!-- 获取 t_employee 全量数据 -->
+    <select id="getAllEmployees" resultType="com.huawei.aitransform.entity.EmployeePO">
+        SELECT 
+            employee_number AS employeeNumber,
+            last_name AS lastName,
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+            lowestdeptid AS lowestDeptId,
+            firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept,
+            lowestdept AS lowestDept,
+            job_type AS jobType,
+            job_category AS jobCategory,
+            job_subcategory AS jobSubcategory,
+            period_id AS periodId,
+            updated_time AS updatedTime,
+            is_qualifications_standard AS isQualificationsStandard,
+            is_cert_standard AS isCertStandard
+        FROM t_employee
+    </select>
+
+    <!-- 插入员工数据 -->
+    <insert id="insertEmployee" parameterType="com.huawei.aitransform.entity.EmployeePO">
+        INSERT INTO t_employee (
+            employee_number, last_name, 
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode, 
+            lowestdeptid, 
+            firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, 
+            lowestdept, 
+            job_type, job_category, job_subcategory, 
+            period_id, updated_time, 
+            is_qualifications_standard, is_cert_standard
+        ) VALUES (
+            #{employeeNumber}, #{lastName}, 
+            #{firstdeptcode}, #{seconddeptcode}, #{thirddeptcode}, #{fourthdeptcode}, #{fifthdeptcode}, #{sixthdeptcode}, 
+            #{lowestDeptId}, 
+            #{firstdept}, #{seconddept}, #{thirddept}, #{fourthdept}, #{fifthdept}, #{sixthdept}, 
+            #{lowestDept}, 
+            #{jobType}, #{jobCategory}, #{jobSubcategory}, 
+            #{periodId}, #{updatedTime}, 
+            #{isQualificationsStandard}, #{isCertStandard}
+        )
+    </insert>
+
+    <!-- 更新员工数据 -->
+    <update id="updateEmployee" parameterType="com.huawei.aitransform.entity.EmployeePO">
+        UPDATE t_employee SET
+            last_name = #{lastName},
+            firstdeptcode = #{firstdeptcode}, seconddeptcode = #{seconddeptcode}, 
+            thirddeptcode = #{thirddeptcode}, fourthdeptcode = #{fourthdeptcode}, 
+            fifthdeptcode = #{fifthdeptcode}, sixthdeptcode = #{sixthdeptcode},
+            lowestdeptid = #{lowestDeptId},
+            firstdept = #{firstdept}, seconddept = #{seconddept}, 
+            thirddept = #{thirddept}, fourthdept = #{fourthdept}, 
+            fifthdept = #{fifthdept}, sixthdept = #{sixthdept},
+            lowestdept = #{lowestDept},
+            job_type = #{jobType}, 
+            job_category = #{jobCategory}, 
+            job_subcategory = #{jobSubcategory},
+            period_id = #{periodId}, 
+            updated_time = #{updatedTime},
+            is_qualifications_standard = #{isQualificationsStandard},
+            is_cert_standard = #{isCertStandard}
+        WHERE employee_number = #{employeeNumber}
+    </update>
+
+    <!-- 删除员工数据 -->
+    <delete id="deleteEmployee">
+        DELETE FROM t_employee WHERE employee_number = #{employeeNumber}
+    </delete>
+
 </mapper>
 

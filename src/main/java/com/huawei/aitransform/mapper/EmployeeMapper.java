@@ -7,11 +7,20 @@ import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
+import com.huawei.aitransform.entity.EmployeeSyncDataVO;
+
 /**
  * 员工信息Mapper接口
  */
 @Mapper
 public interface EmployeeMapper {
+
+    /**
+     * 获取全员同步数据
+     * @param periodId 期号
+     * @return 员工同步数据列表
+     */
+    List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId);
 
     /**
      * 根据部门层级和部门ID列表查询员工工号列表
