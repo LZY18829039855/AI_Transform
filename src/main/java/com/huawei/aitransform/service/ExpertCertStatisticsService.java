@@ -285,7 +285,8 @@ public class ExpertCertStatisticsService {
 
         // 全员处理流程（personType=0）
         List<DepartmentInfoVO> targetDepts;
-        Integer queryLevel;
+        Integer currentLevel;
+        String actualDeptCode;
 
         // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
@@ -306,8 +307,9 @@ public class ExpertCertStatisticsService {
                 response.setTotalStatistics(total);
                 return response;
             }
-            // 查询四级部门的员工，使用 deptLevel=4（因为 EmployeeMapper 中 deptLevel=4 时查询 department5_id）
-            queryLevel = 4;
+            // 查询四级部门的员工，当前层级为3（三级部门），查询下一层（四级部门）
+            currentLevel = 3;
+            actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
         } else {
             // 1. 查询部门信息
             DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
@@ -333,12 +335,25 @@ public class ExpertCertStatisticsService {
                 return response;
             }
 
-            // 3. 根据当前部门层级，确定查询的部门层级（下一层）
-            Integer currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
-            queryLevel = currentLevel + 1;
+            // 3. 根据当前部门层级，确定查询的部门层级
+            currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
+            actualDeptCode = deptCode;
         }
 
-        // 4. 遍历每个部门，分别统计
+        // 4. 批量查询所有子部门的统计数据（从 t_employee 表，只统计研发族）
+        List<DepartmentCertStatisticsVO> statisticsList = employeeMapper.getDeptStatisticsByLevel(currentLevel, actualDeptCode);
+        
+        // 5. 将统计结果转换为 Map，key 为 deptCode，方便快速查找
+        Map<String, DepartmentCertStatisticsVO> statisticsMap = new HashMap<>();
+        if (statisticsList != null) {
+            for (DepartmentCertStatisticsVO stat : statisticsList) {
+                if (stat.getDeptCode() != null && !stat.getDeptCode().trim().isEmpty()) {
+                    statisticsMap.put(stat.getDeptCode(), stat);
+                }
+            }
+        }
+
+        // 6. 遍历目标部门列表，组装统计数据
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
         int totalCountSum = 0;
         int certifiedCountSum = 0;
@@ -355,28 +370,13 @@ public class ExpertCertStatisticsService {
                 continue;
             }
 
-            // 4.1 查询该部门下的员工工号列表
-            List<String> deptIdList = new ArrayList<>();
-            deptIdList.add(dept.getDeptCode());
-            List<String> employeeNumbers = employeeMapper.getEmployeeNumbersByDeptLevel(queryLevel, deptIdList);
+            // 6.1 从 Map 中获取该部门的统计数据，如果没有则使用默认值0
+            DepartmentCertStatisticsVO stat = statisticsMap.get(dept.getDeptCode());
+            int deptTotalCount = (stat != null && stat.getTotalCount() != null) ? stat.getTotalCount() : 0;
+            int deptCertifiedCount = (stat != null && stat.getCertifiedCount() != null) ? stat.getCertifiedCount() : 0;
+            int deptQualifiedCount = (stat != null && stat.getQualifiedCount() != null) ? stat.getQualifiedCount() : 0;
 
-            int deptTotalCount = (employeeNumbers != null) ? employeeNumbers.size() : 0;
-
-            // 4.2 查询该部门已通过认证的员工工号列表
-            int deptCertifiedCount = 0;
-            if (employeeNumbers != null && !employeeNumbers.isEmpty()) {
-                List<String> certifiedNumbers = getCertifiedEmployeeNumbers(employeeNumbers);
-                deptCertifiedCount = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
-            }
-
-            // 4.3 查询该部门已获得任职的员工工号列表
-            int deptQualifiedCount = 0;
-            if (employeeNumbers != null && !employeeNumbers.isEmpty()) {
-                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(employeeNumbers);
-                deptQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
-            }
-
-            // 4.4 计算该部门的认证率
+            // 6.2 计算该部门的认证率
             BigDecimal deptCertRate = BigDecimal.ZERO;
             if (deptTotalCount > 0) {
                 BigDecimal total = new BigDecimal(deptTotalCount);
@@ -385,7 +385,7 @@ public class ExpertCertStatisticsService {
                         .multiply(new BigDecimal(100));
             }
 
-            // 4.5 计算该部门的任职率
+            // 6.3 计算该部门的任职率
             BigDecimal deptQualifiedRate = BigDecimal.ZERO;
             if (deptTotalCount > 0) {
                 BigDecimal total = new BigDecimal(deptTotalCount);
@@ -394,7 +394,7 @@ public class ExpertCertStatisticsService {
                         .multiply(new BigDecimal(100));
             }
 
-            // 4.6 构建部门统计对象
+            // 6.4 构建部门统计对象
             DepartmentCertStatisticsVO deptStat = new DepartmentCertStatisticsVO();
             deptStat.setDeptCode(dept.getDeptCode());
             deptStat.setDeptName(dept.getDeptName());
@@ -406,7 +406,7 @@ public class ExpertCertStatisticsService {
 
             departmentStats.add(deptStat);
 
-            // 4.7 累加总计
+            // 6.5 累加总计
             totalCountSum += deptTotalCount;
             certifiedCountSum += deptCertifiedCount;
             qualifiedCountSum += deptQualifiedCount;

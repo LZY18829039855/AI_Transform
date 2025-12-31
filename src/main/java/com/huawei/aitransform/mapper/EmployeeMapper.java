@@ -1,5 +1,6 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.DepartmentCertStatisticsVO;
 import com.huawei.aitransform.entity.EmployeePO;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.entity.EmployeeDetailVO;
@@ -115,5 +116,15 @@ public interface EmployeeMapper {
             @Param("deptId") String deptId,
             @Param("jobCategory") String jobCategory,
             @Param("queryType") Integer queryType);
+
+    /**
+     * 批量查询部门统计数据（从 t_employee 表，只统计研发族）
+     * @param currentLevel 当前部门层级（1-6）
+     * @param deptCode 当前部门编码
+     * @return 部门统计列表，每个元素包含：deptCode（部门编码）、totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
+     */
+    List<DepartmentCertStatisticsVO> getDeptStatisticsByLevel(
+            @Param("currentLevel") Integer currentLevel,
+            @Param("deptCode") String deptCode);
 }
 

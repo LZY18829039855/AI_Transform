@@ -940,5 +940,55 @@
         </foreach>
     </delete>
 
+    <!-- 批量查询部门统计数据（从 t_employee 表，只统计研发族，不使用 period_id 过滤） -->
+    <select id="getDeptStatisticsByLevel" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
+        SELECT 
+            <choose>
+                <when test="currentLevel == 1">seconddeptcode</when>
+                <when test="currentLevel == 2">thirddeptcode</when>
+                <when test="currentLevel == 3">fourthdeptcode</when>
+                <when test="currentLevel == 4">fifthdeptcode</when>
+                <when test="currentLevel == 5">sixthdeptcode</when>
+                <when test="currentLevel == 6">lowestdeptid</when>
+                <otherwise>NULL</otherwise>
+            </choose> AS deptCode,
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
+        FROM t_employee
+        WHERE job_type = '研发族'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
+        <choose>
+            <when test="currentLevel == 1">
+                AND firstdeptcode = #{deptCode}
+                GROUP BY seconddeptcode
+            </when>
+            <when test="currentLevel == 2">
+                AND seconddeptcode = #{deptCode}
+                GROUP BY thirddeptcode
+            </when>
+            <when test="currentLevel == 3">
+                AND thirddeptcode = #{deptCode}
+                GROUP BY fourthdeptcode
+            </when>
+            <when test="currentLevel == 4">
+                AND fourthdeptcode = #{deptCode}
+                GROUP BY fifthdeptcode
+            </when>
+            <when test="currentLevel == 5">
+                AND fifthdeptcode = #{deptCode}
+                GROUP BY sixthdeptcode
+            </when>
+            <when test="currentLevel == 6">
+                AND sixthdeptcode = #{deptCode}
+                GROUP BY lowestdeptid
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+    </select>
+
 </mapper>
 
