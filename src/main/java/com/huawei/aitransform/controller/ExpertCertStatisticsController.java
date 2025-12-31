@@ -412,13 +412,15 @@ public class ExpertCertStatisticsController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
 
-            // 当deptCode为"0"时，使用云核心网产品线部门ID（与competence-category-cert-statistics保持一致）
-            if ("0".equals(deptCode.trim())) {
-                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
-            }
-
             if (personType == null) {
                 return ResponseEntity.ok(Result.error(400, "人员类型不能为空"));
+            }
+
+            // 当deptCode为"0"时，根据personType决定处理方式
+            // personType=0（全员）时，保持"0"不变，Service层会查询所有数据
+            // personType=1或2（干部/专家）时，使用云核心网产品线部门ID
+            if ("0".equals(deptCode.trim()) && personType != 0) {
+                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             }
 
             // 验证 queryType 参数

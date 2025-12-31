@@ -1253,5 +1253,144 @@
         AND employee_number != ''
     </select>
 
+    <!-- 根据部门层级和部门编码查询员工任职详细信息（全员类型，使用 t_employee 表） -->
+    <select id="getEmployeeQualifiedDetailsFromEmployeeTable" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT 
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.job_category AS competenceCategory,
+            e.job_subcategory AS competenceSubcategory,
+            e.firstdept AS departname2,
+            e.seconddept AS departname3,
+            e.thirddept AS departname4,
+            e.fourthdept AS departname5,
+            e.fifthdept AS departname6,
+            e.sixthdept AS departname7,
+            e.competence_family_cn AS competenceFamilyCn,
+            e.competence_category_cn AS competenceCategoryCn,
+            e.competence_subcategory_cn AS competenceSubcategoryCn,
+            e.direction_cn_name AS directionCnName,
+            e.competence_rating_cn AS competenceRatingCn,
+            e.competence_grade_cn AS competenceGradeCn,
+            e.competence_from AS competenceFrom,
+            e.competence_to AS competenceTo,
+            -- 全员类型不需要统计干部和专家信息，直接设置为 0
+            0 AS isCadre,
+            NULL AS cadreType,
+            0 AS isExpert,
+            -- 岗位AI成熟度（全员类型不需要，设置为 NULL）
+            NULL AS aiMaturity,
+            e.lowestdept AS miniDeptName,
+            NULL AS isQualificationsStandard,
+            NULL AS isCertStandard
+        FROM t_employee e
+        WHERE e.job_type = '研发族'
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <choose>
+            <when test="deptLevel == 1">
+                AND e.firstdeptcode = #{deptCode}
+            </when>
+            <when test="deptLevel == 2">
+                AND e.seconddeptcode = #{deptCode}
+            </when>
+            <when test="deptLevel == 3">
+                AND e.thirddeptcode = #{deptCode}
+            </when>
+            <when test="deptLevel == 4">
+                AND e.fourthdeptcode = #{deptCode}
+            </when>
+            <when test="deptLevel == 5">
+                AND e.fifthdeptcode = #{deptCode}
+            </when>
+            <when test="deptLevel == 6">
+                AND e.sixthdeptcode = #{deptCode}
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+        <!-- queryType=1 时，只返回有任职信息的员工 -->
+        <if test="queryType != null and queryType == 1">
+            AND e.direction_cn_name IS NOT NULL
+            AND e.direction_cn_name != ''
+            AND e.competence_from IS NOT NULL
+            AND e.competence_to IS NOT NULL
+        </if>
+        <!-- 职位类过滤 -->
+        <if test="jobCategory != null and jobCategory != ''">
+            <choose>
+                <when test="jobCategory == '非软件类'">
+                    AND e.job_category != '软件类'
+                </when>
+                <when test="jobCategory == '其他类'">
+                    AND e.job_category NOT IN ('研究类', '软件类', '系统类', '测试类', '产品开发项目管理类')
+                </when>
+                <otherwise>
+                    AND e.job_category = #{jobCategory}
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY e.employee_number
+    </select>
+
+    <!-- 查询所有员工任职详细信息（deptCode="0" 时，只过滤职位族为研发族） -->
+    <select id="getAllEmployeeQualifiedDetailsFromEmployeeTable" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT 
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.job_category AS competenceCategory,
+            e.job_subcategory AS competenceSubcategory,
+            e.firstdept AS departname2,
+            e.seconddept AS departname3,
+            e.thirddept AS departname4,
+            e.fourthdept AS departname5,
+            e.fifthdept AS departname6,
+            e.sixthdept AS departname7,
+            e.competence_family_cn AS competenceFamilyCn,
+            e.competence_category_cn AS competenceCategoryCn,
+            e.competence_subcategory_cn AS competenceSubcategoryCn,
+            e.direction_cn_name AS directionCnName,
+            e.competence_rating_cn AS competenceRatingCn,
+            e.competence_grade_cn AS competenceGradeCn,
+            e.competence_from AS competenceFrom,
+            e.competence_to AS competenceTo,
+            -- 全员类型不需要统计干部和专家信息，直接设置为 0
+            0 AS isCadre,
+            NULL AS cadreType,
+            0 AS isExpert,
+            -- 岗位AI成熟度（全员类型不需要，设置为 NULL）
+            NULL AS aiMaturity,
+            e.lowestdept AS miniDeptName,
+            NULL AS isQualificationsStandard,
+            NULL AS isCertStandard
+        FROM t_employee e
+        WHERE e.job_type = '研发族'
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <!-- queryType=1 时，只返回有任职信息的员工 -->
+        <if test="queryType != null and queryType == 1">
+            AND e.direction_cn_name IS NOT NULL
+            AND e.direction_cn_name != ''
+            AND e.competence_from IS NOT NULL
+            AND e.competence_to IS NOT NULL
+        </if>
+        <!-- 职位类过滤 -->
+        <if test="jobCategory != null and jobCategory != ''">
+            <choose>
+                <when test="jobCategory == '非软件类'">
+                    AND e.job_category != '软件类'
+                </when>
+                <when test="jobCategory == '其他类'">
+                    AND e.job_category NOT IN ('研究类', '软件类', '系统类', '测试类', '产品开发项目管理类')
+                </when>
+                <otherwise>
+                    AND e.job_category = #{jobCategory}
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY e.employee_number
+    </select>
+
 </mapper>
 

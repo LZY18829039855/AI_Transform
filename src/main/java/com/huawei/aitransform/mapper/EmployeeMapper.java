@@ -203,5 +203,29 @@ public interface EmployeeMapper {
      * @return 统计数据，包含：totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
      */
     DepartmentCertStatisticsVO getTotalCompetenceCategoryStatisticsForAllEmployees();
+
+    /**
+     * 根据部门层级和部门编码查询员工任职详细信息（全员类型，使用 t_employee 表）
+     * @param deptLevel 部门层级（1-6）
+     * @param deptCode 部门编码
+     * @param jobCategory 职位类（可选）
+     * @param queryType 查询类型（1-任职人数，2-基线人数）
+     * @return 员工任职详细信息列表
+     */
+    List<EmployeeDetailVO> getEmployeeQualifiedDetailsFromEmployeeTable(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptCode") String deptCode,
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
+
+    /**
+     * 查询所有员工任职详细信息（deptCode="0" 时使用，只过滤职位族为研发族）
+     * @param jobCategory 职位类（可选）
+     * @param queryType 查询类型（1-任职人数，2-基线人数）
+     * @return 员工任职详细信息列表
+     */
+    List<EmployeeDetailVO> getAllEmployeeQualifiedDetailsFromEmployeeTable(
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
 }
 
