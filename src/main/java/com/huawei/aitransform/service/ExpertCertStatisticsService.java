@@ -1726,7 +1726,7 @@ public class ExpertCertStatisticsService {
         List<EmployeeDetailVO> employeeDetails = new ArrayList<>();
 
         if (personType == 0) {
-            // 全员处理
+            // 全员处理（使用 t_employee 表优化）
             // 特殊处理：当 deptCode 为 "0" 时
             String actualDeptCode = deptCode;
             if ("0".equals(deptCode.trim())) {
@@ -1742,8 +1742,10 @@ public class ExpertCertStatisticsService {
             // 直接使用当前部门的层级进行查询（不查询子部门）
             Integer deptLevel = Integer.parseInt(actualDeptInfo.getDeptLevel());
             
-            // 调用 EmployeeMapper.getEmployeeCertDetailsByDeptLevel 查询当前部门的员工认证详细信息
-            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevel(deptLevel, actualDeptCode, jobCategory, queryType);
+            // 调用 EmployeeMapper.getEmployeeCertDetailsByDeptLevelFromEmployee 查询当前部门的员工认证详细信息
+            // 使用 t_employee 表，无需 JOIN 其他表
+            employeeDetails = employeeMapper.getEmployeeCertDetailsByDeptLevelFromEmployee(
+                    deptLevel, actualDeptCode, jobCategory, queryType);
         } else if (personType == 1) {
             // 干部处理
             // 查询该部门下的所有子部门（包括所有层级）

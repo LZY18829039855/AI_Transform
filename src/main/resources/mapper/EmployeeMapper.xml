@@ -265,6 +265,83 @@
         ORDER BY e.employee_number, COALESCE(MAX(cert.start_time), '1900-01-01')
     </select>
 
+    <!-- 根据部门层级和部门ID查询员工认证详细信息（全员类型，使用 t_employee 表） -->
+    <!-- 注意：
+         1. 当部门ID不为0时，只查询当前部门，不查询子部门
+         2. 必须过滤职位族为"研发族"的数据（WHERE e.job_type = '研发族'）
+    -->
+    <select id="getEmployeeCertDetailsByDeptLevelFromEmployee" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
+        SELECT 
+            e.last_name AS name,
+            e.employee_number AS employeeNumber,
+            e.job_category AS competenceCategory,
+            e.job_subcategory AS competenceSubcategory,
+            e.firstdept AS departname2,
+            e.seconddept AS departname3,
+            e.thirddept AS departname4,
+            e.fourthdept AS departname5,
+            e.fifthdept AS departname6,
+            e.sixthdept AS departname7,
+            e.cert_title AS certTitle,
+            NULL AS certStartTime,
+            COALESCE(e.is_passed_subject2, 0) AS isPassedSubject2,
+            0 AS isCadre,
+            NULL AS cadreType,
+            COALESCE(e.is_cert_standard, 0) AS isCertStandard,
+            0 AS isExpert,
+            NULL AS aiMaturity,
+            e.lowestdept AS miniDeptName,
+            COALESCE(e.is_qualifications_standard, 0) AS isQualificationsStandard
+        FROM t_employee e
+        WHERE e.job_type = '研发族'
+        AND e.employee_number IS NOT NULL
+        AND e.employee_number != ''
+        <!-- 根据部门层级过滤 -->
+        <choose>
+            <when test="deptLevel == 1">
+                AND e.firstdeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 2">
+                AND e.seconddeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 3">
+                AND e.thirddeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 4">
+                AND e.fourthdeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 5">
+                AND e.fifthdeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 6">
+                AND e.sixthdeptcode = #{deptId}
+            </when>
+            <when test="deptLevel == 7">
+                AND 1 = 0
+            </when>
+        </choose>
+        <!-- 根据 queryType 过滤：queryType=1 只返回有证书的人员 -->
+        <if test="queryType != null and queryType == 1">
+            AND e.cert_title IS NOT NULL
+            AND e.cert_title != ''
+        </if>
+        <!-- 职位类过滤 -->
+        <if test="jobCategory != null and jobCategory != ''">
+            <choose>
+                <when test="jobCategory == '非软件类'">
+                    AND e.job_category != '软件类'
+                </when>
+                <when test="jobCategory == '其他类'">
+                    AND e.job_category NOT IN ('研究类', '软件类', '系统类', '测试类', '产品开发项目管理类')
+                </when>
+                <otherwise>
+                    AND e.job_category = #{jobCategory}
+                </otherwise>
+            </choose>
+        </if>
+        ORDER BY e.employee_number
+    </select>
+
     <!-- 根据部门层级和部门编码列表查询员工工号和职位族信息 -->
     <!-- 注意：根据部门本身的层级查询对应字段，如deptLevel=3时查询thirddeptcode -->
     <select id="getEmployeesWithJobCategoryByDeptCodes" resultType="com.huawei.aitransform.entity.EmployeeWithCategoryVO">

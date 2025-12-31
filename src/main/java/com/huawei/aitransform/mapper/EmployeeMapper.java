@@ -95,6 +95,20 @@ public interface EmployeeMapper {
             @Param("queryType") Integer queryType);
 
     /**
+     * 根据部门层级和部门ID查询员工认证详细信息（用于下钻，全员类型，使用 t_employee 表）
+     * @param deptLevel 部门层级（1-7）
+     * @param deptId 部门ID（单个部门编码）
+     * @param jobCategory 职位类（可选）
+     * @param queryType 查询类型（1-认证人数，2-基线人数）
+     * @return 员工详细信息列表（包含认证信息）
+     */
+    List<EmployeeDetailVO> getEmployeeCertDetailsByDeptLevelFromEmployee(
+            @Param("deptLevel") Integer deptLevel,
+            @Param("deptId") String deptId,
+            @Param("jobCategory") String jobCategory,
+            @Param("queryType") Integer queryType);
+
+    /**
      * 根据部门层级和部门编码列表查询员工工号和职位族信息
      * @param deptLevel 部门层级（1-7），根据部门本身的层级查询对应字段
      * @param deptCodes 部门编码列表
