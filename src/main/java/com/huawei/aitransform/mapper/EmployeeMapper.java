@@ -135,5 +135,12 @@ public interface EmployeeMapper {
      */
     List<DepartmentCertStatisticsVO> getLevel4DeptStatisticsUnderLevel2(
             @Param("deptCode") String deptCode);
+
+    /**
+     * 统计整个表中研发族员工的总数据（从 t_employee 表）
+     * 用于 deptCode=0 时的总计统计
+     * @return 统计数据，包含：totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
+     */
+    DepartmentCertStatisticsVO getTotalStatisticsForAllEmployees();
 }
 

@@ -413,38 +413,56 @@ public class ExpertCertStatisticsService {
 
             departmentStats.add(deptStat);
 
-            // 6.5 累加总计
-            totalCountSum += deptTotalCount;
-            certifiedCountSum += deptCertifiedCount;
-            qualifiedCountSum += deptQualifiedCount;
+            // 6.5 累加总计（仅当 deptCode 不为 "0" 时累加）
+            if (!"0".equals(deptCode)) {
+                totalCountSum += deptTotalCount;
+                certifiedCountSum += deptCertifiedCount;
+                qualifiedCountSum += deptQualifiedCount;
+            }
         }
 
-        // 5. 计算总计的认证率
-        BigDecimal totalCertRate = BigDecimal.ZERO;
-        if (totalCountSum > 0) {
-            BigDecimal total = new BigDecimal(totalCountSum);
-            BigDecimal certified = new BigDecimal(certifiedCountSum);
-            totalCertRate = certified.divide(total, 4, RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal(100));
-        }
-
-        // 6. 计算总计的任职率
-        BigDecimal totalQualifiedRate = BigDecimal.ZERO;
-        if (totalCountSum > 0) {
-            BigDecimal total = new BigDecimal(totalCountSum);
-            BigDecimal qualified = new BigDecimal(qualifiedCountSum);
-            totalQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
-                    .multiply(new BigDecimal(100));
-        }
-
-        // 7. 构建总计统计对象
+        // 7. 计算总计数据
         DepartmentCertStatisticsVO totalStatistics = new DepartmentCertStatisticsVO();
         totalStatistics.setDeptCode("总计");
         totalStatistics.setDeptName("总计");
-        totalStatistics.setTotalCount(totalCountSum);
-        totalStatistics.setCertifiedCount(certifiedCountSum);
-        totalStatistics.setQualifiedCount(qualifiedCountSum);
+        
+        if ("0".equals(deptCode)) {
+            // 当 deptCode="0" 时，总计直接统计整个表中的数据
+            DepartmentCertStatisticsVO totalStat = employeeMapper.getTotalStatisticsForAllEmployees();
+            if (totalStat != null) {
+                totalStatistics.setTotalCount(totalStat.getTotalCount() != null ? totalStat.getTotalCount() : 0);
+                totalStatistics.setCertifiedCount(totalStat.getCertifiedCount() != null ? totalStat.getCertifiedCount() : 0);
+                totalStatistics.setQualifiedCount(totalStat.getQualifiedCount() != null ? totalStat.getQualifiedCount() : 0);
+            } else {
+                totalStatistics.setTotalCount(0);
+                totalStatistics.setCertifiedCount(0);
+                totalStatistics.setQualifiedCount(0);
+            }
+        } else {
+            // 普通情况：使用累加的数据
+            totalStatistics.setTotalCount(totalCountSum);
+            totalStatistics.setCertifiedCount(certifiedCountSum);
+            totalStatistics.setQualifiedCount(qualifiedCountSum);
+        }
+
+        // 8. 计算总计的认证率
+        BigDecimal totalCertRate = BigDecimal.ZERO;
+        if (totalStatistics.getTotalCount() != null && totalStatistics.getTotalCount() > 0) {
+            BigDecimal total = new BigDecimal(totalStatistics.getTotalCount());
+            BigDecimal certified = new BigDecimal(totalStatistics.getCertifiedCount() != null ? totalStatistics.getCertifiedCount() : 0);
+            totalCertRate = certified.divide(total, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
         totalStatistics.setCertRate(totalCertRate);
+
+        // 9. 计算总计的任职率
+        BigDecimal totalQualifiedRate = BigDecimal.ZERO;
+        if (totalStatistics.getTotalCount() != null && totalStatistics.getTotalCount() > 0) {
+            BigDecimal total = new BigDecimal(totalStatistics.getTotalCount());
+            BigDecimal qualified = new BigDecimal(totalStatistics.getQualifiedCount() != null ? totalStatistics.getQualifiedCount() : 0);
+            totalQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal(100));
+        }
         totalStatistics.setQualifiedRate(totalQualifiedRate);
 
         // 8. 构建返回结果

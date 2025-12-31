@@ -1013,5 +1013,18 @@
         GROUP BY fourthdeptcode
     </select>
 
+    <!-- 统计整个表中研发族员工的总数据（从 t_employee 表，不使用 period_id 过滤） -->
+    <!-- 用于 deptCode=0 时的总计统计 -->
+    <select id="getTotalStatisticsForAllEmployees" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
+        SELECT 
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
+        FROM t_employee
+        WHERE job_type = '研发族'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
+    </select>
+
 </mapper>
 
