@@ -997,5 +997,21 @@
         </choose>
     </select>
 
+    <!-- 批量查询二级部门下的四级部门统计数据（从 t_employee 表，只统计研发族，不使用 period_id 过滤） -->
+    <!-- 专门用于查询云核心网产品线（二级部门）下的所有四级部门 -->
+    <select id="getLevel4DeptStatisticsUnderLevel2" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
+        SELECT 
+            fourthdeptcode AS deptCode,
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
+        FROM t_employee
+        WHERE job_type = '研发族'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
+        AND seconddeptcode = #{deptCode}
+        GROUP BY fourthdeptcode
+    </select>
+
 </mapper>
 

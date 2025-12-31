@@ -126,5 +126,14 @@ public interface EmployeeMapper {
     List<DepartmentCertStatisticsVO> getDeptStatisticsByLevel(
             @Param("currentLevel") Integer currentLevel,
             @Param("deptCode") String deptCode);
+
+    /**
+     * 批量查询二级部门下的四级部门统计数据（从 t_employee 表，只统计研发族）
+     * 专门用于查询云核心网产品线（二级部门）下的所有四级部门
+     * @param deptCode 二级部门编码（云核心网产品线部门ID）
+     * @return 部门统计列表，每个元素包含：deptCode（四级部门编码）、totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
+     */
+    List<DepartmentCertStatisticsVO> getLevel4DeptStatisticsUnderLevel2(
+            @Param("deptCode") String deptCode);
 }
 

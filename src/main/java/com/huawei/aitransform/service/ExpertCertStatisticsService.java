@@ -307,8 +307,8 @@ public class ExpertCertStatisticsService {
                 response.setTotalStatistics(total);
                 return response;
             }
-            // 查询四级部门的员工，当前层级为3（三级部门），查询下一层（四级部门）
-            currentLevel = 3;
+            // 查询四级部门的员工，云核心网产品线是二级部门，需要查询其下的四级部门
+            currentLevel = 2; // 云核心网产品线是二级部门（虽然不会用到，但需要初始化）
             actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
         } else {
             // 1. 查询部门信息
@@ -341,7 +341,14 @@ public class ExpertCertStatisticsService {
         }
 
         // 4. 批量查询所有子部门的统计数据（从 t_employee 表，只统计研发族）
-        List<DepartmentCertStatisticsVO> statisticsList = employeeMapper.getDeptStatisticsByLevel(currentLevel, actualDeptCode);
+        List<DepartmentCertStatisticsVO> statisticsList;
+        if ("0".equals(deptCode)) {
+            // 特殊处理：查询二级部门（云核心网产品线）下的四级部门
+            statisticsList = employeeMapper.getLevel4DeptStatisticsUnderLevel2(actualDeptCode);
+        } else {
+            // 普通查询：查询当前部门下的下一层部门
+            statisticsList = employeeMapper.getDeptStatisticsByLevel(currentLevel, actualDeptCode);
+        }
         
         // 5. 将统计结果转换为 Map，key 为 deptCode，方便快速查找
         Map<String, DepartmentCertStatisticsVO> statisticsMap = new HashMap<>();
