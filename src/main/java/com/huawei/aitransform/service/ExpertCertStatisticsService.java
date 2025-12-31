@@ -363,9 +363,6 @@ public class ExpertCertStatisticsService {
 
         // 6. 遍历目标部门列表，组装统计数据
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
-        int totalCountSum = 0;
-        int certifiedCountSum = 0;
-        int qualifiedCountSum = 0;
 
         for (DepartmentInfoVO dept : targetDepts) {
             if (dept.getDeptCode() == null || dept.getDeptCode().trim().isEmpty()) {
@@ -413,13 +410,6 @@ public class ExpertCertStatisticsService {
             deptStat.setQualifiedRate(deptQualifiedRate);
 
             departmentStats.add(deptStat);
-
-            // 6.5 累加总计（仅当 deptCode 不为 "0" 时累加）
-            if (!"0".equals(deptCode)) {
-                totalCountSum += deptTotalCount;
-                certifiedCountSum += deptCertifiedCount;
-                qualifiedCountSum += deptQualifiedCount;
-            }
         }
 
         // 7. 计算总计数据
@@ -440,10 +430,17 @@ public class ExpertCertStatisticsService {
                 totalStatistics.setQualifiedCount(0);
             }
         } else {
-            // 普通情况：使用累加的数据
-            totalStatistics.setTotalCount(totalCountSum);
-            totalStatistics.setCertifiedCount(certifiedCountSum);
-            totalStatistics.setQualifiedCount(qualifiedCountSum);
+            // 普通情况：直接查询当前部门及其所有子部门的研发族人员
+            DepartmentCertStatisticsVO totalStat = employeeMapper.getTotalDeptStatisticsByLevel(currentLevel, actualDeptCode);
+            if (totalStat != null) {
+                totalStatistics.setTotalCount(totalStat.getTotalCount() != null ? totalStat.getTotalCount() : 0);
+                totalStatistics.setCertifiedCount(totalStat.getCertifiedCount() != null ? totalStat.getCertifiedCount() : 0);
+                totalStatistics.setQualifiedCount(totalStat.getQualifiedCount() != null ? totalStat.getQualifiedCount() : 0);
+            } else {
+                totalStatistics.setTotalCount(0);
+                totalStatistics.setCertifiedCount(0);
+                totalStatistics.setQualifiedCount(0);
+            }
         }
 
         // 8. 计算总计的认证率

@@ -145,6 +145,17 @@ public interface EmployeeMapper {
     DepartmentCertStatisticsVO getTotalStatisticsForAllEmployees();
 
     /**
+     * 查询总计数据（统计当前部门及其所有子部门的研发族人员）
+     * 用于 employee-cert-statistics 接口的总计统计
+     * @param currentLevel 当前部门层级（1-6）
+     * @param deptCode 当前部门编码
+     * @return 统计数据，包含：totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
+     */
+    DepartmentCertStatisticsVO getTotalDeptStatisticsByLevel(
+            @Param("currentLevel") Integer currentLevel,
+            @Param("deptCode") String deptCode);
+
+    /**
      * 按职位类统计下一层部门的统计数据（从 t_employee 表，只统计研发族）
      * @param currentLevel 当前部门层级（1-6）
      * @param deptCode 当前部门编码

@@ -1026,6 +1026,42 @@
         AND employee_number != ''
     </select>
 
+    <!-- 查询总计数据（统计当前部门及其所有子部门的研发族人员） -->
+    <!-- 用于 employee-cert-statistics 接口的总计统计 -->
+    <select id="getTotalDeptStatisticsByLevel" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
+        SELECT 
+            COUNT(1) AS totalCount,
+            SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
+            SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
+        FROM t_employee
+        WHERE job_type = '研发族'
+        AND employee_number IS NOT NULL
+        AND employee_number != ''
+        <choose>
+            <when test="currentLevel == 1">
+                AND firstdeptcode = #{deptCode}
+            </when>
+            <when test="currentLevel == 2">
+                AND seconddeptcode = #{deptCode}
+            </when>
+            <when test="currentLevel == 3">
+                AND thirddeptcode = #{deptCode}
+            </when>
+            <when test="currentLevel == 4">
+                AND fourthdeptcode = #{deptCode}
+            </when>
+            <when test="currentLevel == 5">
+                AND fifthdeptcode = #{deptCode}
+            </when>
+            <when test="currentLevel == 6">
+                AND sixthdeptcode = #{deptCode}
+            </when>
+            <otherwise>
+                AND 1 = 0
+            </otherwise>
+        </choose>
+    </select>
+
     <!-- 按职位类统计下一层部门的统计数据（从 t_employee 表，只统计研发族） -->
     <select id="getCompetenceCategoryStatisticsByLevel" resultType="com.huawei.aitransform.entity.CompetenceCategoryDeptStatisticsVO">
         SELECT 
