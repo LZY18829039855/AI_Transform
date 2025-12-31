@@ -53,6 +53,8 @@ public class EmployeePO {
 
     private String competenceRatingCn;
 
+    private String competenceGradeCn;
+
     private String competenceFrom;
 
     private String competenceTo;

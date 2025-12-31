@@ -73,6 +73,9 @@ public class EmployeeSyncDataVO {
     @JsonProperty("competence_rating_cn")
     private String competenceRatingCn;
 
+    @JsonProperty("competence_grade_cn")
+    private String competenceGradeCn;
+
     @JsonProperty("competence_from")
     private String competenceFrom;
 

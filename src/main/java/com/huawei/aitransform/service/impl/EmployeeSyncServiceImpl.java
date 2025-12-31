@@ -164,6 +164,7 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         po.setCompetenceSubcategoryCn(vo.getCompetenceSubcategoryCn());
         po.setDirectionCnName(vo.getDirectionCnName());
         po.setCompetenceRatingCn(vo.getCompetenceRatingCn());
+        po.setCompetenceGradeCn(vo.getCompetenceGradeCn());
         po.setCompetenceFrom(vo.getCompetenceFrom());
         po.setCompetenceTo(vo.getCompetenceTo());
         return po;
@@ -200,6 +201,7 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         if (!Objects.equals(source.getCompetenceSubcategoryCn(), target.getCompetenceSubcategoryCn())) return true;
         if (!Objects.equals(source.getDirectionCnName(), target.getDirectionCnName())) return true;
         if (!Objects.equals(source.getCompetenceRatingCn(), target.getCompetenceRatingCn())) return true;
+        if (!Objects.equals(source.getCompetenceGradeCn(), target.getCompetenceGradeCn())) return true;
         if (!Objects.equals(source.getCompetenceFrom(), target.getCompetenceFrom())) return true;
         if (!Objects.equals(source.getCompetenceTo(), target.getCompetenceTo())) return true;
         

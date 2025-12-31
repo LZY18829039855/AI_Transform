@@ -628,7 +628,7 @@
             SUBSTRING_INDEX(e.fourthdept, '/', 1) AS fourthdept,
             SUBSTRING_INDEX(e.fifthdept, '/', 1) AS fifthdept,
             SUBSTRING_INDEX(e.sixthdept, '/', 1) AS sixthdept,
-            e.lowest_dept AS lowestDept,
+            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS lowestDept,
             SUBSTRING_INDEX(e.job_category, '-', 1) AS jobType,
             CASE 
                 WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
@@ -655,6 +655,7 @@
             ANY_VALUE(q_detail.competence_subcategory_cn) AS competence_subcategory_cn,
             ANY_VALUE(q_detail.direction_cn_name) AS direction_cn_name,
             ANY_VALUE(q_detail.competence_rating_cn) AS competence_rating_cn,
+            ANY_VALUE(q_detail.competence_grade_cn) AS competence_grade_cn,
             ANY_VALUE(q_detail.competence_from) AS competence_from,
             ANY_VALUE(q_detail.competence_to) AS competence_to
         FROM t_employee_sync e
