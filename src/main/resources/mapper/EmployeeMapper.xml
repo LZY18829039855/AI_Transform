@@ -941,6 +941,7 @@
     </delete>
 
     <!-- 批量查询部门统计数据（从 t_employee 表，只统计研发族，不使用 period_id 过滤） -->
+    <!-- currentLevel 表示当前部门层级，查询的是下一层（currentLevel+1）的部门统计数据 -->
     <select id="getDeptStatisticsByLevel" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
         SELECT 
             <choose>
@@ -960,26 +961,32 @@
         AND employee_number IS NOT NULL
         AND employee_number != ''
         <choose>
+            <!-- currentLevel=1（一级部门），查询二级部门，按 seconddeptcode 分组 -->
             <when test="currentLevel == 1">
                 AND firstdeptcode = #{deptCode}
                 GROUP BY seconddeptcode
             </when>
+            <!-- currentLevel=2（二级部门），查询三级部门，按 thirddeptcode 分组 -->
             <when test="currentLevel == 2">
                 AND seconddeptcode = #{deptCode}
                 GROUP BY thirddeptcode
             </when>
+            <!-- currentLevel=3（三级部门），查询四级部门，按 fourthdeptcode 分组 -->
             <when test="currentLevel == 3">
                 AND thirddeptcode = #{deptCode}
                 GROUP BY fourthdeptcode
             </when>
+            <!-- currentLevel=4（四级部门），查询五级部门，按 fifthdeptcode 分组 -->
             <when test="currentLevel == 4">
                 AND fourthdeptcode = #{deptCode}
                 GROUP BY fifthdeptcode
             </when>
+            <!-- currentLevel=5（五级部门），查询六级部门，按 sixthdeptcode 分组 -->
             <when test="currentLevel == 5">
                 AND fifthdeptcode = #{deptCode}
                 GROUP BY sixthdeptcode
             </when>
+            <!-- currentLevel=6（六级部门），查询最小部门，按 lowestdeptid 分组 -->
             <when test="currentLevel == 6">
                 AND sixthdeptcode = #{deptCode}
                 GROUP BY lowestdeptid
