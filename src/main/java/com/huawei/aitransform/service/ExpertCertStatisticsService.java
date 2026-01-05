@@ -341,7 +341,7 @@ public class ExpertCertStatisticsService {
             actualDeptCode = deptCode;
         }
 
-        // 4. 批量查询所有子部门的统计数据（从 t_employee 表，只统计研发族）
+        // 4. 批量查询所有子部门的统计数据（从 t_employee 表）
         List<DepartmentCertStatisticsVO> statisticsList;
         if ("0".equals(deptCode)) {
             // 特殊处理：查询二级部门（云核心网产品线）下的四级部门
