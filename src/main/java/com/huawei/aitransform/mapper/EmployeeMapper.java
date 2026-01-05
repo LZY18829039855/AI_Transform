@@ -179,7 +179,7 @@ public interface EmployeeMapper {
             @Param("deptCode") String deptCode);
 
     /**
-     * 按职位类统计下一层部门的统计数据（从 t_employee 表，只统计研发族）
+     * 按职位类统计下一层部门的统计数据（从 t_employee 表）
      * @param currentLevel 当前部门层级（1-6）
      * @param deptCode 当前部门编码
      * @return 职位类部门统计列表，每个元素包含：deptCode（部门编码）、competenceCategory（职位类）、totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
@@ -189,7 +189,7 @@ public interface EmployeeMapper {
             @Param("deptCode") String deptCode);
 
     /**
-     * 按职位类统计二级部门下的四级部门（从 t_employee 表，只统计研发族）
+     * 按职位类统计二级部门下的四级部门（从 t_employee 表）
      * 专门用于查询云核心网产品线（二级部门）下的所有四级部门
      * @param deptCode 二级部门编码（云核心网产品线部门ID）
      * @return 职位类部门统计列表，每个元素包含：deptCode（四级部门编码）、competenceCategory（职位类）、totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
@@ -198,7 +198,7 @@ public interface EmployeeMapper {
             @Param("deptCode") String deptCode);
 
     /**
-     * 查询总计数据（统计当前部门及其所有子部门的研发族人员）
+     * 查询总计数据（统计当前部门及其所有子部门的人员）
      * @param currentLevel 当前部门层级（1-6）
      * @param deptCode 当前部门编码
      * @return 统计数据，包含：totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
@@ -208,7 +208,7 @@ public interface EmployeeMapper {
             @Param("deptCode") String deptCode);
 
     /**
-     * 查询总计数据（deptCode="0" 时使用，统计整个表的研发族人员）
+     * 查询总计数据（deptCode="0" 时使用，统计整个表的人员）
      * @return 统计数据，包含：totalCount（总人数）、certifiedCount（认证人数）、qualifiedCount（任职人数）
      */
     DepartmentCertStatisticsVO getTotalCompetenceCategoryStatisticsForAllEmployees();

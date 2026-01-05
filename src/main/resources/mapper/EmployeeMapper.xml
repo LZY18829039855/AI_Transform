@@ -1255,7 +1255,7 @@
         </choose>
     </select>
 
-    <!-- 按职位类统计下一层部门的统计数据（从 t_employee 表，只统计研发族） -->
+    <!-- 按职位类统计下一层部门的统计数据（从 t_employee 表） -->
     <select id="getCompetenceCategoryStatisticsByLevel" resultType="com.huawei.aitransform.entity.CompetenceCategoryDeptStatisticsVO">
         SELECT 
             <choose>
@@ -1272,8 +1272,7 @@
             SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
             SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
         FROM t_employee
-        WHERE job_type = '研发族'
-        AND employee_number IS NOT NULL
+        WHERE employee_number IS NOT NULL
         AND employee_number != ''
         <choose>
             <when test="currentLevel == 1">
@@ -1315,22 +1314,20 @@
             SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
             SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
         FROM t_employee
-        WHERE job_type = '研发族'
-        AND employee_number IS NOT NULL
+        WHERE employee_number IS NOT NULL
         AND employee_number != ''
         AND seconddeptcode = #{deptCode}
         GROUP BY fourthdeptcode, job_category
     </select>
 
-    <!-- 查询总计数据（统计当前部门及其所有子部门的研发族人员） -->
+    <!-- 查询总计数据（统计当前部门及其所有子部门的人员） -->
     <select id="getTotalCompetenceCategoryStatisticsByLevel" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
         SELECT 
             COUNT(1) AS totalCount,
             SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
             SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
         FROM t_employee
-        WHERE job_type = '研发族'
-        AND employee_number IS NOT NULL
+        WHERE employee_number IS NOT NULL
         AND employee_number != ''
         <choose>
             <when test="currentLevel == 1">
@@ -1357,15 +1354,14 @@
         </choose>
     </select>
 
-    <!-- 查询总计数据（deptCode="0" 时使用，统计整个表的研发族人员） -->
+    <!-- 查询总计数据（deptCode="0" 时使用，统计整个表的人员） -->
     <select id="getTotalCompetenceCategoryStatisticsForAllEmployees" resultType="com.huawei.aitransform.entity.DepartmentCertStatisticsVO">
         SELECT 
             COUNT(1) AS totalCount,
             SUM(CASE WHEN is_cert_standard = 1 THEN 1 ELSE 0 END) AS certifiedCount,
             SUM(CASE WHEN is_qualifications_standard = 1 THEN 1 ELSE 0 END) AS qualifiedCount
         FROM t_employee
-        WHERE job_type = '研发族'
-        AND employee_number IS NOT NULL
+        WHERE employee_number IS NOT NULL
         AND employee_number != ''
     </select>
 

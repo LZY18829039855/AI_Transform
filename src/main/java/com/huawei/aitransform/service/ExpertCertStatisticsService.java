@@ -1010,7 +1010,7 @@ public class ExpertCertStatisticsService {
             // 当 deptCode="0" 时，总计直接统计整个表中的数据
             totalStat = employeeMapper.getTotalCompetenceCategoryStatisticsForAllEmployees();
         } else {
-            // 普通情况：查询当前部门及其所有子部门的研发族人员
+            // 普通情况：查询当前部门及其所有子部门的人员
             totalStat = employeeMapper.getTotalCompetenceCategoryStatisticsByLevel(currentLevel, actualDeptCode);
         }
 
