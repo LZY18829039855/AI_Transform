@@ -1909,9 +1909,9 @@ public class ExpertCertStatisticsService {
             
             List<EmployeeDetailVO> allEmployeeDetails;
             
-            // 特殊处理：deptCode="0" 时，查询表中的所有数据，只过滤职位族为研发族
+            // 特殊处理：deptCode="0" 时，查询表中的所有数据
             if ("0".equals(deptCode.trim())) {
-                // 查询所有员工任职详细信息（只过滤职位族为研发族）
+                // 查询所有员工任职详细信息
                 allEmployeeDetails = employeeMapper.getAllEmployeeQualifiedDetailsFromEmployeeTable(
                         jobCategory, queryType);
             } else {

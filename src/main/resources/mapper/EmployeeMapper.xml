@@ -1396,8 +1396,7 @@
             NULL AS isQualificationsStandard,
             NULL AS isCertStandard
         FROM t_employee e
-        WHERE e.job_type = '研发族'
-        AND e.employee_number IS NOT NULL
+        WHERE e.employee_number IS NOT NULL
         AND e.employee_number != ''
         <choose>
             <when test="deptLevel == 1">
@@ -1446,7 +1445,7 @@
         ORDER BY e.employee_number
     </select>
 
-    <!-- 查询所有员工任职详细信息（deptCode="0" 时，只过滤职位族为研发族） -->
+    <!-- 查询所有员工任职详细信息（deptCode="0" 时，查询所有员工） -->
     <select id="getAllEmployeeQualifiedDetailsFromEmployeeTable" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT 
             e.last_name AS name,
@@ -1477,8 +1476,7 @@
             NULL AS isQualificationsStandard,
             NULL AS isCertStandard
         FROM t_employee e
-        WHERE e.job_type = '研发族'
-        AND e.employee_number IS NOT NULL
+        WHERE e.employee_number IS NOT NULL
         AND e.employee_number != ''
         <!-- queryType=1 时，只返回有任职信息的员工 -->
         <if test="queryType != null and queryType == 1">
