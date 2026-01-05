@@ -166,5 +166,11 @@ public interface CadreMapper {
      * @return 统计结果
      */
     com.huawei.aitransform.entity.CadreAiCertCountVO getCadreAiCertStatisticsByL4DeptCode(@Param("deptCode") String deptCode);
+
+    /**
+     * 查询所有干部的工号列表
+     * @return 干部工号列表
+     */
+    List<String> getAllCadreEmployeeNumbers();
 }
 

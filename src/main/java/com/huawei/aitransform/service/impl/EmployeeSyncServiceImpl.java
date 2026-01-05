@@ -2,9 +2,9 @@ package com.huawei.aitransform.service.impl;
 
 import com.huawei.aitransform.entity.EmployeePO;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
+import com.huawei.aitransform.mapper.CadreMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.service.EmployeeSyncService;
-import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +23,9 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
     @Autowired
     private EmployeeMapper employeeMapper;
 
+    @Autowired
+    private CadreMapper cadreMapper;
+
     @Override
     @Transactional(rollbackFor = Exception.class)
     public Map<String, Object> syncEmployeeData(String periodId) {
@@ -30,22 +33,67 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
             throw new IllegalArgumentException("Period ID cannot be empty");
         }
 
-        // 1. 获取源数据 (t_employee_sync + 达标计算)
-        List<EmployeeSyncDataVO> sourceList = employeeMapper.getEmployeeSyncData(periodId);
+        // 1. 获取研发族数据 (t_employee_sync + 达标计算)
+        List<EmployeeSyncDataVO> rndList = employeeMapper.getEmployeeSyncData(periodId);
         
-        // 校验源数据量，如果小于2000条则认为数据异常，中止同步
+        // 2. 获取干部数据
+        // 2.1 查询所有干部的工号
+        List<String> cadreEmployeeNumbers = new ArrayList<>();
+        try {
+            cadreEmployeeNumbers = cadreMapper.getAllCadreEmployeeNumbers();
+        } catch (Exception e) {
+            // 如果查询干部工号失败，记录日志但不影响研发族数据同步
+            System.err.println("Failed to query cadre employee numbers: " + e.getMessage());
+        }
+        
+        // 2.2 如果干部工号列表不为空，查询干部数据
+        List<EmployeeSyncDataVO> cadreList = new ArrayList<>();
+        if (cadreEmployeeNumbers != null && !cadreEmployeeNumbers.isEmpty()) {
+            try {
+                cadreList = employeeMapper.getEmployeeSyncDataByEmployeeNumbers(periodId, cadreEmployeeNumbers);
+            } catch (Exception e) {
+                // 如果查询干部数据失败，记录日志但不影响研发族数据同步
+                System.err.println("Failed to query cadre data: " + e.getMessage());
+            }
+        }
+        
+        // 3. 合并数据（去重，以工号为唯一标识，干部数据优先覆盖研发族数据）
+        Map<String, EmployeeSyncDataVO> sourceMap = new HashMap<>();
+        
+        // 3.1 将研发族数据转换为 Map（工号 -> 数据）
+        if (rndList != null) {
+            for (EmployeeSyncDataVO vo : rndList) {
+                if (vo.getEmployeeNumber() != null) {
+                    sourceMap.put(vo.getEmployeeNumber(), vo);
+                }
+            }
+        }
+        
+        // 3.2 将干部数据合并到 Map 中（如果工号已存在，干部数据优先覆盖）
+        if (cadreList != null) {
+            for (EmployeeSyncDataVO vo : cadreList) {
+                if (vo.getEmployeeNumber() != null) {
+                    sourceMap.put(vo.getEmployeeNumber(), vo);
+                }
+            }
+        }
+        
+        // 3.3 转换为 List
+        List<EmployeeSyncDataVO> sourceList = new ArrayList<>(sourceMap.values());
+        
+        // 校验合并后的数据量，如果小于2000条则认为数据异常，中止同步
         if (sourceList == null || sourceList.size() < 2000) {
             Map<String, Object> errorResult = new HashMap<>();
             errorResult.put("periodId", periodId);
             errorResult.put("success", false);
             errorResult.put("message", "Source data count is too low (" + (sourceList == null ? 0 : sourceList.size()) + "), sync aborted.");
+            errorResult.put("rndCount", rndList != null ? rndList.size() : 0);
+            errorResult.put("cadreCount", cadreList != null ? cadreList.size() : 0);
+            errorResult.put("cadreEmployeeNumberCount", cadreEmployeeNumbers != null ? cadreEmployeeNumbers.size() : 0);
             return errorResult;
         }
 
-        Map<String, EmployeeSyncDataVO> sourceMap = sourceList.stream()
-                .collect(Collectors.toMap(EmployeeSyncDataVO::getEmployeeNumber, Function.identity(), (k1, k2) -> k1));
-
-        // 2. 获取目标数据 (t_employee 全量)
+        // 4. 获取目标数据 (t_employee 全量)
         List<EmployeePO> targetList = employeeMapper.getAllEmployees();
         Map<String, EmployeePO> targetMap = targetList.stream()
                 .collect(Collectors.toMap(EmployeePO::getEmployeeNumber, Function.identity(), (k1, k2) -> k1));
@@ -59,7 +107,7 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         List<EmployeePO> updateList = new ArrayList<>();
         List<String> deleteList = new ArrayList<>();
 
-        // 3. 遍历源数据，判断新增或更新
+        // 5. 遍历源数据，判断新增或更新
         for (EmployeeSyncDataVO sourceVO : sourceList) {
             EmployeePO targetPO = targetMap.get(sourceVO.getEmployeeNumber());
             
@@ -80,10 +128,10 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
             }
         }
         
-        // 4. 处理删除 (目标Map中剩余的)
+        // 6. 处理删除 (目标Map中剩余的)
         deleteList.addAll(targetMap.keySet());
         
-        // 5. 批量执行数据库操作
+        // 7. 批量执行数据库操作
         // 批量插入
         if (!insertList.isEmpty()) {
             // 分批处理，每批1000条
@@ -124,6 +172,9 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         result.put("success", true);
         result.put("message", "Sync completed successfully");
         result.put("periodId", periodId);
+        result.put("rndCount", rndList != null ? rndList.size() : 0);
+        result.put("cadreCount", cadreList != null ? cadreList.size() : 0);
+        result.put("cadreEmployeeNumberCount", cadreEmployeeNumbers != null ? cadreEmployeeNumbers.size() : 0);
         result.put("totalSource", sourceList.size());
         result.put("insertCount", insertCount);
         result.put("updateCount", updateCount);

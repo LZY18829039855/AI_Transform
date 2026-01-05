@@ -670,4 +670,12 @@
         WHERE l4_department_code = #{deptCode}
     </select>
 
+    <!-- 查询所有干部的工号列表 -->
+    <select id="getAllCadreEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT account
+        FROM t_cadre
+        WHERE account IS NOT NULL
+        AND account != ''
+    </select>
+
 </mapper>

@@ -721,6 +721,125 @@
             )
         )
         WHERE e.period_id = #{periodId}
+        AND SUBSTRING_INDEX(e.job_category, '-', 1) = '研发族'
+        GROUP BY e.employee_number
+    </select>
+
+    <!-- 根据工号列表和期号查询员工同步数据（不过滤职位族） -->
+    <select id="getEmployeeSyncDataByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
+        SELECT 
+            e.employee_number AS employeeNumber,
+            e.last_name AS lastName,
+            e.firstdeptcode,
+            e.seconddeptcode,
+            e.thirddeptcode,
+            e.fourthdeptcode,
+            e.fifthdeptcode,
+            e.sixthdeptcode,
+            e.lowest_dept_number AS lowestDeptNumber,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS firstdept,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS seconddept,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS thirddept,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS fourthdept,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS fifthdept,
+            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS sixthdept,
+            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS lowestDept,
+            SUBSTRING_INDEX(e.job_category, '-', 1) AS jobType,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE e.job_category
+            END AS jobCategory,
+            CASE 
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS jobSubcategory,
+            e.period_id AS periodId,
+            CASE 
+                WHEN MAX(q.employee_number) IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isQualificationsStandard,
+            CASE 
+                WHEN MAX(cert.employee_number) IS NOT NULL THEN 1 
+                ELSE 0 
+            END AS isCertStandard,
+            SUBSTRING_INDEX(GROUP_CONCAT(cert.cer_title ORDER BY cert.start_time DESC SEPARATOR '||'), '||', 1) AS cert_title,
+            MAX(CASE WHEN exam.emp_num IS NOT NULL THEN 1 ELSE 0 END) AS is_passed_subject2,
+            ANY_VALUE(q_detail.competence_family_cn) AS competence_family_cn,
+            ANY_VALUE(q_detail.competence_category_cn) AS competence_category_cn,
+            ANY_VALUE(q_detail.competence_subcategory_cn) AS competence_subcategory_cn,
+            ANY_VALUE(q_detail.direction_cn_name) AS direction_cn_name,
+            ANY_VALUE(q_detail.competence_rating_cn) AS competence_rating_cn,
+            ANY_VALUE(q_detail.competence_grade_cn) AS competence_grade_cn,
+            ANY_VALUE(q_detail.competence_from) AS competence_from,
+            ANY_VALUE(q_detail.competence_to) AS competence_to
+        FROM t_employee_sync e
+        LEFT JOIN t_qualifications q ON (
+            e.employee_number = q.employee_number
+            AND q.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+        )
+        LEFT JOIN dwr_t_cert_record_t cert ON (
+            e.employee_number = cert.employee_number
+            AND (cert.status = 1 OR cert.approved_status = 1)
+            AND cert.cer_title IN (
+                '华为研究类能力认证（专业级，AI算法技术）',
+                '华为研究类能力认证（专业级，AI决策推理）',
+                '华为研究类能力认证（专业级，AI图像语言语义）'
+            )
+        )
+        LEFT JOIN (
+            SELECT DISTINCT emp_num
+            FROM t_exam_record
+            WHERE is_pass = 1
+            AND exam_name IS NOT NULL
+            AND exam_name != ''
+        ) exam ON (e.employee_number = exam.emp_num)
+        LEFT JOIN t_qualifications q_detail ON (
+            e.employee_number = q_detail.employee_number
+            AND q_detail.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            AND q_detail.competence_from = (
+                SELECT q2.competence_from
+                FROM t_qualifications q2
+                WHERE q2.employee_number = e.employee_number
+                AND q2.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                ORDER BY 
+                    CASE 
+                        WHEN q2.competence_rating_cn = '8级' THEN 1
+                        WHEN q2.competence_rating_cn = '7级' THEN 2
+                        WHEN q2.competence_rating_cn = '6级' THEN 3
+                        WHEN q2.competence_rating_cn = '5级' THEN 4
+                        WHEN q2.competence_rating_cn = '4级' THEN 5
+                        WHEN q2.competence_rating_cn = '3级' THEN 6
+                        WHEN q2.competence_rating_cn = '2级' THEN 7
+                        WHEN q2.competence_rating_cn = '1级' THEN 8
+                        WHEN q2.competence_rating_cn = '初级' THEN 9
+                        ELSE 10
+                    END,
+                    q2.competence_from DESC
+                LIMIT 1
+            )
+        )
+        WHERE e.period_id = #{periodId}
+        AND e.employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
         GROUP BY e.employee_number
     </select>
 

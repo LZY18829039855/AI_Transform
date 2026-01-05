@@ -25,6 +25,15 @@ public interface EmployeeMapper {
     List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId);
 
     /**
+     * 根据工号列表和期号查询员工同步数据（不过滤职位族）
+     * @param periodId 期号
+     * @param employeeNumbers 工号列表
+     * @return 员工同步数据列表
+     */
+    List<EmployeeSyncDataVO> getEmployeeSyncDataByEmployeeNumbers(@Param("periodId") String periodId, 
+                                                                    @Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
      * 获取 t_employee 表全量数据
      * @return 员工PO列表
      */
