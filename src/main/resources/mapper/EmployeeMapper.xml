@@ -268,7 +268,6 @@
     <!-- 根据部门层级和部门ID查询员工认证详细信息（全员类型，使用 t_employee 表） -->
     <!-- 注意：
          1. 当部门ID不为0时，只查询当前部门，不查询子部门
-         2. 必须过滤职位族为"研发族"的数据（WHERE e.job_type = '研发族'）
     -->
     <select id="getEmployeeCertDetailsByDeptLevelFromEmployee" resultType="com.huawei.aitransform.entity.EmployeeDetailVO">
         SELECT 
@@ -293,8 +292,7 @@
             e.lowestdept AS miniDeptName,
             COALESCE(e.is_qualifications_standard, 0) AS isQualificationsStandard
         FROM t_employee e
-        WHERE e.job_type = '研发族'
-        AND e.employee_number IS NOT NULL
+        WHERE e.employee_number IS NOT NULL
         AND e.employee_number != ''
         <!-- 根据部门层级过滤 -->
         <choose>
