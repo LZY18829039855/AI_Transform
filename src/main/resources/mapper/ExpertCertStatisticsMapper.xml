@@ -336,7 +336,16 @@
         )
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
         WHERE e.period_id = 20251213
-        AND exp.position_ai_maturity IN ('L2', 'L3')
+        <choose>
+            <when test="aiMaturity != null and 'L6'.equals(aiMaturity)">
+                <!-- L6代表查询所有专家（L1、L2、L3），不添加成熟度过滤条件 -->
+                AND exp.position_ai_maturity IN ('L1', 'L2', 'L3')
+            </when>
+            <otherwise>
+                <!-- 默认只查询L2和L3 -->
+                AND exp.position_ai_maturity IN ('L2', 'L3')
+            </otherwise>
+        </choose>
         AND exp.account IS NOT NULL
         AND exp.account != ''
         AND e.employee_number IS NOT NULL
@@ -379,7 +388,7 @@
                 </otherwise>
             </choose>
         </if>
-        <if test="aiMaturity != null and aiMaturity != ''">
+        <if test="aiMaturity != null and aiMaturity != '' and !'L6'.equals(aiMaturity)">
             <choose>
                 <when test="aiMaturity == 'L5'">
                     AND exp.position_ai_maturity IN ('L2', 'L3')
@@ -504,7 +513,16 @@
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN t_cadre c ON (e.employee_number = c.account)
         WHERE e.period_id = 20251213
-        AND exp.position_ai_maturity IN ('L2', 'L3')
+        <choose>
+            <when test="aiMaturity != null and 'L6'.equals(aiMaturity)">
+                <!-- L6代表查询所有专家（L1、L2、L3），不添加成熟度过滤条件 -->
+                AND exp.position_ai_maturity IN ('L1', 'L2', 'L3')
+            </when>
+            <otherwise>
+                <!-- 默认只查询L2和L3 -->
+                AND exp.position_ai_maturity IN ('L2', 'L3')
+            </otherwise>
+        </choose>
         AND exp.account IS NOT NULL
         AND exp.account != ''
         AND e.employee_number IS NOT NULL
@@ -515,7 +533,7 @@
                 #{empNum}
             </foreach>
         </if>
-        <if test="aiMaturity != null and aiMaturity != ''">
+        <if test="aiMaturity != null and aiMaturity != '' and !'L6'.equals(aiMaturity)">
             <choose>
                 <when test="'L5'.equals(aiMaturity)">
                     <!-- 当aiMaturity为L5时，查询L2和L3的数据（L5代表查询L2和L3） -->
