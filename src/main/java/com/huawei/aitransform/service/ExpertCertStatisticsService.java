@@ -479,6 +479,8 @@ public class ExpertCertStatisticsService {
     private EmployeeCertStatisticsResponseVO getExpertCertStatisticsForEmployee(String deptCode) {
         List<DepartmentInfoVO> targetDepts;
         Integer queryLevel;
+        String actualDeptCode; // 用于总计查询的实际部门编码
+        Integer totalQueryLevel; // 用于总计查询的部门层级
 
         // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
@@ -501,6 +503,9 @@ public class ExpertCertStatisticsService {
             }
             // 查询四级部门的专家，使用 deptLevel=4
             queryLevel = 4;
+            // 总计查询使用云核心网产品线（二级部门）
+            actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+            totalQueryLevel = 2;
         } else {
             // 1. 查询部门信息
             DepartmentInfoVO deptInfo = departmentInfoMapper.getDepartmentByCode(deptCode);
@@ -529,6 +534,9 @@ public class ExpertCertStatisticsService {
             // 3. 根据当前部门层级，确定查询的部门层级（下一层）
             Integer currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
             queryLevel = currentLevel + 1;
+            // 总计查询使用当前部门
+            actualDeptCode = deptCode;
+            totalQueryLevel = currentLevel;
         }
 
         // 4. 遍历每个部门，分别统计
@@ -598,43 +606,25 @@ public class ExpertCertStatisticsService {
         }
 
         // 5. 计算总计统计
-        int totalCountSum;
-        int certifiedCountSum;
-        int qualifiedCountSum;
+        // 总计应该直接查询对应部门下的所有专家数据，而不是累加各个子部门的数据
+        List<String> totalDeptIdList = new ArrayList<>();
+        totalDeptIdList.add(actualDeptCode);
+        List<String> allEmployeeNumbers = expertMapper.getExpertNumbersByDeptLevel(totalQueryLevel, totalDeptIdList);
 
-        if ("0".equals(deptCode)) {
-            // 当 deptCode="0" 时，总计应该直接查询云核心网产品线（二级部门）下的所有专家
-            // 而不是累加各个四级部门的数据
-            List<String> totalDeptIdList = new ArrayList<>();
-            totalDeptIdList.add(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
-            List<String> allEmployeeNumbers = expertMapper.getExpertNumbersByDeptLevel(2, totalDeptIdList);
+        int totalCountSum = (allEmployeeNumbers != null) ? allEmployeeNumbers.size() : 0;
 
-            totalCountSum = (allEmployeeNumbers != null) ? allEmployeeNumbers.size() : 0;
+        // 查询已通过认证的专家工号列表
+        int certifiedCountSum = 0;
+        if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
+            List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
+            certifiedCountSum = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
+        }
 
-            // 查询已通过认证的专家工号列表
-            certifiedCountSum = 0;
-            if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
-                List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
-                certifiedCountSum = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
-            }
-
-            // 查询已获得任职的专家工号列表
-            qualifiedCountSum = 0;
-            if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
-                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(allEmployeeNumbers);
-                qualifiedCountSum = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
-            }
-        } else {
-            // 普通情况：累加所有子部门的数据
-            totalCountSum = 0;
-            certifiedCountSum = 0;
-            qualifiedCountSum = 0;
-
-            for (DepartmentCertStatisticsVO deptStat : departmentStats) {
-                totalCountSum += (deptStat.getTotalCount() != null ? deptStat.getTotalCount() : 0);
-                certifiedCountSum += (deptStat.getCertifiedCount() != null ? deptStat.getCertifiedCount() : 0);
-                qualifiedCountSum += (deptStat.getQualifiedCount() != null ? deptStat.getQualifiedCount() : 0);
-            }
+        // 查询已获得任职的专家工号列表
+        int qualifiedCountSum = 0;
+        if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
+            List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(allEmployeeNumbers);
+            qualifiedCountSum = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
         }
 
         // 6. 计算总计的认证率
