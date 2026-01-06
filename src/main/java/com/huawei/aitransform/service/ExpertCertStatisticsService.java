@@ -533,9 +533,6 @@ public class ExpertCertStatisticsService {
 
         // 4. 遍历每个部门，分别统计
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
-        int totalCountSum = 0;
-        int certifiedCountSum = 0;
-        int qualifiedCountSum = 0;
 
         for (DepartmentInfoVO dept : targetDepts) {
             if (dept.getDeptCode() == null || dept.getDeptCode().trim().isEmpty()) {
@@ -598,14 +595,49 @@ public class ExpertCertStatisticsService {
             deptStat.setQualifiedRate(deptQualifiedRate);
 
             departmentStats.add(deptStat);
-
-            // 4.7 累加总计
-            totalCountSum += deptTotalCount;
-            certifiedCountSum += deptCertifiedCount;
-            qualifiedCountSum += deptQualifiedCount;
         }
 
-        // 5. 计算总计的认证率
+        // 5. 计算总计统计
+        int totalCountSum;
+        int certifiedCountSum;
+        int qualifiedCountSum;
+
+        if ("0".equals(deptCode)) {
+            // 当 deptCode="0" 时，总计应该直接查询云核心网产品线（二级部门）下的所有专家
+            // 而不是累加各个四级部门的数据
+            List<String> totalDeptIdList = new ArrayList<>();
+            totalDeptIdList.add(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+            List<String> allEmployeeNumbers = expertMapper.getExpertNumbersByDeptLevel(2, totalDeptIdList);
+
+            totalCountSum = (allEmployeeNumbers != null) ? allEmployeeNumbers.size() : 0;
+
+            // 查询已通过认证的专家工号列表
+            certifiedCountSum = 0;
+            if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
+                List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
+                certifiedCountSum = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
+            }
+
+            // 查询已获得任职的专家工号列表
+            qualifiedCountSum = 0;
+            if (allEmployeeNumbers != null && !allEmployeeNumbers.isEmpty()) {
+                List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(allEmployeeNumbers);
+                qualifiedCountSum = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
+            }
+        } else {
+            // 普通情况：累加所有子部门的数据
+            totalCountSum = 0;
+            certifiedCountSum = 0;
+            qualifiedCountSum = 0;
+
+            for (DepartmentCertStatisticsVO deptStat : departmentStats) {
+                totalCountSum += (deptStat.getTotalCount() != null ? deptStat.getTotalCount() : 0);
+                certifiedCountSum += (deptStat.getCertifiedCount() != null ? deptStat.getCertifiedCount() : 0);
+                qualifiedCountSum += (deptStat.getQualifiedCount() != null ? deptStat.getQualifiedCount() : 0);
+            }
+        }
+
+        // 6. 计算总计的认证率
         BigDecimal totalCertRate = BigDecimal.ZERO;
         if (totalCountSum > 0) {
             BigDecimal total = new BigDecimal(totalCountSum);
@@ -614,7 +646,7 @@ public class ExpertCertStatisticsService {
                     .multiply(new BigDecimal(100));
         }
 
-        // 6. 计算总计的任职率
+        // 7. 计算总计的任职率
         BigDecimal totalQualifiedRate = BigDecimal.ZERO;
         if (totalCountSum > 0) {
             BigDecimal total = new BigDecimal(totalCountSum);
@@ -623,7 +655,7 @@ public class ExpertCertStatisticsService {
                     .multiply(new BigDecimal(100));
         }
 
-        // 7. 构建总计统计对象
+        // 8. 构建总计统计对象
         DepartmentCertStatisticsVO totalStatistics = new DepartmentCertStatisticsVO();
         totalStatistics.setDeptCode("总计");
         totalStatistics.setDeptName("总计");
