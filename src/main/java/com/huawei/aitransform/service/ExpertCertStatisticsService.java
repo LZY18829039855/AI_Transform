@@ -1799,8 +1799,11 @@ public class ExpertCertStatisticsService {
             String deptLevelStr = deptInfo.getDeptLevel();
             Integer deptLevel = Integer.parseInt(deptLevelStr);
             
+            // 判断是否需要查询所有成熟度（L1、L2、L3）
+            Boolean includeAllMaturity = (aiMaturity != null && "L6".equals(aiMaturity));
+            
             // 1. 调用Mapper方法查询专家数据
-            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel, includeAllMaturity);
             
             if (expertList == null || expertList.isEmpty()) {
                 employeeDetails = new ArrayList<>();
@@ -1818,6 +1821,9 @@ public class ExpertCertStatisticsService {
                             if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
                                 continue;
                             }
+                        } else if ("L6".equals(aiMaturity)) {
+                            // L6代表查询所有专家（L1、L2、L3），不进行成熟度过滤
+                            // 不添加任何过滤条件，保留所有专家
                         } else {
                             if (expertAiMaturity == null || !expertAiMaturity.equals(aiMaturity)) {
                                 continue;
@@ -2010,8 +2016,11 @@ public class ExpertCertStatisticsService {
             String deptLevelStr = deptInfo.getDeptLevel();
             Integer deptLevel = Integer.parseInt(deptLevelStr);
             
+            // 判断是否需要查询所有成熟度（L1、L2、L3）
+            Boolean includeAllMaturity = (aiMaturity != null && "L6".equals(aiMaturity));
+            
             // 1. 调用Mapper方法查询专家数据
-            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+            List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel, includeAllMaturity);
             
             if (expertList == null || expertList.isEmpty()) {
                 employeeDetails = new ArrayList<>();
@@ -2022,20 +2031,25 @@ public class ExpertCertStatisticsService {
                     String expertAiMaturity = expert.getAiMaturity();
                     String expertJobCategory = extractJobCategory(expert.getJobCategory());
                     
-                    // 只处理L2和L3的成熟度
-                    if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
-                        continue;
-                    }
-                    
                     // 过滤AI成熟度
                     if (aiMaturity != null && !aiMaturity.trim().isEmpty()) {
                         if ("L5".equals(aiMaturity)) {
-                            // L5代表查询L2和L3，已经在上面的判断中处理了
-                            // 不需要额外判断
-                        } else {
-                            if (!expertAiMaturity.equals(aiMaturity)) {
+                            // L5代表查询L2和L3
+                            if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
                                 continue;
                             }
+                        } else if ("L6".equals(aiMaturity)) {
+                            // L6代表查询所有专家（L1、L2、L3），不进行成熟度过滤
+                            // 不添加任何过滤条件，保留所有专家
+                        } else {
+                            if (expertAiMaturity == null || !expertAiMaturity.equals(aiMaturity)) {
+                                continue;
+                            }
+                        }
+                    } else {
+                        // 如果没有传成熟度，默认只处理L2和L3
+                        if (expertAiMaturity == null || (!expertAiMaturity.equals("L2") && !expertAiMaturity.equals("L3"))) {
+                            continue;
                         }
                     }
                     
@@ -3407,8 +3421,8 @@ public class ExpertCertStatisticsService {
         String deptLevelStr = deptInfo.getDeptLevel();
         Integer deptLevel = Integer.parseInt(deptLevelStr); // 转换为Integer类型，用于SQL判断
         
-        // 3. 调用Mapper方法查询专家数据
-        List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+        // 3. 调用Mapper方法查询专家数据（只查询L2和L3）
+        List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel, false);
         
         if (expertList == null || expertList.isEmpty()) {
             // 如果没有专家数据，返回空统计
@@ -3614,8 +3628,8 @@ public class ExpertCertStatisticsService {
         String deptLevelStr = deptInfo.getDeptLevel();
         Integer deptLevel = Integer.parseInt(deptLevelStr); // 转换为Integer类型，用于SQL判断
         
-        // 3. 调用Mapper方法查询专家数据
-        List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel);
+        // 3. 调用Mapper方法查询专家数据（只查询L2和L3）
+        List<ExpertInfoVO> expertList = expertMapper.getExpertInfoByDeptCode(actualDeptCode, deptLevel, false);
         
         if (expertList == null || expertList.isEmpty()) {
             // 如果没有专家数据，返回空统计
