@@ -4,6 +4,7 @@
 <mapper namespace="com.huawei.aitransform.mapper.ExpertMapper">
 
     <!-- 根据部门编码和部门层级查询L2/L3专家信息（关联t_employee_sync表获取job_category） -->
+    <!-- Mod: Added choose logic for includeAllMaturity -->
     <select id="getExpertInfoByDeptCode" resultType="com.huawei.aitransform.entity.ExpertInfoVO">
         SELECT DISTINCT
             exp.account AS employeeNumber,
@@ -13,7 +14,17 @@
         FROM t_expert exp
         INNER JOIN t_employee_sync e ON (exp.account = e.employee_number)
         WHERE e.period_id = 20251126
-        AND exp.position_ai_maturity IN ('L2', 'L3')
+        
+        <choose>
+            <when test="includeAllMaturity != null and includeAllMaturity == true">
+                <!-- 查询所有成熟度（L1、L2、L3） -->
+                AND exp.position_ai_maturity IN ('L1', 'L2', 'L3')
+            </when>
+            <otherwise>
+                <!-- 默认只查询L2和L3 -->
+                AND exp.position_ai_maturity IN ('L2', 'L3')
+            </otherwise>
+        </choose>
         AND exp.account IS NOT NULL
         AND exp.account != ''
         AND e.employee_number IS NOT NULL
@@ -311,9 +322,4 @@
             </when>
         </choose>
     </select>
-
 </mapper>
-   
- <!-- Force update -->
-   
- 
