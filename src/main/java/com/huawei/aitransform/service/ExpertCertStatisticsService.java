@@ -718,9 +718,6 @@ public class ExpertCertStatisticsService {
 
         // 3. 遍历每个下级部门，查询所有子部门并统计干部信息
         List<DepartmentCertStatisticsVO> departmentStats = new ArrayList<>();
-        int totalCountSum = 0;
-        int certifiedCountSum = 0;
-        int qualifiedCountSum = 0;
 
         for (DepartmentInfoVO childDept : childDepts) {
             if (childDept.getDeptCode() == null || childDept.getDeptCode().trim().isEmpty()) {
@@ -795,27 +792,50 @@ public class ExpertCertStatisticsService {
             deptStat.setQualifiedRate(deptQualifiedRate);
 
             departmentStats.add(deptStat);
-
-            // 3.8 累加总计
-            totalCountSum += deptTotalCount;
-            certifiedCountSum += deptCertifiedCount;
-            qualifiedCountSum += deptQualifiedCount;
         }
 
-        // 4. 计算总计的认证率
+        // ========================================================================================================
+        // 4. 重算总计数据：使用递归查询逻辑
+        // 如果 deptCode="0"，查询云核心网产品线（二级部门）及其所有子孙部门的干部数据
+        // 如果 deptCode!="0"，查询当前部门及其所有子孙部门的干部数据
+        // ========================================================================================================
+        
+        String totalQueryDeptCode = "0".equals(deptCode) ? DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE : deptCode;
+        
+        // 4.1 递归查询指定部门及其子孙部门下的所有干部工号
+        List<String> allCadreEmployeeNumbers = cadreMapper.getAllCadreEmployeeNumbersByDeptCode(totalQueryDeptCode);
+        
+        // 4.2 计算总人数
+        int finalTotalCount = (allCadreEmployeeNumbers != null) ? allCadreEmployeeNumbers.size() : 0;
+        
+        // 4.3 计算总认证人数
+        int finalCertifiedCount = 0;
+        if (allCadreEmployeeNumbers != null && !allCadreEmployeeNumbers.isEmpty()) {
+            List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allCadreEmployeeNumbers);
+            finalCertifiedCount = (certifiedNumbers != null) ? certifiedNumbers.size() : 0;
+        }
+        
+        // 4.4 计算总任职人数
+        int finalQualifiedCount = 0;
+        if (allCadreEmployeeNumbers != null && !allCadreEmployeeNumbers.isEmpty()) {
+            List<String> qualifiedNumbers = getQualifiedEmployeeNumbers(allCadreEmployeeNumbers);
+            finalQualifiedCount = (qualifiedNumbers != null) ? qualifiedNumbers.size() : 0;
+        }
+
+        // 4.5 计算总计的认证率
         BigDecimal totalCertRate = BigDecimal.ZERO;
-        if (totalCountSum > 0) {
-            BigDecimal total = new BigDecimal(totalCountSum);
-            BigDecimal certified = new BigDecimal(certifiedCountSum);
+        if (finalTotalCount > 0) {
+            BigDecimal total = new BigDecimal(finalTotalCount);
+            BigDecimal certified = new BigDecimal(finalCertifiedCount);
             totalCertRate = certified.divide(total, 4, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100));
         }
 
-        // 5. 计算总计的任职率
+        // 4.6 计算总计的任职率
         BigDecimal totalQualifiedRate = BigDecimal.ZERO;
-        if (totalCountSum > 0) {
-            BigDecimal total = new BigDecimal(totalCountSum);
-            BigDecimal qualified = new BigDecimal(qualifiedCountSum);
+        if (finalTotalCount > 0) {
+            BigDecimal total = new BigDecimal(finalTotalCount);
+            BigDecimal qualified = new BigDecimal(finalQualifiedCount);
             totalQualifiedRate = qualified.divide(total, 4, RoundingMode.HALF_UP)
                     .multiply(new BigDecimal(100));
         }
@@ -824,9 +844,9 @@ public class ExpertCertStatisticsService {
         DepartmentCertStatisticsVO totalStatistics = new DepartmentCertStatisticsVO();
         totalStatistics.setDeptCode("总计");
         totalStatistics.setDeptName("总计");
-        totalStatistics.setTotalCount(totalCountSum);
-        totalStatistics.setCertifiedCount(certifiedCountSum);
-        totalStatistics.setQualifiedCount(qualifiedCountSum);
+        totalStatistics.setTotalCount(finalTotalCount);
+        totalStatistics.setCertifiedCount(finalCertifiedCount);
+        totalStatistics.setQualifiedCount(finalQualifiedCount);
         totalStatistics.setCertRate(totalCertRate);
         totalStatistics.setQualifiedRate(totalQualifiedRate);
 

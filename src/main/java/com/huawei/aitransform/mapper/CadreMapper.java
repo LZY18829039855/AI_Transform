@@ -23,6 +23,13 @@ public interface CadreMapper {
     List<String> getCadreEmployeeNumbersByDeptCodes(@Param("deptCodes") List<String> deptCodes);
 
     /**
+     * 根据部门编码列表递归查询干部工号列表（匹配 l2/l3/l4/l5_department_code）
+     * @param deptCode 部门编码
+     * @return 干部工号列表
+     */
+    List<String> getAllCadreEmployeeNumbersByDeptCode(@Param("deptCode") String deptCode);
+
+    /**
      * 根据部门编码列表查询干部工号和职位类
      * @param deptCodes 部门编码列表
      * @return 干部工号和职位类列表

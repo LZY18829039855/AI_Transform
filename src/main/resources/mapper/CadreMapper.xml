@@ -20,6 +20,22 @@
         </where>
     </select>
 
+    <!-- 根据部门编码递归查询干部工号列表 -->
+    <!-- 匹配 l2/l3/l4/l5_department_code 字段 -->
+    <select id="getAllCadreEmployeeNumbersByDeptCode" resultType="java.lang.String">
+        SELECT DISTINCT account
+        FROM t_cadre
+        WHERE (
+            l2_department_code = #{deptCode}
+            OR l3_department_code = #{deptCode}
+            OR l4_department_code = #{deptCode}
+            OR l5_department_code = #{deptCode}
+            OR mini_departname_id = #{deptCode}
+        )
+        AND account IS NOT NULL
+        AND account != ''
+    </select>
+
     <!-- 根据部门编码列表查询干部工号和职位类 -->
     <!-- 只匹配最小部门编码（mini_departname_id）字段 -->
     <select id="getCadreEmployeesWithCategoryByDeptCodes" resultType="com.huawei.aitransform.entity.EmployeeWithCategoryVO">
