@@ -26,5 +26,12 @@ public interface PersonalCourseCompletionMapper {
      */
     List<String> getCompletedCourseNumbers(@Param("empNum") String empNum, 
                                            @Param("courseNumbers") List<String> courseNumbers);
+
+    /**
+     * 根据员工工号查询中文名（last_name）
+     * @param employeeNumber 员工工号
+     * @return 中文名
+     */
+    String getLastNameByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 }
 

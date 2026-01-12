@@ -112,10 +112,16 @@ public class PersonalCourseCompletionService {
             return orderA.compareTo(orderB);
         });
 
+        // 查询员工中文名
+        String empName = personalCourseCompletionMapper.getLastNameByEmployeeNumber(empNum);
+        if (empName == null) {
+            empName = "";
+        }
+
         // 创建响应对象
         PersonalCourseCompletionResponseVO response = new PersonalCourseCompletionResponseVO();
         response.setEmpNum(empNum);
-        response.setEmpName("");
+        response.setEmpName(empName);
         response.setCourseStatistics(courseStatistics);
 
         return response;

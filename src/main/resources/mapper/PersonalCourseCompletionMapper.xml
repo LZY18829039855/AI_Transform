@@ -42,5 +42,13 @@
         ) AS completed_courses
     </select>
 
+    <!-- 根据员工工号查询中文名（last_name） -->
+    <select id="getLastNameByEmployeeNumber" resultType="java.lang.String">
+        SELECT last_name
+        FROM t_employee_sync
+        WHERE employee_number = #{employeeNumber}
+        LIMIT 1
+    </select>
+
 </mapper>
 
