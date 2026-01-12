@@ -24,6 +24,11 @@ public class CourseInfoVO implements Serializable {
      */
     private Boolean isCompleted;
 
+    /**
+     * 课程主分类
+     */
+    private String bigType;
+
     public CourseInfoVO() {
     }
 
@@ -31,6 +36,13 @@ public class CourseInfoVO implements Serializable {
         this.courseName = courseName;
         this.courseNumber = courseNumber;
         this.isCompleted = isCompleted;
+    }
+
+    public CourseInfoVO(String courseName, String courseNumber, Boolean isCompleted, String bigType) {
+        this.courseName = courseName;
+        this.courseNumber = courseNumber;
+        this.isCompleted = isCompleted;
+        this.bigType = bigType;
     }
 
     public String getCourseName() {
@@ -55,6 +67,14 @@ public class CourseInfoVO implements Serializable {
 
     public void setIsCompleted(Boolean isCompleted) {
         this.isCompleted = isCompleted;
+    }
+
+    public String getBigType() {
+        return bigType;
+    }
+
+    public void setBigType(String bigType) {
+        this.bigType = bigType;
     }
 }
 

@@ -62,12 +62,6 @@ public class PersonalCourseCompletionService {
             String courseLevel = entry.getKey();
             List<CourseInfoByLevelVO> courses = entry.getValue();
 
-            // 获取该分类的 bigType（从第一个课程获取，因为同一级别的课程应该有相同的 bigType）
-            String bigType = null;
-            if (!courses.isEmpty() && courses.get(0) != null) {
-                bigType = courses.get(0).getBigType();
-            }
-
             // 构建课程列表
             List<CourseInfoVO> courseList = new ArrayList<>();
             int completedCount = 0;
@@ -76,7 +70,8 @@ public class PersonalCourseCompletionService {
                 if (isCompleted) {
                     completedCount++;
                 }
-                courseList.add(new CourseInfoVO(course.getCourseName(), course.getCourseNumber(), isCompleted));
+                // 为每门课程设置 bigType
+                courseList.add(new CourseInfoVO(course.getCourseName(), course.getCourseNumber(), isCompleted, course.getBigType()));
             }
 
             // 计算完课占比
@@ -93,7 +88,6 @@ public class PersonalCourseCompletionService {
             // 创建分类统计对象
             CourseCategoryStatisticsVO statistics = new CourseCategoryStatisticsVO();
             statistics.setCourseLevel(courseLevel);
-            statistics.setBigType(bigType);
             statistics.setTotalCourses(totalCourses);
             statistics.setTargetCourses(totalCourses);
             statistics.setCompletedCourses(completedCount);
