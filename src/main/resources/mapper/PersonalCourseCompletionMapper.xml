@@ -10,7 +10,6 @@
             course_name AS courseName,
             course_number AS courseNumber,
             big_type AS bigType,
-            is_target_course AS isTargetCourse,
             course_link AS courseLink
         FROM ai_course_planning_info
         WHERE course_level IS NOT NULL
