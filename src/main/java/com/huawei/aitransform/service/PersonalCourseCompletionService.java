@@ -96,6 +96,22 @@ public class PersonalCourseCompletionService {
             courseStatistics.add(statistics);
         }
 
+        // 按照指定顺序排序：基础、进阶、高阶、实战
+        Map<String, Integer> levelOrder = new HashMap<>();
+        levelOrder.put("基础", 1);
+        levelOrder.put("进阶", 2);
+        levelOrder.put("高阶", 3);
+        levelOrder.put("实战", 4);
+        
+        // 对courseStatistics进行排序
+        courseStatistics.sort((a, b) -> {
+            String levelA = a.getCourseLevel();
+            String levelB = b.getCourseLevel();
+            Integer orderA = levelOrder.getOrDefault(levelA, 999); // 未匹配的排在最后
+            Integer orderB = levelOrder.getOrDefault(levelB, 999);
+            return orderA.compareTo(orderB);
+        });
+
         // 创建响应对象
         PersonalCourseCompletionResponseVO response = new PersonalCourseCompletionResponseVO();
         response.setEmpNum(empNum);
