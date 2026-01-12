@@ -70,8 +70,9 @@ public class PersonalCourseCompletionService {
                 if (isCompleted) {
                     completedCount++;
                 }
-                // 为每门课程设置 bigType
-                courseList.add(new CourseInfoVO(course.getCourseName(), course.getCourseNumber(), isCompleted, course.getBigType()));
+                // 为每门课程设置 bigType、isTargetCourse 和 courseLink
+                courseList.add(new CourseInfoVO(course.getCourseName(), course.getCourseNumber(), isCompleted, 
+                        course.getBigType(), course.getIsTargetCourse(), course.getCourseLink()));
             }
 
             // 计算完课占比
