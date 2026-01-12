@@ -24,6 +24,11 @@ public class CourseInfoByLevelVO implements Serializable {
      */
     private String courseNumber;
 
+    /**
+     * 课程主分类
+     */
+    private String bigType;
+
     public CourseInfoByLevelVO() {
     }
 
@@ -49,6 +54,14 @@ public class CourseInfoByLevelVO implements Serializable {
 
     public void setCourseNumber(String courseNumber) {
         this.courseNumber = courseNumber;
+    }
+
+    public String getBigType() {
+        return bigType;
+    }
+
+    public void setBigType(String bigType) {
+        this.bigType = bigType;
     }
 }
 

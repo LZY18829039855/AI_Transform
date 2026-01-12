@@ -8,7 +8,8 @@
         SELECT 
             course_level AS courseLevel,
             course_name AS courseName,
-            course_number AS courseNumber
+            course_number AS courseNumber,
+            big_type AS bigType
         FROM ai_course_planning_info
         WHERE course_level IS NOT NULL
           AND course_name IS NOT NULL

@@ -16,6 +16,11 @@ public class CourseCategoryStatisticsVO implements Serializable {
     private String courseLevel;
 
     /**
+     * 课程主分类
+     */
+    private String bigType;
+
+    /**
      * 课程总数
      */
     private Integer totalCourses;
@@ -49,6 +54,14 @@ public class CourseCategoryStatisticsVO implements Serializable {
 
     public void setCourseLevel(String courseLevel) {
         this.courseLevel = courseLevel;
+    }
+
+    public String getBigType() {
+        return bigType;
+    }
+
+    public void setBigType(String bigType) {
+        this.bigType = bigType;
     }
 
     public Integer getTotalCourses() {
