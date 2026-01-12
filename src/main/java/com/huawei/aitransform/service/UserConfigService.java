@@ -94,15 +94,18 @@ public class UserConfigService {
             return null;
         }
         
-        String empNum = account.trim();
+        String accountTrimmed = account.trim();
+        String empNum = null;
         String w3Account = null;
         
-        // 如果工号以字母开头，去除首字母得到w3_account
-        if (empNum != null && empNum.length() > 0 && Character.isLetter(empNum.charAt(0))) {
-            w3Account = empNum.substring(1);
+        // 如果工号以字母开头，w3Account是带首字母的，empNum是不带首字母的
+        if (accountTrimmed != null && accountTrimmed.length() > 0 && Character.isLetter(accountTrimmed.charAt(0))) {
+            w3Account = accountTrimmed;
+            empNum = accountTrimmed.substring(1);
         } else {
-            // 如果工号不以字母开头，w3_account与emp_num相同
-            w3Account = empNum;
+            // 如果工号不以字母开头，两者相同
+            w3Account = accountTrimmed;
+            empNum = accountTrimmed;
         }
         
         return new UserAccountResponseVO(empNum, w3Account);
