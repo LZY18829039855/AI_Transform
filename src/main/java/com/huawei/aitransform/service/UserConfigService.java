@@ -1,11 +1,14 @@
 package com.huawei.aitransform.service;
 
+import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.entity.UserConfigPermissionResponseVO;
 import com.huawei.aitransform.entity.UserConfigVO;
 import com.huawei.aitransform.mapper.UserConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -60,6 +63,49 @@ public class UserConfigService {
         
         UserConfigVO user = userConfigMapper.selectValidUserByAccount(account.trim());
         return user != null;
+    }
+
+    /**
+     * 从cookie中获取用户工号信息
+     * @param request HTTP请求对象，用于获取cookie
+     * @param accountCookie 从cookie中获取的工号（可选，如果cookie名称为account）
+     * @return 包含emp_num和w3_account的用户工号信息，如果未获取到则返回null
+     */
+    public UserAccountResponseVO getUserAccountFromCookie(HttpServletRequest request, String accountCookie) {
+        // 优先使用 @CookieValue 获取的 account cookie
+        String account = accountCookie;
+        
+        // 如果 @CookieValue 没有获取到，尝试从 HttpServletRequest 中获取
+        if (account == null || account.trim().isEmpty()) {
+            Cookie[] cookies = request.getCookies();
+            if (cookies != null) {
+                for (Cookie cookie : cookies) {
+                    // 只判断cookie名称为account
+                    if ("account".equals(cookie.getName())) {
+                        account = cookie.getValue();
+                        break;
+                    }
+                }
+            }
+        }
+        
+        // 如果未获取到工号，返回null
+        if (account == null || account.trim().isEmpty()) {
+            return null;
+        }
+        
+        String empNum = account.trim();
+        String w3Account = null;
+        
+        // 如果工号以字母开头，去除首字母得到w3_account
+        if (empNum != null && empNum.length() > 0 && Character.isLetter(empNum.charAt(0))) {
+            w3Account = empNum.substring(1);
+        } else {
+            // 如果工号不以字母开头，w3_account与emp_num相同
+            w3Account = empNum;
+        }
+        
+        return new UserAccountResponseVO(empNum, w3Account);
     }
 }
 
