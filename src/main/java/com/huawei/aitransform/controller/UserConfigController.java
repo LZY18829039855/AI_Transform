@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 
 /**
@@ -51,16 +52,29 @@ public class UserConfigController {
             HttpServletRequest request,
             @CookieValue(value = "account", required = false) String accountCookie) {
         try {
-            // 从cookie中获取用户工号信息
-            UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
-            
+            // 优先使用 @CookieValue 获取的 account cookie
+            String account = accountCookie;
+
+            // 如果 @CookieValue 没有获取到，尝试从 HttpServletRequest 中获取
+            if (account == null || account.trim().isEmpty()) {
+                Cookie[] cookies = request.getCookies();
+                if (cookies != null) {
+                    for (Cookie cookie : cookies) {
+                        // 只判断cookie名称为account
+                        if ("account".equals(cookie.getName())) {
+                            account = cookie.getValue();
+                            break;
+                        }
+                    }
+                }
+            }
+
             // 如果未获取到工号，返回false
-            if (accountInfo == null || accountInfo.getW3Account() == null || accountInfo.getW3Account().trim().isEmpty()) {
+            if (account == null || account.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.success("查询成功", false));
             }
-            
-            // 查询数据库中是否存在该有效用户（使用w3_account进行验证）
-            boolean isValid = userConfigService.isValidUser(accountInfo.getW3Account());
+            // 查询数据库中是否存在该有效用户
+            boolean isValid = userConfigService.isValidUser(account);
             return ResponseEntity.ok(Result.success("查询成功", isValid));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
