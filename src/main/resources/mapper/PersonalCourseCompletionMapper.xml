@@ -1,0 +1,46 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.PersonalCourseCompletionMapper">
+
+    <!-- 按课程级别分类查询所有课程信息 -->
+    <select id="getCourseInfoByLevel" resultType="com.huawei.aitransform.entity.CourseInfoByLevelVO">
+        SELECT 
+            course_level AS courseLevel,
+            course_name AS courseName,
+            course_number AS courseNumber
+        FROM ai_course_planning_info
+        WHERE course_level IS NOT NULL
+          AND course_name IS NOT NULL
+          AND course_number IS NOT NULL
+        ORDER BY course_level, course_number
+    </select>
+
+    <!-- 查询用户已完成的课程编码列表 -->
+    <select id="getCompletedCourseNumbers" resultType="java.lang.String">
+        SELECT DISTINCT course_team_code
+        FROM (
+            SELECT DISTINCT course_team_code
+            FROM t_micro_study_info_sync
+            WHERE emp_num = #{empNum}
+              AND course_team_code IN 
+              <foreach collection="courseNumbers" item="courseNumber" open="(" separator="," close=")">
+                  #{courseNumber}
+              </foreach>
+              AND is_pass = '1'
+            
+            UNION
+            
+            SELECT DISTINCT course_team_code
+            FROM t_mooc_study_info_sync
+            WHERE emp_num = #{empNum}
+              AND course_team_code IN 
+              <foreach collection="courseNumbers" item="courseNumber" open="(" separator="," close=")">
+                  #{courseNumber}
+              </foreach>
+              AND is_pass = '1'
+        ) AS completed_courses
+    </select>
+
+</mapper>
+
