@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.CoursePlanningInfoVO;
+import com.huawei.aitransform.entity.DeptCourseSelection;
 import org.apache.ibatis.annotations.Mapper;
 
 import java.util.List;
@@ -16,6 +17,12 @@ public interface CoursePlanningInfoMapper {
      * @return 课程规划明细列表
      */
     List<CoursePlanningInfoVO> getAllCoursePlanningInfo();
+
+    /**
+     * 查询所有部门选课信息
+     * @return 部门选课列表
+     */
+    List<DeptCourseSelection> getAllDeptSelections();
 }
 
 

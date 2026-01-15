@@ -22,6 +22,15 @@
         ORDER BY id
     </select>
 
+    <!-- 查询所有部门选课信息 -->
+    <select id="getAllDeptSelections" resultType="com.huawei.aitransform.entity.DeptCourseSelection">
+        SELECT 
+            dept_code AS deptCode,
+            dept_name AS deptName,
+            course_selections AS courseSelections
+        FROM dept_course_selections
+    </select>
+
 </mapper>
 
 

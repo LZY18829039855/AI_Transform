@@ -1,6 +1,7 @@
 package com.huawei.aitransform.entity;
 
 import java.io.Serializable;
+import java.util.List;
 
 /**
  * AI课程规划明细表VO
@@ -69,7 +70,20 @@ public class CoursePlanningInfoVO implements Serializable {
      */
     private String inClassTest;
 
+    /**
+     * 已选该课程的部门列表
+     */
+    private List<DepartmentVO> selectedDepts;
+
     public CoursePlanningInfoVO() {
+    }
+
+    public List<DepartmentVO> getSelectedDepts() {
+        return selectedDepts;
+    }
+
+    public void setSelectedDepts(List<DepartmentVO> selectedDepts) {
+        this.selectedDepts = selectedDepts;
     }
 
     public Integer getId() {
