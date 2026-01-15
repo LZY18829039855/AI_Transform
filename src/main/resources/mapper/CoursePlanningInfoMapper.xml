@@ -17,7 +17,8 @@
             course_explain AS courseExplain,
             study_duration AS studyDuration,
             course_level AS courseLevel,
-            in_class_test AS inClassTest
+            in_class_test AS inClassTest,
+            course_number AS courseNumber
         FROM ai_course_planning_info
         ORDER BY id
     </select>

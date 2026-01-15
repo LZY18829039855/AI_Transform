@@ -71,11 +71,24 @@ public class CoursePlanningInfoVO implements Serializable {
     private String inClassTest;
 
     /**
+     * 课程编码
+     */
+    private String courseNumber;
+
+    /**
      * 已选该课程的部门列表
      */
     private List<DepartmentVO> selectedDepts;
 
     public CoursePlanningInfoVO() {
+    }
+
+    public String getCourseNumber() {
+        return courseNumber;
+    }
+
+    public void setCourseNumber(String courseNumber) {
+        this.courseNumber = courseNumber;
     }
 
     public List<DepartmentVO> getSelectedDepts() {
