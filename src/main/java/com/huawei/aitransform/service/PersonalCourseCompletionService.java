@@ -36,10 +36,15 @@ public class PersonalCourseCompletionService {
      * @return 个人课程完成情况响应对象
      */
     public PersonalCourseCompletionResponseVO getPersonalCourseCompletion(String empNum) {
-        // 1. 查询员工四级部门ID
+        // 1. 查询所有课程信息（用于计算totalCourses）
+        List<CourseInfoByLevelVO> allCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
+        Map<String, List<CourseInfoByLevelVO>> allCoursesByLevel = allCourses.stream()
+                .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
+        
+        // 2. 查询员工四级部门ID
         String fourthDeptCode = personalCourseCompletionMapper.getFourthDeptCodeByEmployeeNumber(empNum);
         
-        // 2. 获取部门选定的目标课程
+        // 3. 获取部门选定的目标课程
         List<CourseInfoByLevelVO> targetCourses;
         boolean useAllCourses = false; // 标记是否使用所有课程
         
@@ -95,8 +100,8 @@ public class PersonalCourseCompletionService {
             targetCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
         }
 
-        // 3. 按课程级别分组
-        Map<String, List<CourseInfoByLevelVO>> coursesByLevel = targetCourses.stream()
+        // 4. 按课程级别分组目标课程
+        Map<String, List<CourseInfoByLevelVO>> targetCoursesByLevel = targetCourses.stream()
                 .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
 
         // 4. 获取目标课程编码列表
@@ -119,14 +124,19 @@ public class PersonalCourseCompletionService {
 
         // 7. 组装各分类的课程统计信息
         List<CourseCategoryStatisticsVO> courseStatistics = new ArrayList<>();
-        for (Map.Entry<String, List<CourseInfoByLevelVO>> entry : coursesByLevel.entrySet()) {
+        
+        // 遍历所有课程级别，确保每个级别都有统计信息
+        for (Map.Entry<String, List<CourseInfoByLevelVO>> entry : allCoursesByLevel.entrySet()) {
             String courseLevel = entry.getKey();
-            List<CourseInfoByLevelVO> courses = entry.getValue();
-
-            // 构建课程列表
+            List<CourseInfoByLevelVO> allCoursesInLevel = entry.getValue();
+            
+            // 获取该级别下的目标课程
+            List<CourseInfoByLevelVO> targetCoursesInLevel = targetCoursesByLevel.getOrDefault(courseLevel, new ArrayList<>());
+            
+            // 构建目标课程列表
             List<CourseInfoVO> courseList = new ArrayList<>();
             int completedCount = 0;
-            for (CourseInfoByLevelVO course : courses) {
+            for (CourseInfoByLevelVO course : targetCoursesInLevel) {
                 Boolean isCompleted = completedCourseMap.containsKey(course.getCourseNumber());
                 if (isCompleted) {
                     completedCount++;
@@ -136,11 +146,12 @@ public class PersonalCourseCompletionService {
                         course.getBigType(), true, course.getCourseLink()));
             }
 
-            // 计算完课占比
-            int totalCourses = courses.size();
+            // 计算完课占比（基于目标课程数）
+            int totalCourses = allCoursesInLevel.size(); // 所有课程数量
+            int targetCoursesCount = targetCoursesInLevel.size(); // 目标课程数量
             double completionRate = 0.0;
-            if (totalCourses > 0) {
-                completionRate = (double) completedCount / totalCourses * 100;
+            if (targetCoursesCount > 0) {
+                completionRate = (double) completedCount / targetCoursesCount * 100;
                 // 保留2位小数
                 BigDecimal bd = new BigDecimal(completionRate);
                 bd = bd.setScale(2, RoundingMode.HALF_UP);
@@ -150,8 +161,8 @@ public class PersonalCourseCompletionService {
             // 创建分类统计对象
             CourseCategoryStatisticsVO statistics = new CourseCategoryStatisticsVO();
             statistics.setCourseLevel(courseLevel);
-            statistics.setTotalCourses(totalCourses);
-            statistics.setTargetCourses(totalCourses);
+            statistics.setTotalCourses(totalCourses); // 所有课程数量
+            statistics.setTargetCourses(targetCoursesCount); // 目标课程数量
             statistics.setCompletedCourses(completedCount);
             statistics.setCompletionRate(completionRate);
             statistics.setCourseList(courseList);
