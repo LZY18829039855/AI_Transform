@@ -49,17 +49,8 @@ public class PersonalCourseCompletionService {
         boolean useAllCourses = false; // 标记是否使用所有课程
         
         if (fourthDeptCode != null && !fourthDeptCode.trim().isEmpty()) {
-            // 获取所有部门选课信息
-            List<DeptCourseSelection> allDeptSelections = coursePlanningInfoMapper.getAllDeptSelections();
-            
-            // 查找当前用户所在部门的选课信息
-            DeptCourseSelection userDeptSelection = null;
-            for (DeptCourseSelection selection : allDeptSelections) {
-                if (selection.getDeptCode() != null && selection.getDeptCode().equals(fourthDeptCode)) {
-                    userDeptSelection = selection;
-                    break;
-                }
-            }
+            // 根据部门ID直接查询部门选课信息
+            DeptCourseSelection userDeptSelection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode);
             
             // 解析目标课程ID列表
             List<Integer> targetCourseIds = new ArrayList<>();

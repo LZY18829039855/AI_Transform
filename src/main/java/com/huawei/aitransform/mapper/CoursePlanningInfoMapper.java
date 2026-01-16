@@ -3,6 +3,7 @@ package com.huawei.aitransform.mapper;
 import com.huawei.aitransform.entity.CoursePlanningInfoVO;
 import com.huawei.aitransform.entity.DeptCourseSelection;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -23,6 +24,13 @@ public interface CoursePlanningInfoMapper {
      * @return 部门选课列表
      */
     List<DeptCourseSelection> getAllDeptSelections();
+
+    /**
+     * 根据部门编码查询部门选课信息
+     * @param deptCode 部门编码
+     * @return 部门选课信息，如果未找到返回null
+     */
+    DeptCourseSelection getDeptSelectionByDeptCode(@Param("deptCode") String deptCode);
 }
 
 

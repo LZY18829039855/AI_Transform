@@ -32,6 +32,17 @@
         FROM dept_course_selections
     </select>
 
+    <!-- 根据部门编码查询部门选课信息 -->
+    <select id="getDeptSelectionByDeptCode" resultType="com.huawei.aitransform.entity.DeptCourseSelection">
+        SELECT 
+            dept_code AS deptCode,
+            dept_name AS deptName,
+            course_selections AS courseSelections
+        FROM dept_course_selections
+        WHERE dept_code = #{deptCode}
+        LIMIT 1
+    </select>
+
 </mapper>
 
 
