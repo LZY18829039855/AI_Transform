@@ -33,5 +33,19 @@ public interface PersonalCourseCompletionMapper {
      * @return 中文名
      */
     String getLastNameByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
+
+    /**
+     * 根据员工工号查询四级部门ID（fourthdeptcode）
+     * @param employeeNumber 员工工号（不带首字母）
+     * @return 四级部门ID，如果未找到返回null
+     */
+    String getFourthDeptCodeByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
+
+    /**
+     * 根据课程ID列表查询课程信息（按级别分类）
+     * @param courseIds 课程ID列表
+     * @return 课程信息列表
+     */
+    List<CourseInfoByLevelVO> getCourseInfoByLevelAndIds(@Param("courseIds") List<Integer> courseIds);
 }
 

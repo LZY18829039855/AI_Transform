@@ -52,5 +52,32 @@
         LIMIT 1
     </select>
 
+    <!-- 根据员工工号查询四级部门ID -->
+    <select id="getFourthDeptCodeByEmployeeNumber" resultType="java.lang.String">
+        SELECT fourthdeptcode
+        FROM t_employee_sync
+        WHERE employee_number = #{employeeNumber}
+        LIMIT 1
+    </select>
+
+    <!-- 根据课程ID列表查询课程信息（按级别分类） -->
+    <select id="getCourseInfoByLevelAndIds" resultType="com.huawei.aitransform.entity.CourseInfoByLevelVO">
+        SELECT 
+            course_level AS courseLevel,
+            course_name AS courseName,
+            course_number AS courseNumber,
+            big_type AS bigType,
+            course_link AS courseLink
+        FROM ai_course_planning_info
+        WHERE id IN
+        <foreach collection="courseIds" item="courseId" open="(" separator="," close=")">
+            #{courseId}
+        </foreach>
+          AND course_level IS NOT NULL
+          AND course_name IS NOT NULL
+          AND course_number IS NOT NULL
+        ORDER BY course_level, course_number
+    </select>
+
 </mapper>
 

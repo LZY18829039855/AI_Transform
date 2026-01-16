@@ -3,7 +3,9 @@ package com.huawei.aitransform.service;
 import com.huawei.aitransform.entity.CourseCategoryStatisticsVO;
 import com.huawei.aitransform.entity.CourseInfoByLevelVO;
 import com.huawei.aitransform.entity.CourseInfoVO;
+import com.huawei.aitransform.entity.DeptCourseSelection;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
+import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -25,38 +27,97 @@ public class PersonalCourseCompletionService {
     @Autowired
     private PersonalCourseCompletionMapper personalCourseCompletionMapper;
 
+    @Autowired
+    private CoursePlanningInfoMapper coursePlanningInfoMapper;
+
     /**
      * 查询个人课程完成情况
      * @param empNum 员工工号（不带首字母）
      * @return 个人课程完成情况响应对象
      */
     public PersonalCourseCompletionResponseVO getPersonalCourseCompletion(String empNum) {
-        // 查询所有课程信息（按级别分类）
-        List<CourseInfoByLevelVO> allCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
+        // 1. 查询员工四级部门ID
+        String fourthDeptCode = personalCourseCompletionMapper.getFourthDeptCodeByEmployeeNumber(empNum);
+        
+        // 2. 获取部门选定的目标课程
+        List<CourseInfoByLevelVO> targetCourses;
+        boolean useAllCourses = false; // 标记是否使用所有课程
+        
+        if (fourthDeptCode != null && !fourthDeptCode.trim().isEmpty()) {
+            // 获取所有部门选课信息
+            List<DeptCourseSelection> allDeptSelections = coursePlanningInfoMapper.getAllDeptSelections();
+            
+            // 查找当前用户所在部门的选课信息
+            DeptCourseSelection userDeptSelection = null;
+            for (DeptCourseSelection selection : allDeptSelections) {
+                if (selection.getDeptCode() != null && selection.getDeptCode().equals(fourthDeptCode)) {
+                    userDeptSelection = selection;
+                    break;
+                }
+            }
+            
+            // 解析目标课程ID列表
+            List<Integer> targetCourseIds = new ArrayList<>();
+            if (userDeptSelection != null && userDeptSelection.getCourseSelections() != null 
+                    && !userDeptSelection.getCourseSelections().trim().isEmpty()) {
+                // 部门有选课信息，解析选定的课程ID
+                String courseSelectionsStr = userDeptSelection.getCourseSelections();
+                String[] courseIdStrs = courseSelectionsStr.split(",");
+                for (String courseIdStr : courseIdStrs) {
+                    courseIdStr = courseIdStr.trim();
+                    if (!courseIdStr.isEmpty()) {
+                        try {
+                            targetCourseIds.add(Integer.parseInt(courseIdStr));
+                        } catch (NumberFormatException e) {
+                            // 忽略无效的课程ID
+                        }
+                    }
+                }
+                // 如果解析后没有有效的课程ID，则使用所有课程
+                if (targetCourseIds.isEmpty()) {
+                    useAllCourses = true;
+                }
+            } else {
+                // 部门没有选课信息，使用所有课程作为默认目标课程
+                useAllCourses = true;
+            }
+            
+            // 根据标志位决定查询方式
+            if (useAllCourses) {
+                // 使用所有课程作为目标课程（fallback逻辑）
+                targetCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
+            } else {
+                // 根据目标课程ID列表查询课程信息
+                targetCourses = personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
+            }
+        } else {
+            // 如果未找到部门信息，使用所有课程作为默认目标课程
+            targetCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
+        }
 
-        // 按课程级别分组
-        Map<String, List<CourseInfoByLevelVO>> coursesByLevel = allCourses.stream()
+        // 3. 按课程级别分组
+        Map<String, List<CourseInfoByLevelVO>> coursesByLevel = targetCourses.stream()
                 .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
 
-        // 获取所有课程编码
-        List<String> allCourseNumbers = allCourses.stream()
+        // 4. 获取目标课程编码列表
+        List<String> targetCourseNumbers = targetCourses.stream()
                 .map(CourseInfoByLevelVO::getCourseNumber)
                 .distinct()
                 .collect(Collectors.toList());
 
-        // 查询用户已完成的课程编码列表
+        // 5. 查询用户已完成的课程编码列表（只查询目标课程中的完课数据）
         List<String> completedCourseNumbers = new ArrayList<>();
-        if (!allCourseNumbers.isEmpty()) {
-            completedCourseNumbers = personalCourseCompletionMapper.getCompletedCourseNumbers(empNum, allCourseNumbers);
+        if (!targetCourseNumbers.isEmpty()) {
+            completedCourseNumbers = personalCourseCompletionMapper.getCompletedCourseNumbers(empNum, targetCourseNumbers);
         }
 
-        // 将已完成的课程编码转换为Set，便于快速查找
+        // 6. 将已完成的课程编码转换为Map，便于快速查找
         Map<String, Boolean> completedCourseMap = new HashMap<>();
         for (String courseNumber : completedCourseNumbers) {
             completedCourseMap.put(courseNumber, true);
         }
 
-        // 组装各分类的课程统计信息
+        // 7. 组装各分类的课程统计信息
         List<CourseCategoryStatisticsVO> courseStatistics = new ArrayList<>();
         for (Map.Entry<String, List<CourseInfoByLevelVO>> entry : coursesByLevel.entrySet()) {
             String courseLevel = entry.getKey();
@@ -98,7 +159,7 @@ public class PersonalCourseCompletionService {
             courseStatistics.add(statistics);
         }
 
-        // 按照指定顺序排序：基础、进阶、高阶、实战
+        // 8. 按照指定顺序排序：基础、进阶、高阶、实战
         Map<String, Integer> levelOrder = new HashMap<>();
         levelOrder.put("基础", 1);
         levelOrder.put("进阶", 2);
@@ -114,13 +175,13 @@ public class PersonalCourseCompletionService {
             return orderA.compareTo(orderB);
         });
 
-        // 查询员工中文名
+        // 9. 查询员工中文名
         String empName = personalCourseCompletionMapper.getLastNameByEmployeeNumber(empNum);
         if (empName == null) {
             empName = "";
         }
 
-        // 创建响应对象
+        // 10. 创建响应对象
         PersonalCourseCompletionResponseVO response = new PersonalCourseCompletionResponseVO();
         response.setEmpNum(empNum);
         response.setEmpName(empName);
