@@ -2,7 +2,7 @@ package com.huawei.aitransform.service.impl;
 
 import com.huawei.aitransform.entity.CourseInfoByLevelVO;
 import com.huawei.aitransform.entity.DeptCourseSelection;
-import com.huawei.aitransform.entity.EmployeePO;
+import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
@@ -49,9 +49,9 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
             throw new IllegalArgumentException("Period ID cannot be empty");
         }
 
-        // 1. 从 t_employee_sync 查询该 periodId 下所有成员工号
-        List<String> employeeNumbers = employeeMapper.getEmployeeNumbersByPeriodId(periodId);
-        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+        // 1. 从 t_employee_sync 查询该 periodId 下成员工号及基本信息（本次同步的基本信息）
+        List<EmployeeSyncDataVO> basicInfoList = employeeMapper.getEmployeeSyncBasicInfoByPeriodId(periodId);
+        if (basicInfoList == null || basicInfoList.isEmpty()) {
             Map<String, Object> result = new HashMap<>();
             result.put("success", true);
             result.put("message", "No employees in scope for period " + periodId);
@@ -64,32 +64,17 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
             return result;
         }
 
-        // 2. 从 t_employee 查询对应用户基本信息（本次同步的基本信息）
-        List<EmployeePO> basicInfoList = employeeMapper.getEmployeesByEmployeeNumbers(employeeNumbers);
-        if (basicInfoList == null || basicInfoList.isEmpty()) {
-            Map<String, Object> result = new HashMap<>();
-            result.put("success", true);
-            result.put("message", "No basic info in t_employee for period " + periodId);
-            result.put("periodId", periodId);
-            result.put("totalSource", 0);
-            result.put("insertCount", 0);
-            result.put("updateCount", 0);
-            result.put("deleteCount", 0);
-            result.put("ignoreCount", 0);
-            return result;
-        }
-
         String updatedTime = LocalDateTime.now().format(UPDATED_TIME_FORMAT);
 
-        // 3. 对每条员工数据计算训战课程字段并构建源列表
+        // 2. 对每条员工数据计算训战课程字段并构建源列表
         List<EmployeeTrainingInfoPO> sourceList = new ArrayList<>();
-        for (EmployeePO emp : basicInfoList) {
+        for (EmployeeSyncDataVO emp : basicInfoList) {
             EmployeeTrainingInfoPO po = buildTrainingInfoPO(emp, periodId, updatedTime);
             fillTrainingCourseFields(emp.getEmployeeNumber(), emp.getFourthdeptcode(), po);
             sourceList.add(po);
         }
 
-        // 4. 从 t_employee_training_info 查询全量目标
+        // 3. 从 t_employee_training_info 查询全量目标
         List<EmployeeTrainingInfoPO> targetList = employeeTrainingInfoMapper.getAll();
         Map<String, EmployeeTrainingInfoPO> targetMap = targetList.stream()
                 .collect(Collectors.toMap(EmployeeTrainingInfoPO::getEmployeeNumber, Function.identity(), (a, b) -> a));
@@ -102,7 +87,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         List<EmployeeTrainingInfoPO> updateList = new ArrayList<>();
         List<String> deleteList = new ArrayList<>();
 
-        // 5. 全量对比
+        // 4. 全量对比
         for (EmployeeTrainingInfoPO source : sourceList) {
             EmployeeTrainingInfoPO target = targetMap.get(source.getEmployeeNumber());
             if (target == null) {
@@ -118,7 +103,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         }
         deleteList.addAll(targetMap.keySet());
 
-        // 6. 批量执行
+        // 5. 批量执行
         for (int i = 0; i < insertList.size(); i += BATCH_SIZE) {
             int end = Math.min(i + BATCH_SIZE, insertList.size());
             employeeTrainingInfoMapper.batchInsert(insertList.subList(i, end));
@@ -149,7 +134,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         return result;
     }
 
-    private EmployeeTrainingInfoPO buildTrainingInfoPO(EmployeePO emp, String periodId, String updatedTime) {
+    private EmployeeTrainingInfoPO buildTrainingInfoPO(EmployeeSyncDataVO emp, String periodId, String updatedTime) {
         EmployeeTrainingInfoPO po = new EmployeeTrainingInfoPO();
         po.setEmployeeNumber(emp.getEmployeeNumber());
         po.setLastName(emp.getLastName());
@@ -159,7 +144,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         po.setFourthdeptcode(emp.getFourthdeptcode());
         po.setFifthdeptcode(emp.getFifthdeptcode());
         po.setSixthdeptcode(emp.getSixthdeptcode());
-        po.setLowestdeptid(emp.getLowestDeptId());
+        po.setLowestdeptid(emp.getLowestDeptNumber());
         po.setFirstdept(emp.getFirstdept());
         po.setSeconddept(emp.getSeconddept());
         po.setThirddept(emp.getThirddept());
@@ -231,11 +216,14 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         }
     }
 
+    /**
+     * 按级别拼接已完课课程的主键 ID（basicCourses/advancedCourses/practicalCourses 存课程主键 ID）
+     */
     private String joinCompletedByLevel(List<CourseInfoByLevelVO> coursesInLevel, Map<String, Boolean> completedMap) {
         List<String> completed = new ArrayList<>();
         for (CourseInfoByLevelVO c : coursesInLevel) {
-            if (c.getCourseNumber() != null && Boolean.TRUE.equals(completedMap.get(c.getCourseNumber()))) {
-                completed.add(c.getCourseNumber());
+            if (c.getId() != null && c.getCourseNumber() != null && Boolean.TRUE.equals(completedMap.get(c.getCourseNumber()))) {
+                completed.add(String.valueOf(c.getId()));
             }
         }
         return completed.isEmpty() ? null : String.join(",", completed);

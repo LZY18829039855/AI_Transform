@@ -6,6 +6,7 @@
     <!-- 按课程级别分类查询所有课程信息 -->
     <select id="getCourseInfoByLevel" resultType="com.huawei.aitransform.entity.CourseInfoByLevelVO">
         SELECT 
+            id,
             course_level AS courseLevel,
             course_name AS courseName,
             course_number AS courseNumber,
@@ -63,6 +64,7 @@
     <!-- 根据课程ID列表查询课程信息（按级别分类） -->
     <select id="getCourseInfoByLevelAndIds" resultType="com.huawei.aitransform.entity.CourseInfoByLevelVO">
         SELECT 
+            id,
             course_level AS courseLevel,
             course_name AS courseName,
             course_number AS courseNumber,

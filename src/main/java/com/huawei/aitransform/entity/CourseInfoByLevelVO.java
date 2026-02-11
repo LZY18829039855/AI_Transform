@@ -10,6 +10,11 @@ public class CourseInfoByLevelVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
+     * 课程主键 ID（ai_course_planning_info.id）
+     */
+    private Integer id;
+
+    /**
      * 课程级别（训战分类）
      */
     private String courseLevel;
@@ -35,6 +40,14 @@ public class CourseInfoByLevelVO implements Serializable {
     private String courseLink;
 
     public CourseInfoByLevelVO() {
+    }
+
+    public Integer getId() {
+        return id;
+    }
+
+    public void setId(Integer id) {
+        this.id = id;
     }
 
     public String getCourseLevel() {

@@ -608,14 +608,41 @@
         ORDER BY e.employee_number, COALESCE(q.competence_from, '1900-01-01')
     </select>
 
-    <!-- 获取全员同步数据 -->
-    <!-- 按期号查询 t_employee_sync 下所有成员工号（不过滤研发族/干部） -->
-    <select id="getEmployeeNumbersByPeriodId" resultType="java.lang.String">
-        SELECT DISTINCT employee_number
-        FROM t_employee_sync
-        WHERE period_id = #{periodId}
-          AND employee_number IS NOT NULL
-          AND employee_number != ''
+    <!-- 按期号从 t_employee_sync 查询成员工号及基本信息（仅基础信息字段，参考 getEmployeeSyncData 中基础信息部分） -->
+    <select id="getEmployeeSyncBasicInfoByPeriodId" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
+        SELECT
+            e.employee_number AS employeeNumber,
+            e.last_name AS lastName,
+            e.firstdeptcode,
+            e.seconddeptcode,
+            e.thirddeptcode,
+            e.fourthdeptcode,
+            e.fifthdeptcode,
+            e.sixthdeptcode,
+            e.lowest_dept_number AS lowestDeptNumber,
+            SUBSTRING_INDEX(e.firstdept, '/', 1) AS firstdept,
+            SUBSTRING_INDEX(e.seconddept, '/', 1) AS seconddept,
+            SUBSTRING_INDEX(e.thirddept, '/', 1) AS thirddept,
+            SUBSTRING_INDEX(e.fourthdept, '/', 1) AS fourthdept,
+            SUBSTRING_INDEX(e.fifthdept, '/', 1) AS fifthdept,
+            SUBSTRING_INDEX(e.sixthdept, '/', 1) AS sixthdept,
+            SUBSTRING_INDEX(e.lowest_dept, '/', 1) AS lowestDept,
+            SUBSTRING_INDEX(e.job_category, '-', 1) AS jobType,
+            CASE
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(SUBSTRING_INDEX(e.job_category, '-', 2), '-', -1)
+                WHEN e.job_category LIKE '%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE e.job_category
+            END AS jobCategory,
+            CASE
+                WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
+                ELSE NULL
+            END AS jobSubcategory,
+            e.period_id AS periodId
+        FROM t_employee_sync e
+        WHERE e.period_id = #{periodId}
+          AND e.employee_number IS NOT NULL
+          AND e.employee_number != ''
+        ORDER BY e.employee_number
     </select>
 
     <!-- 根据工号列表从 t_employee 表查询员工基本信息 -->
