@@ -217,16 +217,21 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     }
 
     /**
-     * 按级别拼接已完课课程的主键 ID（basicCourses/advancedCourses/practicalCourses 存课程主键 ID）
+     * 按级别拼接已完课课程的主键 ID（basicCourses/advancedCourses/practicalCourses 存课程主键 ID）。
+     * ID 按升序排序后再拼接，便于后续数据对比。
      */
     private String joinCompletedByLevel(List<CourseInfoByLevelVO> coursesInLevel, Map<String, Boolean> completedMap) {
-        List<String> completed = new ArrayList<>();
+        List<Integer> completedIds = new ArrayList<>();
         for (CourseInfoByLevelVO c : coursesInLevel) {
             if (c.getId() != null && c.getCourseNumber() != null && Boolean.TRUE.equals(completedMap.get(c.getCourseNumber()))) {
-                completed.add(String.valueOf(c.getId()));
+                completedIds.add(c.getId());
             }
         }
-        return completed.isEmpty() ? null : String.join(",", completed);
+        if (completedIds.isEmpty()) {
+            return null;
+        }
+        completedIds.sort(Integer::compareTo);
+        return completedIds.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     private boolean isDifferent(EmployeeTrainingInfoPO source, EmployeeTrainingInfoPO target) {
