@@ -1,11 +1,7 @@
 {
-	"folders": [
-		{
-			"path": "."
-		},
-		{
-			"path": "../ai--dashboard-main"
-		}
-	],
-	"settings": {}
+  "folders": [
+    { "path": ".", "name": "AI_Transform (后端)" },
+    { "path": "../AI_Transform_Web", "name": "AI_Transform_Web (前端)" }
+  ],
+  "settings": {}
 }
