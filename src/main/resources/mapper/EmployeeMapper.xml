@@ -609,6 +609,36 @@
     </select>
 
     <!-- 获取全员同步数据 -->
+    <!-- 按期号查询 t_employee_sync 下所有成员工号（不过滤研发族/干部） -->
+    <select id="getEmployeeNumbersByPeriodId" resultType="java.lang.String">
+        SELECT DISTINCT employee_number
+        FROM t_employee_sync
+        WHERE period_id = #{periodId}
+          AND employee_number IS NOT NULL
+          AND employee_number != ''
+    </select>
+
+    <!-- 根据工号列表从 t_employee 表查询员工基本信息 -->
+    <select id="getEmployeesByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeePO">
+        SELECT
+            employee_number AS employeeNumber,
+            last_name AS lastName,
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+            lowestdeptid AS lowestDeptId,
+            firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept,
+            lowestdept AS lowestDept,
+            job_type AS jobType,
+            job_category AS jobCategory,
+            job_subcategory AS jobSubcategory,
+            period_id AS periodId,
+            updated_time AS updatedTime
+        FROM t_employee
+        WHERE employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+    </select>
+
     <select id="getEmployeeSyncData" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
         SELECT 
             e.employee_number AS employeeNumber,

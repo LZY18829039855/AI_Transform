@@ -1,0 +1,151 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper">
+
+    <resultMap id="BaseResultMap" type="com.huawei.aitransform.entity.EmployeeTrainingInfoPO">
+        <id column="employee_number" property="employeeNumber"/>
+        <result column="last_name" property="lastName"/>
+        <result column="firstdeptcode" property="firstdeptcode"/>
+        <result column="seconddeptcode" property="seconddeptcode"/>
+        <result column="thirddeptcode" property="thirddeptcode"/>
+        <result column="fourthdeptcode" property="fourthdeptcode"/>
+        <result column="fifthdeptcode" property="fifthdeptcode"/>
+        <result column="sixthdeptcode" property="sixthdeptcode"/>
+        <result column="lowestdeptid" property="lowestdeptid"/>
+        <result column="firstdept" property="firstdept"/>
+        <result column="seconddept" property="seconddept"/>
+        <result column="thirddept" property="thirddept"/>
+        <result column="fourthdept" property="fourthdept"/>
+        <result column="fifthdept" property="fifthdept"/>
+        <result column="sixthdept" property="sixthdept"/>
+        <result column="lowestdept" property="lowestdept"/>
+        <result column="job_type" property="jobType"/>
+        <result column="job_category" property="jobCategory"/>
+        <result column="job_subcategory" property="jobSubcategory"/>
+        <result column="period_id" property="periodId"/>
+        <result column="updated_time" property="updatedTime"/>
+        <result column="basic_courses" property="basicCourses"/>
+        <result column="advanced_courses" property="advancedCourses"/>
+        <result column="practical_courses" property="practicalCourses"/>
+    </resultMap>
+
+    <select id="getAll" resultMap="BaseResultMap">
+        SELECT employee_number, last_name,
+               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+               job_type, job_category, job_subcategory,
+               period_id, updated_time,
+               basic_courses, advanced_courses, practical_courses
+        FROM t_employee_training_info
+    </select>
+
+    <insert id="batchInsert" parameterType="java.util.List">
+        INSERT INTO t_employee_training_info (
+            employee_number, last_name,
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+            lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+            job_type, job_category, job_subcategory,
+            period_id, updated_time,
+            basic_courses, advanced_courses, practical_courses
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+                #{item.employeeNumber}, #{item.lastName},
+                #{item.firstdeptcode}, #{item.seconddeptcode}, #{item.thirddeptcode}, #{item.fourthdeptcode}, #{item.fifthdeptcode}, #{item.sixthdeptcode},
+                #{item.lowestdeptid}, #{item.firstdept}, #{item.seconddept}, #{item.thirddept}, #{item.fourthdept}, #{item.fifthdept}, #{item.sixthdept}, #{item.lowestdept},
+                #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory},
+                #{item.periodId}, #{item.updatedTime},
+                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses}
+            )
+        </foreach>
+    </insert>
+
+    <!-- 批量更新（CASE WHEN） -->
+    <update id="batchUpdate" parameterType="java.util.List">
+        UPDATE t_employee_training_info
+        <trim prefix="SET" suffixOverrides=",">
+            <trim prefix="last_name = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.lastName} </foreach>
+            </trim>
+            <trim prefix="firstdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.firstdeptcode} </foreach>
+            </trim>
+            <trim prefix="seconddeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.seconddeptcode} </foreach>
+            </trim>
+            <trim prefix="thirddeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.thirddeptcode} </foreach>
+            </trim>
+            <trim prefix="fourthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.fourthdeptcode} </foreach>
+            </trim>
+            <trim prefix="fifthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.fifthdeptcode} </foreach>
+            </trim>
+            <trim prefix="sixthdeptcode = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.sixthdeptcode} </foreach>
+            </trim>
+            <trim prefix="lowestdeptid = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.lowestdeptid} </foreach>
+            </trim>
+            <trim prefix="firstdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.firstdept} </foreach>
+            </trim>
+            <trim prefix="seconddept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.seconddept} </foreach>
+            </trim>
+            <trim prefix="thirddept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.thirddept} </foreach>
+            </trim>
+            <trim prefix="fourthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.fourthdept} </foreach>
+            </trim>
+            <trim prefix="fifthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.fifthdept} </foreach>
+            </trim>
+            <trim prefix="sixthdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.sixthdept} </foreach>
+            </trim>
+            <trim prefix="lowestdept = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.lowestdept} </foreach>
+            </trim>
+            <trim prefix="job_type = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.jobType} </foreach>
+            </trim>
+            <trim prefix="job_category = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.jobCategory} </foreach>
+            </trim>
+            <trim prefix="job_subcategory = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.jobSubcategory} </foreach>
+            </trim>
+            <trim prefix="period_id = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.periodId} </foreach>
+            </trim>
+            <trim prefix="updated_time = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.updatedTime} </foreach>
+            </trim>
+            <trim prefix="basic_courses = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.basicCourses} </foreach>
+            </trim>
+            <trim prefix="advanced_courses = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedCourses} </foreach>
+            </trim>
+            <trim prefix="practical_courses = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalCourses} </foreach>
+            </trim>
+        </trim>
+        WHERE employee_number IN
+        <foreach collection="list" item="item" open="(" separator="," close=")">
+            #{item.employeeNumber}
+        </foreach>
+    </update>
+
+    <delete id="batchDeleteByEmployeeNumbers">
+        DELETE FROM t_employee_training_info
+        WHERE employee_number IN
+        <foreach collection="list" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+    </delete>
+</mapper>
