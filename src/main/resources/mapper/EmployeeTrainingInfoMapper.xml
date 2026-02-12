@@ -160,12 +160,12 @@
         FROM t_employee_training_info
         <where>
             <choose>
-                <when test="deptLevel == '1'">firstdeptcode = #{deptCode}</when>
-                <when test="deptLevel == '2'">seconddeptcode = #{deptCode}</when>
-                <when test="deptLevel == '3'">thirddeptcode = #{deptCode}</when>
-                <when test="deptLevel == '4'">fourthdeptcode = #{deptCode}</when>
-                <when test="deptLevel == '5'">fifthdeptcode = #{deptCode}</when>
-                <when test="deptLevel == '6'">sixthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 1">firstdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 2">seconddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 3">thirddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 4">fourthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 5">fifthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 6">sixthdeptcode = #{deptCode}</when>
             </choose>
         </where>
     </select>
