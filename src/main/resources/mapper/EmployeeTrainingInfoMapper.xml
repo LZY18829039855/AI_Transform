@@ -148,4 +148,25 @@
             #{empNo}
         </foreach>
     </delete>
+
+    <!-- 按部门层级与部门编码查询本部门人员（不含下级） -->
+    <select id="listByDeptLevelAndCode" resultMap="BaseResultMap">
+        SELECT employee_number, last_name,
+               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+               job_type, job_category, job_subcategory,
+               period_id, updated_time,
+               basic_courses, advanced_courses, practical_courses
+        FROM t_employee_training_info
+        <where>
+            <choose>
+                <when test="deptLevel == '1'">firstdeptcode = #{deptCode}</when>
+                <when test="deptLevel == '2'">seconddeptcode = #{deptCode}</when>
+                <when test="deptLevel == '3'">thirddeptcode = #{deptCode}</when>
+                <when test="deptLevel == '4'">fourthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == '5'">fifthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == '6'">sixthdeptcode = #{deptCode}</when>
+            </choose>
+        </where>
+    </select>
 </mapper>

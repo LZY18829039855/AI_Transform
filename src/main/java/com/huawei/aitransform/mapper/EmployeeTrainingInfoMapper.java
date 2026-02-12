@@ -2,6 +2,7 @@ package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import org.apache.ibatis.annotations.Mapper;
+import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
 
@@ -30,4 +31,12 @@ public interface EmployeeTrainingInfoMapper {
      * 批量按工号删除
      */
     void batchDeleteByEmployeeNumbers(List<String> employeeNumbers);
+
+    /**
+     * 按部门层级与部门编码查询本部门人员训战信息（不含下级）
+     * @param deptLevel 部门层级 '1'~'6'
+     * @param deptCode  部门编码
+     * @return 该部门下人员记录列表
+     */
+    List<EmployeeTrainingInfoPO> listByDeptLevelAndCode(@Param("deptLevel") String deptLevel, @Param("deptCode") String deptCode);
 }
