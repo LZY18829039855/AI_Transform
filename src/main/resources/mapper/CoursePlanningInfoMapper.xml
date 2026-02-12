@@ -28,7 +28,10 @@
         SELECT 
             dept_code AS deptCode,
             dept_name AS deptName,
-            course_selections AS courseSelections
+            course_selections AS courseSelections,
+            basic_target_courses_num AS basicTargetCoursesNum,
+            advanced_target_courses_num AS advancedTargetCoursesNum,
+            practical_target_courses_num AS practicalTargetCoursesNum
         FROM dept_course_selections
     </select>
 
@@ -37,7 +40,10 @@
         SELECT 
             dept_code AS deptCode,
             dept_name AS deptName,
-            course_selections AS courseSelections
+            course_selections AS courseSelections,
+            basic_target_courses_num AS basicTargetCoursesNum,
+            advanced_target_courses_num AS advancedTargetCoursesNum,
+            practical_target_courses_num AS practicalTargetCoursesNum
         FROM dept_course_selections
         WHERE dept_code = #{deptCode}
         LIMIT 1

@@ -34,4 +34,10 @@ public class EmployeeTrainingInfoPO {
     private String advancedCourses;
     /** 实战目标课程完课列表（逗号分隔） */
     private String practicalCourses;
+    /** 基础目标课程数 */
+    private Integer basicTargetCoursesNum;
+    /** 进阶目标课程数 */
+    private Integer advancedTargetCoursesNum;
+    /** 实战目标课程数 */
+    private Integer practicalTargetCoursesNum;
 }

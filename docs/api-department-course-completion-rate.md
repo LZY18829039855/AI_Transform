@@ -44,9 +44,9 @@ Host: example.com
 | deptId                         | String  | 部门ID（待统计部门的 dept_code） |
 | deptName                       | String  | 部门名称（待统计部门的 dept_name） |
 | baselineCount                  | Integer | 基线人数（该部门本部门人员数量，t_employee_training_info 记录数，不含该部门下级） |
-| basicCourseCount               | Integer | 基础课程数（该部门使用的目标课程中基础课程数量，见 5.3） |
-| advancedCourseCount            | Integer | 进阶课程数（该部门使用的目标课程中进阶课程数量） |
-| practicalCourseCount           | Integer | 实战课程数（该部门使用的目标课程中实战课程数量） |
+| basicCourseCount               | Integer | 基础目标课程数（来源于表字段 **basic_target_courses_num**，见 5.3） |
+| advancedCourseCount            | Integer | 进阶目标课程数（来源于表字段 **advanced_target_courses_num**，见 5.3） |
+| practicalCourseCount           | Integer | 实战目标课程数（来源于表字段 **practical_target_courses_num**，见 5.3） |
 | basicAvgCompletedCount         | Double  | 基础课程平均完课人数（计算方式见 5.4） |
 | advancedAvgCompletedCount      | Double  | 进阶课程平均完课人数（计算方式见 5.4） |
 | practicalAvgCompletedCount     | Double  | 实战课程平均完课人数（计算方式见 5.4） |
@@ -138,38 +138,38 @@ Host: example.com
 
 ### 5.3 目标课程与基础/进阶/实战课程数（按待统计部门）
 
-- **目标课程**以**四级部门**为维度配置（与现有 `getDeptSelectionByDeptCode`、dept_course_selections 表逻辑一致）。对**每个待统计部门**，按以下规则确定其使用的目标课程（再据此得到该部门的基础/进阶/实战课程数）：
+- 查询 **department-completion-rate 相关表**（如 t_employee_training_info 或部门维度目标课程表）时，应查询以下字段，作为**基础、进阶、实战目标课程数**，并用于 5.4 平均完课人数与 5.5 平均完课率的计算：
+  - **basic_target_courses_num** → 对应响应中的 **basicCourseCount**（基础目标课程数）
+  - **advanced_target_courses_num** → 对应响应中的 **advancedCourseCount**（进阶目标课程数）
+  - **practical_target_courses_num** → 对应响应中的 **practicalCourseCount**（实战目标课程数）
+- 上述三字段按**待统计部门**对应的目标课程来源获取（部门层级与目标课程来源规则见下表）。若表中无该三字段，则按原逻辑从四级部门选课与 **ai_course_planning_info** 统计得到基础/进阶/实战课程数作为 fallback。
 
 | 待统计部门层级 | 目标课程来源 | 说明 |
 |----------------|--------------|------|
-| **四级部门** | 该四级部门自己的选课 | 入参为 **0、二级或三级**时，返回列表为四级部门；对每个四级部门调用 `getDeptSelectionByDeptCode(该四级 dept_code)`。若无选课或选课为空，则目标课程视为**全部课程**（与现有个人完课接口 fallback 一致）。 |
-| **五级部门** | **父四级部门**的选课 | 入参为**四级部门**时，返回列表为五级子部门；目标课程统一使用**入参四级部门**的选课（即 `getDeptSelectionByDeptCode(入参 deptId)`）。 |
-| **六级部门** | **对应的父四级部门**的选课 | 入参为**五级部门**时，返回列表为六级子部门；对每个六级部门，根据 department_info_hrms 找到其**祖先四级部门**（parent 链向上到 dept_level='4'），再调用 `getDeptSelectionByDeptCode(该四级 dept_code)`。若无选课或选课为空，则目标课程视为**全部课程**。 |
+| **四级部门** | 该四级部门自己的选课 | 入参为 **0、二级或三级**时，返回列表为四级部门；对每个四级部门查询其对应的 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num**（或调用 `getDeptSelectionByDeptCode(该四级 dept_code)` 后统计）。若无选课或选课为空，则目标课程视为**全部课程**（与现有个人完课接口 fallback 一致）。 |
+| **五级部门** | **父四级部门**的选课 | 入参为**四级部门**时，返回列表为五级子部门；目标课程数使用**入参四级部门**对应的上述三字段（或 `getDeptSelectionByDeptCode(入参 deptId)` 后统计）。 |
+| **六级部门** | **对应的父四级部门**的选课 | 入参为**五级部门**时，返回列表为六级子部门；对每个六级部门，根据 department_info_hrms 找到其**祖先四级部门**，再查询该四级部门对应的 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num**（或 getDeptSelectionByDeptCode）。若无选课或选课为空，则目标课程视为**全部课程**。 |
 
-- 在目标课程范围内，按 **course_level**（或等效字段）区分为：
-  - **基础课程** → 统计数量得到该部门的 **basicCourseCount**
-  - **进阶课程** → **advancedCourseCount**
-  - **实战课程** → **practicalCourseCount**
-- 课程级别与 **ai_course_planning_info**（或现有选课/完课逻辑）中的“基础”“进阶”“实战”保持一致。
+- 实现时优先使用表中 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num** 作为该部门的基础/进阶/实战目标课程数，供 5.4、5.5 计算使用。
 
 ### 5.4 平均完课人数（基础/进阶/实战，按待统计部门）
 
-- 对**每个待统计部门**计算：
+- 对**每个待统计部门**计算（分母使用从表中查询的 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num**，即响应中的 basicCourseCount、advancedCourseCount、practicalCourseCount）：
   - **基础课程平均完课人数**：
     - 分子：该部门全员在**基础课程**上的**总完课数**（即 t_employee_training_info 中该部门范围内，每人 basic_courses 解析后的完课门数之和）。
-    - 分母：该部门**目标基础课程数** basicCourseCount（若为 0，则比值可按 0 或约定规则处理）。
-    - **基础课程平均完课人数 = 该部门全员基础课程总完课数 / 基础课程数（目标）**。
-  - **进阶课程平均完课人数**：同上，使用该部门 **advanced_courses** 总完课数与 **advancedCourseCount**。
-  - **实战课程平均完课人数**：同上，使用该部门 **practical_courses** 总完课数与 **practicalCourseCount**。
+    - 分母：该部门**基础目标课程数**（**basic_target_courses_num**，即 basicCourseCount）（若为 0，则比值可按 0 或约定规则处理）。
+    - **基础课程平均完课人数 = 该部门全员基础课程总完课数 / basic_target_courses_num**。
+  - **进阶课程平均完课人数**：同上，使用该部门 **advanced_courses** 总完课数与 **advanced_target_courses_num**（advancedCourseCount）。
+  - **实战课程平均完课人数**：同上，使用该部门 **practical_courses** 总完课数与 **practical_target_courses_num**（practicalCourseCount）。
 
 ### 5.5 平均完课率（基础/进阶/实战，按待统计部门）
 
-- 对**每个待统计部门**计算：
+- 对**每个待统计部门**计算（分母中的目标课程数使用表中 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num**）：
   - **基础课程平均完课率**：
     - 分子：该部门全员在基础课程上的**总完课数**（与 5.4 中分子一致）。
-    - 分母：**该部门成员数 × 该部门目标基础课程数** = **baselineCount × basicCourseCount**（若为 0，则完课率可按 0 或约定规则处理）。
-    - **基础课程平均完课率 = (该部门全员基础课程总完课数 / (基线人数 × 基础课程数)) × 100**（单位：百分比，建议保留 2 位小数）。
-  - **进阶/实战课程平均完课率**：同上，使用该部门对应总完课数、baselineCount、advancedCourseCount / practicalCourseCount。
+    - 分母：**该部门成员数 × 该部门基础目标课程数** = **baselineCount × basic_target_courses_num**（即 baselineCount × basicCourseCount）（若为 0，则完课率可按 0 或约定规则处理）。
+    - **基础课程平均完课率 = (该部门全员基础课程总完课数 / (基线人数 × basic_target_courses_num)) × 100**（单位：百分比，建议保留 2 位小数）。
+  - **进阶/实战课程平均完课率**：同上，使用该部门对应总完课数、baselineCount、**advanced_target_courses_num** / **practical_target_courses_num**（即 advancedCourseCount / practicalCourseCount）。
 
 ### 5.6 基线人数（按待统计部门）
 
@@ -187,10 +187,10 @@ Host: example.com
    - **deptId = 五级**：**getChildDepartments(deptId)** → 六级子部门列表。
    - **deptId = 六级**：待统计列表为空，返回 **data: []**。
 3. **对每个待统计部门**循环：
-   - 根据该部门的 dept_level、dept_code 在 t_employee_training_info 中过滤出**该部门**人员（personType=0，仅该部门不含其下级），得到该部门基线人数与各人员 basic_courses、advanced_courses、practical_courses。
-   - 按 5.3 确定该部门使用的目标课程（四级部门用自身选课；五级用入参四级选课；六级用其父四级选课），得到该部门基础/进阶/实战课程数。
+   - 根据该部门的 dept_level、dept_code 在表中过滤出**该部门**人员（personType=0，仅该部门不含其下级），得到该部门基线人数与各人员 basic_courses、advanced_courses、practical_courses；**并查询该部门对应的 basic_target_courses_num、advanced_target_courses_num、practical_target_courses_num**（即基础/进阶/实战目标课程数）。
+   - 若表中有上述三字段则直接使用，否则按 5.3 从四级部门选课等逻辑得到该部门基础/进阶/实战课程数。
    - 统计该部门全员在基础/进阶/实战上的总完课数（解析 basic_courses、advanced_courses、practical_courses 汇总）。
-   - 按 5.4、5.5 计算该部门平均完课人数与平均完课率，组装一条结果加入列表。
+   - 按 5.4、5.5 使用 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num** 计算该部门平均完课人数与平均完课率，组装一条结果加入列表。
 4. 返回 **data** 为上述待统计部门统计列表（数组）。
 
 ---
@@ -237,7 +237,7 @@ Host: example.com
 | getChildDepartments / children           | 根据父部门ID查询**下一层级子部门**列表（已存在接口/方法） |
 | getLevel4DepartmentsUnderLevel2          | deptId 为二级部门（如 031562）时，查询该二级下的**所有四级部门**（已存在 Mapper 方法） |
 | CLOUD_CORE_NETWORK_DEPT_CODE（031562）   | 二级部门常量；deptId 为该值或 0 时，返回所有四级部门统计 |
-| t_employee_training_info                 | 全员训战课程；按待统计部门层级字段过滤**该部门**人员（不含其下级），读取 basic_courses、advanced_courses、practical_courses |
+| t_employee_training_info（或部门完成率相关表） | 全员训战课程；按待统计部门层级字段过滤**该部门**人员（不含其下级），读取 basic_courses、advanced_courses、practical_courses；**并查询 basic_target_courses_num、advanced_target_courses_num、practical_target_courses_num** 作为基础/进阶/实战目标课程数，供平均完课人数与完课率计算使用 |
 | dept_course_selections                  | 四级部门选课；getDeptSelectionByDeptCode 得到目标课程 ID 列表（目标课程以四级部门配置） |
 | ai_course_planning_info                 | 课程规划；无选课时作为“全部课程”来源，并区分基础/进阶/实战 |
 

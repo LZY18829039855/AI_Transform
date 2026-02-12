@@ -28,6 +28,9 @@
         <result column="basic_courses" property="basicCourses"/>
         <result column="advanced_courses" property="advancedCourses"/>
         <result column="practical_courses" property="practicalCourses"/>
+        <result column="basic_target_courses_num" property="basicTargetCoursesNum"/>
+        <result column="advanced_target_courses_num" property="advancedTargetCoursesNum"/>
+        <result column="practical_target_courses_num" property="practicalTargetCoursesNum"/>
     </resultMap>
 
     <select id="getAll" resultMap="BaseResultMap">
@@ -36,7 +39,8 @@
                lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
                job_type, job_category, job_subcategory,
                period_id, updated_time,
-               basic_courses, advanced_courses, practical_courses
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
         FROM t_employee_training_info
     </select>
 
@@ -47,7 +51,8 @@
             lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
             job_type, job_category, job_subcategory,
             period_id, updated_time,
-            basic_courses, advanced_courses, practical_courses
+            basic_courses, advanced_courses, practical_courses,
+            basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -56,7 +61,8 @@
                 #{item.lowestdeptid}, #{item.firstdept}, #{item.seconddept}, #{item.thirddept}, #{item.fourthdept}, #{item.fifthdept}, #{item.sixthdept}, #{item.lowestdept},
                 #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory},
                 #{item.periodId}, #{item.updatedTime},
-                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses}
+                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses},
+                #{item.basicTargetCoursesNum}, #{item.advancedTargetCoursesNum}, #{item.practicalTargetCoursesNum}
             )
         </foreach>
     </insert>
@@ -134,6 +140,15 @@
             <trim prefix="practical_courses = CASE" suffix="END,">
                 <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalCourses} </foreach>
             </trim>
+            <trim prefix="basic_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.basicTargetCoursesNum} </foreach>
+            </trim>
+            <trim prefix="advanced_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedTargetCoursesNum} </foreach>
+            </trim>
+            <trim prefix="practical_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalTargetCoursesNum} </foreach>
+            </trim>
         </trim>
         WHERE employee_number IN
         <foreach collection="list" item="item" open="(" separator="," close=")">
@@ -156,7 +171,8 @@
                lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
                job_type, job_category, job_subcategory,
                period_id, updated_time,
-               basic_courses, advanced_courses, practical_courses
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
         FROM t_employee_training_info
         <where>
             <choose>

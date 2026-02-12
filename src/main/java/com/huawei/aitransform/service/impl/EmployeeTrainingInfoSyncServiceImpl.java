@@ -30,6 +30,16 @@ import java.util.stream.Collectors;
 @Service
 public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfoSyncService {
 
+    /**
+     * 目标课程列表及按级别统计的目标课程数（用于同步时填充 basicTargetCoursesNum 等）
+     */
+    private static class TargetCoursesWithCounts {
+        List<CourseInfoByLevelVO> courses;
+        Integer basicTargetCoursesNum;
+        Integer advancedTargetCoursesNum;
+        Integer practicalTargetCoursesNum;
+    }
+
     private static final int BATCH_SIZE = 1000;
     private static final DateTimeFormatter UPDATED_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
 
@@ -161,11 +171,16 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     }
 
     /**
-     * 按文档 4.6：四级部门目标课程 + 完课判断，填充 basicCourses、advancedCourses、practicalCourses
+     * 按文档 4.6：四级部门目标课程 + 完课判断，填充 basicCourses、advancedCourses、practicalCourses 及目标课程数
      * 四级部门从本次同步的基本信息（emp 的 fourthdeptcode）获取
      */
     private void fillTrainingCourseFields(String empNum, String fourthDeptCode, EmployeeTrainingInfoPO po) {
-        List<CourseInfoByLevelVO> targetCourses = getTargetCoursesByFourthDept(fourthDeptCode);
+        TargetCoursesWithCounts withCounts = getTargetCoursesByFourthDept(fourthDeptCode);
+        List<CourseInfoByLevelVO> targetCourses = withCounts.courses;
+        po.setBasicTargetCoursesNum(withCounts.basicTargetCoursesNum);
+        po.setAdvancedTargetCoursesNum(withCounts.advancedTargetCoursesNum);
+        po.setPracticalTargetCoursesNum(withCounts.practicalTargetCoursesNum);
+
         List<String> targetCourseNumbers = targetCourses.stream()
                 .map(CourseInfoByLevelVO::getCourseNumber)
                 .distinct()
@@ -188,11 +203,18 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         po.setPracticalCourses(joinCompletedByLevel(byLevel.getOrDefault("实战", new ArrayList<>()), completedMap));
     }
 
-    private List<CourseInfoByLevelVO> getTargetCoursesByFourthDept(String fourthDeptCode) {
+    /**
+     * 根据四级部门编码获取目标课程列表及基础/进阶/实战目标课程数。
+     * 若部门在 dept_course_selections 有配置则用其目标课程及三数字段；否则使用默认课程并按级别统计数量。
+     */
+    private TargetCoursesWithCounts getTargetCoursesByFourthDept(String fourthDeptCode) {
+        TargetCoursesWithCounts result = new TargetCoursesWithCounts();
         boolean useAllCourses = true;
         List<Integer> targetCourseIds = new ArrayList<>();
+        DeptCourseSelection selection = null;
+
         if (fourthDeptCode != null && !fourthDeptCode.trim().isEmpty()) {
-            DeptCourseSelection selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode);
+            selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode);
             if (selection != null && selection.getCourseSelections() != null && !selection.getCourseSelections().trim().isEmpty()) {
                 String[] parts = selection.getCourseSelections().split(",");
                 for (String s : parts) {
@@ -209,11 +231,32 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
                 }
             }
         }
+
         if (useAllCourses) {
-            return personalCourseCompletionMapper.getCourseInfoByLevel();
+            result.courses = personalCourseCompletionMapper.getCourseInfoByLevel();
+            result.basicTargetCoursesNum = countByLevel(result.courses, "基础");
+            result.advancedTargetCoursesNum = countByLevel(result.courses, "进阶");
+            result.practicalTargetCoursesNum = countByLevel(result.courses, "实战");
         } else {
-            return personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
+            result.courses = personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
+            if (selection != null && selection.getBasicTargetCoursesNum() != null && selection.getAdvancedTargetCoursesNum() != null && selection.getPracticalTargetCoursesNum() != null) {
+                result.basicTargetCoursesNum = selection.getBasicTargetCoursesNum();
+                result.advancedTargetCoursesNum = selection.getAdvancedTargetCoursesNum();
+                result.practicalTargetCoursesNum = selection.getPracticalTargetCoursesNum();
+            } else {
+                result.basicTargetCoursesNum = countByLevel(result.courses, "基础");
+                result.advancedTargetCoursesNum = countByLevel(result.courses, "进阶");
+                result.practicalTargetCoursesNum = countByLevel(result.courses, "实战");
+            }
         }
+        return result;
+    }
+
+    private static int countByLevel(List<CourseInfoByLevelVO> courses, String level) {
+        if (courses == null) {
+            return 0;
+        }
+        return (int) courses.stream().filter(c -> level.equals(c.getCourseLevel())).count();
     }
 
     /**
@@ -296,6 +339,15 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
             return true;
         }
         if (!Objects.equals(source.getPracticalCourses(), target.getPracticalCourses())) {
+            return true;
+        }
+        if (!Objects.equals(source.getBasicTargetCoursesNum(), target.getBasicTargetCoursesNum())) {
+            return true;
+        }
+        if (!Objects.equals(source.getAdvancedTargetCoursesNum(), target.getAdvancedTargetCoursesNum())) {
+            return true;
+        }
+        if (!Objects.equals(source.getPracticalTargetCoursesNum(), target.getPracticalTargetCoursesNum())) {
             return true;
         }
         return false;
