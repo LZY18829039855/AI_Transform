@@ -68,11 +68,8 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
      * 根据入参 deptId 解析待统计部门列表
      */
     private List<DepartmentInfoVO> resolveDepartmentList(String deptId) {
-        if ("0".equals(deptId)) {
-            return departmentInfoMapper.getAllLevel4Departments();
-        }
-        if (DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE.equals(deptId)) {
-            return departmentInfoMapper.getLevel4DepartmentsUnderLevel2(deptId);
+        if ("0".equals(deptId) || DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE.equals(deptId)) {
+            return departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
         }
         DepartmentInfoVO inputDept = departmentInfoMapper.getDepartmentByCode(deptId);
         if (inputDept == null) {
