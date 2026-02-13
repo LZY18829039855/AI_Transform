@@ -18,6 +18,7 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -65,11 +66,14 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
     }
 
     /**
-     * 根据入参 deptId 解析待统计部门列表
+     * 根据入参 deptId 解析待统计部门列表。
+     * 当 deptId 为 0 或云核心网二级部门时，仅查询并返回白名单内的四级部门（按固定顺序），以节省接口时间。
      */
     private List<DepartmentInfoVO> resolveDepartmentList(String deptId) {
         if ("0".equals(deptId) || DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE.equals(deptId)) {
-            return departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+            List<DepartmentInfoVO> list = departmentInfoMapper.getLevel4DepartmentsByCodes(
+                    DepartmentConstants.COMPLETION_RATE_LEVEL4_DEPT_CODES);
+            return sortByLevel4Order(list);
         }
         DepartmentInfoVO inputDept = departmentInfoMapper.getDepartmentByCode(deptId);
         if (inputDept == null) {
@@ -95,6 +99,21 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
             default:
                 return Collections.emptyList();
         }
+    }
+
+    /**
+     * 按 COMPLETION_RATE_LEVEL4_DEPT_CODES 中定义的顺序对四级部门列表排序
+     */
+    private List<DepartmentInfoVO> sortByLevel4Order(List<DepartmentInfoVO> list) {
+        if (list == null || list.isEmpty()) {
+            return list;
+        }
+        List<String> order = DepartmentConstants.COMPLETION_RATE_LEVEL4_DEPT_CODES;
+        list.sort(Comparator.comparingInt(dept -> {
+            int idx = order.indexOf(dept.getDeptCode());
+            return idx >= 0 ? idx : order.size();
+        }));
+        return list;
     }
 
     /**

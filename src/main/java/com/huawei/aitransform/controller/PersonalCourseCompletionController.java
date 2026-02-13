@@ -78,7 +78,7 @@ public class PersonalCourseCompletionController {
 
     /**
      * 部门课程完成率查询：根据父部门ID返回下一层级各部门的课程完成率统计
-     * @param deptId    父部门ID（0 或二级部门时返回所有四级部门；三级返回四级子部门；四/五/六级返回下一层级子部门）
+     * @param deptId    父部门ID（0 或云核心网二级部门时仅返回白名单内四级部门；三级返回四级子部门；四/五/六级返回下一层级子部门）
      * @param personType 人员类型，当前仅处理 0
      * @return 各部门统计列表
      */

@@ -2,7 +2,7 @@
 
 ## 1. 概述
 
-本接口用于查询**传入部门下一层级所有部门**的课程完成率统计信息。入参为**父部门ID（deptId）**，返回**待统计部门列表**中每个部门的统计（基线人数、基础/进阶/实战课程数、平均完课人数、平均完课率）。**待统计部门列表**与**目标课程**规则约定如下：**deptId 为 0 或二级部门ID（CLOUD_CORE_NETWORK_DEPT_CODE = "031562"）时，返回所有四级部门**；**deptId 为三级部门时，返回其下一层级（四级）子部门**；**deptId 为四/五/六级部门时，返回其下一层级子部门**，且目标课程使用**对应的父四级部门**配置。实现时先根据 5.1 确定待统计部门列表（复用现有 **children** / **getChildDepartments** 或 **getLevel4DepartmentsUnderLevel2** 等），再对每个部门单独统计本部门数据（不包含该部门下级）。数据来源于部门信息表 **department_info_hrms** 与全员训战课程表 **t_employee_training_info**，目标课程来源于四级部门选课（或全部课程）。
+本接口用于查询**传入部门下一层级所有部门**的课程完成率统计信息。入参为**父部门ID（deptId）**，返回**待统计部门列表**中每个部门的统计（基线人数、基础/进阶/实战课程数、平均完课人数、平均完课率）。**待统计部门列表**与**目标课程**规则约定如下：**deptId 为 0 或二级部门ID（CLOUD_CORE_NETWORK_DEPT_CODE = "031562"）时，仅返回白名单内的四级部门**（当前为：047375、047374、043539、041852、038460、030699、038462、038461、047376，按此顺序返回，以节省接口时间）；**deptId 为三级部门时，返回其下一层级（四级）子部门**；**deptId 为四/五/六级部门时，返回其下一层级子部门**，且目标课程使用**对应的父四级部门**配置。实现时先根据 5.1 确定待统计部门列表（复用 **getLevel4DepartmentsByCodes** / **getChildDepartments** 等），再对每个部门单独统计本部门数据（不包含该部门下级）。数据来源于部门信息表 **department_info_hrms** 与全员训战课程表 **t_employee_training_info**，目标课程来源于四级部门选课（或全部课程）。
 
 ---
 
@@ -22,7 +22,7 @@
 
 | 参数名     | 类型   | 参数位置 | 是否必填 | 说明 |
 |------------|--------|----------|----------|------|
-| deptId     | String | Query    | 是       | **父部门**ID（部门编码，与 department_info_hrms.dept_code 对应）。**为 0 或二级部门**时返回**所有四级部门**统计；**为三级部门**时返回其下一层级（四级）子部门统计；**为四/五/六级部门**时返回其下一层级子部门统计，目标课程使用对应**父四级部门**配置。二级部门特例：**CLOUD_CORE_NETWORK_DEPT_CODE（031562）** 与 **0** 均按“所有四级部门”处理，见 5.1、5.3。 |
+| deptId     | String | Query    | 是       | **父部门**ID（部门编码，与 department_info_hrms.dept_code 对应）。**为 0 或二级部门（031562）**时仅返回**白名单内四级部门**统计（047375、047374、043539、041852、038460、030699、038462、038461、047376，按此顺序）；**为三级部门**时返回其下一层级（四级）子部门统计；**为四/五/六级部门**时返回其下一层级子部门统计，目标课程使用对应**父四级部门**配置。见 5.1、5.3。 |
 | personType | Integer| Query    | 否       | 人员类型；当前**仅处理 0**，其他值可由实现忽略或按 0 处理 |
 
 **请求示例：**
@@ -36,7 +36,7 @@ Host: example.com
 
 ## 4. 响应参数（data 为列表）
 
-- **data**：数组。元素个数 = 待统计部门个数（5.1）：deptId 为 0 或二级时 = 所有四级部门数；为三级/四级/五级时 = 下一层级子部门数；为六级时 = 0，即 `[]`。
+- **data**：数组。元素个数 = 待统计部门个数（5.1）：deptId 为 0 或二级（031562）时 = 白名单内四级部门数（当前 9 个，按固定顺序）；为三级/四级/五级时 = 下一层级子部门数；为六级时 = 0，即 `[]`。
 - 每个元素（单部门统计）结构如下：
 
 | 参数名                         | 类型    | 说明 |
@@ -113,13 +113,13 @@ Host: example.com
 
 | 入参 deptId | 返回的部门列表 | 说明 |
 |-------------|----------------|------|
-| **0** 或 **二级部门ID**（如 **CLOUD_CORE_NETWORK_DEPT_CODE = "031562"**） | **所有四级部门** | 返回全量或该二级下的所有四级部门；每个四级部门一条统计，目标课程见 5.3。 |
+| **0** 或 **二级部门ID**（**CLOUD_CORE_NETWORK_DEPT_CODE = "031562"**） | **白名单内四级部门** | 仅返回指定四级部门（047375、047374、043539、041852、038460、030699、038462、038461、047376），按此顺序；每个四级部门一条统计，目标课程见 5.3。节省接口时间。 |
 | **三级部门ID** | 该三级部门的**下一层级子部门**（四级部门） | 调用 **getChildDepartments(deptId)** 或现有 **children** 接口，得到四级子部门列表。 |
 | **四级部门ID** | 该四级部门的**下一层级子部门**（五级部门） | 调用 **getChildDepartments(deptId)**，得到五级子部门列表；目标课程使用**该四级部门（入参）**的配置，见 5.3。 |
 | **五级部门ID** | 该五级部门的**下一层级子部门**（六级部门） | 调用 **getChildDepartments(deptId)**，得到六级子部门列表；目标课程使用**每个六级部门对应的父四级部门**的配置，见 5.3。 |
 | **六级部门ID** | 空列表 **[]** | 无下一层级，返回 **data: []**。 |
 
-- 上述“所有四级部门”在 **deptId = 0** 时：取系统/业务约定范围内的全部四级部门（如全表 dept_level='4' 或与现有类似接口一致）；在 **deptId = 二级部门ID（031562）** 时：取该二级部门下的所有四级部门（如现有 **getLevel4DepartmentsUnderLevel2(level2DeptCode)**）。
+- 上述“白名单内四级部门”在 **deptId = 0** 或 **deptId = 031562** 时：仅取 **COMPLETION_RATE_LEVEL4_DEPT_CODES** 中定义的四级部门（**getLevel4DepartmentsByCodes**），并按该列表顺序返回。
 - 待统计部门列表中的每个部门需包含 **dept_code**、**dept_name**、**dept_level**（及五/六级部门时用于查找“父四级”的层级信息）。
 - 若根据 deptId 未查到父部门或得到的部门列表为空，返回 **data: []**（deptId 无效时也可返回 400/404，由实现约定）。
 
@@ -183,7 +183,7 @@ Host: example.com
 
 1. 入参校验：deptId 必填（父部门）；personType 当前仅处理 0。
 2. 根据 **deptId** 按 5.1 确定**待统计部门列表**：
-   - **deptId = 0 或 二级部门ID（031562）**：查询**所有四级部门**（deptId=0 时全量四级；deptId=031562 时可用 **getLevel4DepartmentsUnderLevel2("031562")**）。
+   - **deptId = 0 或 二级部门ID（031562）**：仅查询**白名单内四级部门**（**getLevel4DepartmentsByCodes(COMPLETION_RATE_LEVEL4_DEPT_CODES)**），按固定顺序返回。
    - **deptId = 三级**：**getChildDepartments(deptId)** → 四级子部门列表。
    - **deptId = 四级**：**getChildDepartments(deptId)** → 五级子部门列表。
    - **deptId = 五级**：**getChildDepartments(deptId)** → 六级子部门列表。
@@ -237,8 +237,8 @@ Host: example.com
 |------------------------------------------|------|
 | department_info_hrms                     | 部门信息与层级；getChildDepartments 通过 parent_dept_code 查下一层级子部门；五/六级部门查父四级时用层级链 |
 | getChildDepartments / children           | 根据父部门ID查询**下一层级子部门**列表（已存在接口/方法） |
-| getLevel4DepartmentsUnderLevel2          | deptId 为二级部门（如 031562）时，查询该二级下的**所有四级部门**（已存在 Mapper 方法） |
-| CLOUD_CORE_NETWORK_DEPT_CODE（031562）   | 二级部门常量；deptId 为该值或 0 时，返回所有四级部门统计 |
+| getLevel4DepartmentsByCodes              | deptId 为 0 或 031562 时，按白名单查询**指定四级部门**（COMPLETION_RATE_LEVEL4_DEPT_CODES），节省时间 |
+| CLOUD_CORE_NETWORK_DEPT_CODE（031562）   | 二级部门常量；deptId 为该值或 0 时，返回白名单内四级部门统计（COMPLETION_RATE_LEVEL4_DEPT_CODES） |
 | t_employee_training_info                 | 全员训战课程；按待统计部门层级字段过滤**该部门**人员（不含其下级）；读取 basic_courses、advanced_courses、practical_courses 以及 **basic_target_courses_num**、**advanced_target_courses_num**、**practical_target_courses_num**（每人目标课程数，用于汇总为部门总目标课程数及平均完课人数/完课率计算） |
 
 ---
