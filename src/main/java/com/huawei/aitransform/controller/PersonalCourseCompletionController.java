@@ -42,25 +42,31 @@ public class PersonalCourseCompletionController {
     /**
      * 查询个人课程完成情况
      * @param request HTTP请求对象，用于获取cookie
+     * @param account 工号入参（可选），不为空时优先使用；为空时从cookie获取
      * @param accountCookie 从cookie中获取的工号（可选，如果cookie名称为account）
      * @return 个人课程完成情况
      */
     @GetMapping("/completion")
     public ResponseEntity<Result<PersonalCourseCompletionResponseVO>> getPersonalCourseCompletion(
             HttpServletRequest request,
+            @RequestParam(value = "account", required = false) String account,
             @CookieValue(value = "account", required = false) String accountCookie) {
         try {
-            // 从cookie中获取用户工号信息
-            UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
-            
-            // 如果未获取到用户信息，返回错误提示
-            if (accountInfo == null || accountInfo.getEmpNum() == null || accountInfo.getEmpNum().trim().isEmpty()) {
+            String empNum = null;
+            // 工号入参不为空时优先使用入参
+            if (account != null && !account.trim().isEmpty()) {
+                empNum = account.trim();
+            } else {
+                // 否则复用原工号获取逻辑：从cookie中获取用户工号信息
+                UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
+                if (accountInfo != null && accountInfo.getEmpNum() != null && !accountInfo.getEmpNum().trim().isEmpty()) {
+                    empNum = accountInfo.getEmpNum().trim();
+                }
+            }
+            // 如果仍未获取到工号，返回错误提示
+            if (empNum == null || empNum.isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "未获取到用户信息，请先登录"));
             }
-            
-            // 获取不带首字母的工号
-            String empNum = accountInfo.getEmpNum().trim();
-            
             // 查询个人课程完成情况
             PersonalCourseCompletionResponseVO result = personalCourseCompletionService.getPersonalCourseCompletion(empNum);
             
