@@ -2,9 +2,11 @@ package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.DepartmentCourseCompletionRateVO;
+import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.service.DepartmentCourseCompletionRateService;
+import com.huawei.aitransform.service.DepartmentEmployeeTrainingOverviewService;
 import com.huawei.aitransform.service.PersonalCourseCompletionService;
 import com.huawei.aitransform.service.UserConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -33,6 +35,9 @@ public class PersonalCourseCompletionController {
 
     @Autowired
     private DepartmentCourseCompletionRateService departmentCourseCompletionRateService;
+
+    @Autowired
+    private DepartmentEmployeeTrainingOverviewService departmentEmployeeTrainingOverviewService;
 
     /**
      * 查询个人课程完成情况
@@ -81,6 +86,28 @@ public class PersonalCourseCompletionController {
             }
             Integer pt = (personType != null) ? personType : 0;
             List<DepartmentCourseCompletionRateVO> list = departmentCourseCompletionRateService.getDepartmentCourseCompletionRate(deptId.trim(), pt);
+            return ResponseEntity.ok(Result.success("查询成功", list));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细
+     * @param deptId    部门ID（部门编码）
+     * @param personType 人员类型，当前仅处理 0
+     * @return 该部门下每名员工的训战总览列表
+     */
+    @GetMapping("/department-employee-training-overview")
+    public ResponseEntity<Result<List<DepartmentEmployeeTrainingOverviewVO>>> getDepartmentEmployeeTrainingOverview(
+            @RequestParam(value = "deptId", required = true) String deptId,
+            @RequestParam(value = "personType", required = false) Integer personType) {
+        try {
+            if (deptId == null || deptId.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+            Integer pt = (personType != null) ? personType : 0;
+            List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt);
             return ResponseEntity.ok(Result.success("查询成功", list));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));

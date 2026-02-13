@@ -39,8 +39,7 @@
                lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
                job_type, job_category, job_subcategory,
                period_id, updated_time,
-               basic_courses, advanced_courses, practical_courses,
-               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+               basic_courses, advanced_courses, practical_courses
         FROM t_employee_training_info
     </select>
 
@@ -51,8 +50,7 @@
             lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
             job_type, job_category, job_subcategory,
             period_id, updated_time,
-            basic_courses, advanced_courses, practical_courses,
-            basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+            basic_courses, advanced_courses, practical_courses
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -61,8 +59,7 @@
                 #{item.lowestdeptid}, #{item.firstdept}, #{item.seconddept}, #{item.thirddept}, #{item.fourthdept}, #{item.fifthdept}, #{item.sixthdept}, #{item.lowestdept},
                 #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory},
                 #{item.periodId}, #{item.updatedTime},
-                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses},
-                #{item.basicTargetCoursesNum}, #{item.advancedTargetCoursesNum}, #{item.practicalTargetCoursesNum}
+                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses}
             )
         </foreach>
     </insert>
@@ -139,15 +136,6 @@
             </trim>
             <trim prefix="practical_courses = CASE" suffix="END,">
                 <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalCourses} </foreach>
-            </trim>
-            <trim prefix="basic_target_courses_num = CASE" suffix="END,">
-                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.basicTargetCoursesNum} </foreach>
-            </trim>
-            <trim prefix="advanced_target_courses_num = CASE" suffix="END,">
-                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedTargetCoursesNum} </foreach>
-            </trim>
-            <trim prefix="practical_target_courses_num = CASE" suffix="END,">
-                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalTargetCoursesNum} </foreach>
             </trim>
         </trim>
         WHERE employee_number IN
