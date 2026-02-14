@@ -173,9 +173,9 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         vo.setBasicCourseCount(basicCourseCount);
         vo.setAdvancedCourseCount(advancedCourseCount);
         vo.setPracticalCourseCount(practicalCourseCount);
-        vo.setBasicAvgCompletedCount(round2(basicAvgCompletedCount));
-        vo.setAdvancedAvgCompletedCount(round2(advancedAvgCompletedCount));
-        vo.setPracticalAvgCompletedCount(round2(practicalAvgCompletedCount));
+        vo.setBasicAvgCompletedCount(roundToInt(basicAvgCompletedCount));
+        vo.setAdvancedAvgCompletedCount(roundToInt(advancedAvgCompletedCount));
+        vo.setPracticalAvgCompletedCount(roundToInt(practicalAvgCompletedCount));
         vo.setBasicAvgCompletionRate(round2(basicAvgCompletionRate));
         vo.setAdvancedAvgCompletionRate(round2(advancedAvgCompletionRate));
         vo.setPracticalAvgCompletionRate(round2(practicalAvgCompletionRate));
@@ -261,5 +261,10 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
 
     private static double round2(double value) {
         return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP).doubleValue();
+    }
+
+    /** 四舍五入为整数（用于平均完课人数字段） */
+    private static int roundToInt(double value) {
+        return (int) Math.round(value);
     }
 }

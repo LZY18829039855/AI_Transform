@@ -47,9 +47,9 @@ Host: example.com
 | basicCourseCount               | Integer | 基础目标课程数（该部门所有人的 basic_target_courses_num 之和，即总目标课程数-基础，见 5.3） |
 | advancedCourseCount            | Integer | 进阶目标课程数（该部门所有人的 advanced_target_courses_num 之和，即总目标课程数-进阶） |
 | practicalCourseCount           | Integer | 实战目标课程数（该部门所有人的 practical_target_courses_num 之和，即总目标课程数-实战） |
-| basicAvgCompletedCount         | Double  | 基础课程平均完课人数（计算方式见 5.4） |
-| advancedAvgCompletedCount      | Double  | 进阶课程平均完课人数（计算方式见 5.4） |
-| practicalAvgCompletedCount     | Double  | 实战课程平均完课人数（计算方式见 5.4） |
+| basicAvgCompletedCount         | Integer | 基础课程平均完课人数（计算方式见 5.4，四舍五入为整数） |
+| advancedAvgCompletedCount      | Integer | 进阶课程平均完课人数（计算方式见 5.4，四舍五入为整数） |
+| practicalAvgCompletedCount     | Integer | 实战课程平均完课人数（计算方式见 5.4，四舍五入为整数） |
 | basicAvgCompletionRate         | Double  | 基础课程平均完课率（百分比，计算方式见 5.5） |
 | advancedAvgCompletionRate      | Double  | 进阶课程平均完课率（百分比，计算方式见 5.5） |
 | practicalAvgCompletionRate     | Double  | 实战课程平均完课率（百分比，计算方式见 5.5） |
@@ -68,9 +68,9 @@ Host: example.com
       "basicCourseCount": 10,
       "advancedCourseCount": 5,
       "practicalCourseCount": 3,
-      "basicAvgCompletedCount": 6.2,
-      "advancedAvgCompletedCount": 1.8,
-      "practicalAvgCompletedCount": 0.9,
+      "basicAvgCompletedCount": 6,
+      "advancedAvgCompletedCount": 2,
+      "practicalAvgCompletedCount": 1,
       "basicAvgCompletionRate": 62.00,
       "advancedAvgCompletionRate": 36.00,
       "practicalAvgCompletionRate": 30.00
@@ -82,9 +82,9 @@ Host: example.com
       "basicCourseCount": 10,
       "advancedCourseCount": 5,
       "practicalCourseCount": 3,
-      "basicAvgCompletedCount": 5.5,
-      "advancedAvgCompletedCount": 2.1,
-      "practicalAvgCompletedCount": 1.0,
+      "basicAvgCompletedCount": 6,
+      "advancedAvgCompletedCount": 2,
+      "practicalAvgCompletedCount": 1,
       "basicAvgCompletionRate": 55.00,
       "advancedAvgCompletionRate": 42.00,
       "practicalAvgCompletionRate": 33.33
@@ -161,10 +161,10 @@ Host: example.com
   - **总完课数（实战）** = 该部门所有人 **practical_courses** 列表数量的总和。
   - **总目标课程数（实战）** = 该部门所有人 **practical_target_courses_num** 之和（即 **practicalCourseCount**）。
 
-- **平均完课人数**（总目标课程数为 0 时可按 0 或约定规则处理）：
-  - **基础课程平均完课人数** = **总完课数（基础）** / **总目标课程数（基础）**。
-  - **进阶课程平均完课人数** = **总完课数（进阶）** / **总目标课程数（进阶）**。
-  - **实战课程平均完课人数** = **总完课数（实战）** / **总目标课程数（实战）**。
+- **平均完课人数**（总目标课程数为 0 时可按 0 或约定规则处理；接口返回时四舍五入为整数）：
+  - **基础课程平均完课人数** = **总完课数（基础）** / **总目标课程数（基础）**，四舍五入为整数。
+  - **进阶课程平均完课人数** = **总完课数（进阶）** / **总目标课程数（进阶）**，四舍五入为整数。
+  - **实战课程平均完课人数** = **总完课数（实战）** / **总目标课程数（实战）**，四舍五入为整数。
 
 ### 5.5 平均完课率（基础/进阶/实战，按待统计部门）
 
@@ -249,6 +249,6 @@ Host: example.com
 2. **deptId = 0 时“所有四级部门”范围**：全系统四级部门，还是某业务根下的四级部门（与现有接口约定一致即可）。
 3. **人员类型**：personType 未来扩展值及对应过滤规则（如是否关联 t_employee_sync 等）。
 4. **除数为 0**：baselineCount、basicCourseCount 等为 0 时，平均完课人数与完课率返回 0 或 null、以及前端展示约定。
-5. **数值精度**：平均完课人数、完课率的小数位数（建议完课率保留 2 位小数）。
+5. **数值精度**：平均完课人数四舍五入为整数；完课率建议保留 2 位小数。
 
 请你 check 上述文档，确认入参、响应字段、计算逻辑及待确认项后再进行代码修改。

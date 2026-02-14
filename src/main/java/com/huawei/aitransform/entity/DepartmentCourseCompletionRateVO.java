@@ -15,9 +15,12 @@ public class DepartmentCourseCompletionRateVO implements Serializable {
     private Integer basicCourseCount;
     private Integer advancedCourseCount;
     private Integer practicalCourseCount;
-    private Double basicAvgCompletedCount;
-    private Double advancedAvgCompletedCount;
-    private Double practicalAvgCompletedCount;
+    /** 基础课程平均完课人数（四舍五入为整数） */
+    private Integer basicAvgCompletedCount;
+    /** 进阶课程平均完课人数（四舍五入为整数） */
+    private Integer advancedAvgCompletedCount;
+    /** 实战课程平均完课人数（四舍五入为整数） */
+    private Integer practicalAvgCompletedCount;
     private Double basicAvgCompletionRate;
     private Double advancedAvgCompletionRate;
     private Double practicalAvgCompletionRate;
@@ -70,27 +73,27 @@ public class DepartmentCourseCompletionRateVO implements Serializable {
         this.practicalCourseCount = practicalCourseCount;
     }
 
-    public Double getBasicAvgCompletedCount() {
+    public Integer getBasicAvgCompletedCount() {
         return basicAvgCompletedCount;
     }
 
-    public void setBasicAvgCompletedCount(Double basicAvgCompletedCount) {
+    public void setBasicAvgCompletedCount(Integer basicAvgCompletedCount) {
         this.basicAvgCompletedCount = basicAvgCompletedCount;
     }
 
-    public Double getAdvancedAvgCompletedCount() {
+    public Integer getAdvancedAvgCompletedCount() {
         return advancedAvgCompletedCount;
     }
 
-    public void setAdvancedAvgCompletedCount(Double advancedAvgCompletedCount) {
+    public void setAdvancedAvgCompletedCount(Integer advancedAvgCompletedCount) {
         this.advancedAvgCompletedCount = advancedAvgCompletedCount;
     }
 
-    public Double getPracticalAvgCompletedCount() {
+    public Integer getPracticalAvgCompletedCount() {
         return practicalAvgCompletedCount;
     }
 
-    public void setPracticalAvgCompletedCount(Double practicalAvgCompletedCount) {
+    public void setPracticalAvgCompletedCount(Integer practicalAvgCompletedCount) {
         this.practicalAvgCompletedCount = practicalAvgCompletedCount;
     }
 
