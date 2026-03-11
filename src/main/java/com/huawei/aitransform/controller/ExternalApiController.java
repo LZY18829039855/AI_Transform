@@ -4,6 +4,7 @@ import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.HandsOnCoursesSyncRequestVO;
 import com.huawei.aitransform.service.CadreDepartmentRefreshService;
 import com.huawei.aitransform.service.EmployeeSyncService;
+import com.huawei.aitransform.service.EmployeeTrainingInfoSyncService;
 import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import com.huawei.aitransform.service.HandsOnCourseService;
@@ -38,6 +39,9 @@ public class ExternalApiController {
     private EmployeeSyncService employeeSyncService;
 
     @Autowired
+    private EmployeeTrainingInfoSyncService employeeTrainingInfoSyncService;
+
+    @Autowired
     private HandsOnCourseService handsOnCourseService;
 
     /**
@@ -55,6 +59,27 @@ public class ExternalApiController {
             String periodId = targetDate.format(formatter);
             
             java.util.Map<String, Object> result = employeeSyncService.syncEmployeeData(periodId);
+            return ResponseEntity.ok(Result.success("同步成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 同步全体员工训战信息
+     * 将指定期号下全部成员与 t_employee_training_info 全量对比，批量新增、更新、删除。
+     * 用户基本信息从 t_employee 查询，训战课程字段按四级部门目标课程+完课逻辑刷新。
+     *
+     * @return 同步结果统计
+     */
+    @PostMapping("/sync-employee-training-info")
+    public ResponseEntity<Result<java.util.Map<String, Object>>> syncEmployeeTrainingInfo() {
+        try {
+            LocalDate targetDate = LocalDate.now().minusDays(2);
+            DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd");
+            String periodId = targetDate.format(formatter);
+
+            java.util.Map<String, Object> result = employeeTrainingInfoSyncService.syncEmployeeTrainingInfo(periodId);
             return ResponseEntity.ok(Result.success("同步成功", result));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));

@@ -56,6 +56,22 @@
         ORDER BY d4.dept_code
     </select>
 
+    <!-- 根据部门编码列表查询四级部门（完成率接口白名单，仅查指定四级部门以节省时间） -->
+    <select id="getLevel4DepartmentsByCodes" resultType="com.huawei.aitransform.entity.DepartmentInfoVO">
+        SELECT
+            dept_code AS deptCode,
+            dept_name AS deptName,
+            dept_level AS deptLevel,
+            parent_dept_code AS parentDeptCode
+        FROM department_info_hrms
+        WHERE dept_level = '4'
+        AND dept_code IN
+        <foreach collection="deptCodes" item="code" open="(" separator="," close=")">
+            #{code}
+        </foreach>
+        AND DATE(update_time) = '2025-11-18'
+    </select>
+
     <!-- 递归查询指定部门下的所有六级部门 -->
     <!-- 使用多表JOIN方式实现，兼容MySQL 5.7及以下版本 -->
     <!-- 通过多级JOIN找到所有六级部门，然后检查其祖先路径中是否包含目标部门 -->

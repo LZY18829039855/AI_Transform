@@ -18,11 +18,25 @@ import java.util.List;
 public interface EmployeeMapper {
 
     /**
+     * 按期号从 t_employee_sync 查询成员工号及基本信息（仅基础信息字段，无任职/认证等 JOIN）
+     * @param periodId 期号
+     * @return 员工同步数据列表（含工号与基本信息）
+     */
+    List<EmployeeSyncDataVO> getEmployeeSyncBasicInfoByPeriodId(@Param("periodId") String periodId);
+
+    /**
      * 获取全员同步数据
      * @param periodId 期号
      * @return 员工同步数据列表
      */
     List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId);
+
+    /**
+     * 根据工号列表从 t_employee 表查询员工基本信息
+     * @param employeeNumbers 工号列表
+     * @return 员工PO列表
+     */
+    List<EmployeePO> getEmployeesByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 
     /**
      * 根据工号列表和期号查询员工同步数据（不过滤职位族）

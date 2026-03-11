@@ -40,6 +40,13 @@ public interface DepartmentInfoMapper {
     List<DepartmentInfoVO> getLevel4DepartmentsUnderLevel2(@Param("level2DeptCode") String level2DeptCode);
 
     /**
+     * 根据部门编码列表查询四级部门信息（用于完成率接口白名单，仅查询指定四级部门）
+     * @param deptCodes 四级部门编码列表
+     * @return 四级部门列表（顺序需由调用方按 deptCodes 顺序重排）
+     */
+    List<DepartmentInfoVO> getLevel4DepartmentsByCodes(@Param("deptCodes") List<String> deptCodes);
+
+    /**
      * 递归查询指定部门下的所有六级部门
      * @param deptCode 部门编码
      * @return 六级部门列表
