@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" 
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.HandsOnCourseMapper">
+
+    <!-- 结果映射 -->
+    <resultMap id="BaseResultMap" type="com.huawei.aitransform.entity.HandsOnCourse">
+        <result column="account" property="account" jdbcType="VARCHAR"/>
+        <result column="task_type" property="taskType" jdbcType="VARCHAR"/>
+        <result column="task_status" property="taskStatus" jdbcType="VARCHAR"/>
+        <result column="task_info" property="taskInfo" jdbcType="VARCHAR"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <!-- 根据工号和课程类型查询记录 -->
+    <select id="selectByAccountAndTaskType" resultMap="BaseResultMap">
+        SELECT 
+            account,
+            task_type,
+            task_status,
+            task_info,
+            update_time
+        FROM hands_on_courses
+        WHERE account = #{account}
+          AND task_type = #{taskType}
+        LIMIT 1
+    </select>
+
+    <!-- 插入记录 -->
+    <insert id="insert" parameterType="com.huawei.aitransform.entity.HandsOnCourse">
+        INSERT INTO hands_on_courses (
+            account,
+            task_type,
+            task_status,
+            task_info,
+            update_time
+        ) VALUES (
+            #{account},
+            #{taskType},
+            #{taskStatus},
+            #{taskInfo},
+            NOW()
+        )
+    </insert>
+
+    <!-- 更新记录（根据工号和课程类型） -->
+    <update id="updateByAccountAndTaskType" parameterType="com.huawei.aitransform.entity.HandsOnCourse">
+        UPDATE hands_on_courses
+        SET task_status = #{taskStatus},
+            task_info = #{taskInfo},
+            update_time = NOW()
+        WHERE account = #{account}
+          AND task_type = #{taskType}
+    </update>
+
+</mapper>

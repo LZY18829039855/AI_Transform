@@ -1,13 +1,16 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.entity.HandsOnCoursesSyncRequestVO;
 import com.huawei.aitransform.service.CadreDepartmentRefreshService;
 import com.huawei.aitransform.service.EmployeeSyncService;
 import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
+import com.huawei.aitransform.service.HandsOnCourseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -33,6 +36,9 @@ public class ExternalApiController {
 
     @Autowired
     private EmployeeSyncService employeeSyncService;
+
+    @Autowired
+    private HandsOnCourseService handsOnCourseService;
 
     /**
      * 对外开放数据同步更新接口
@@ -222,6 +228,46 @@ public class ExternalApiController {
                 return ResponseEntity.ok(Result.success((String) result.get("message"), result));
             } else {
                 return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 实战课程个人完课情况同步接口
+     * 
+     * 对外提供实战课程个人完课情况的信息同步能力。调用方传入工号、课程类型、课程状态及备注，
+     * 系统根据「工号 + 课程类型」判断数据库中是否已有记录：存在则更新，不存在则插入；
+     * 更新或插入时自动写入当前时间到 update_time 字段。
+     * 
+     * 业务逻辑：
+     * 1. 参数校验：校验必填参数 account、task_type、task_status 非空
+     * 2. 查询是否存在：根据 account + task_type 查询表 hands_on_courses 是否已有记录
+     * 3. 分支处理：
+     *    - 存在：更新该记录的 task_status、task_info，并将 update_time 置为当前时间
+     *    - 不存在：插入新记录，字段为：account、task_type、task_status、task_info（可选）、update_time
+     * 4. 返回：统一返回成功或失败及简要说明
+     * 
+     * @param request 请求参数（包含工号、课程类型、课程状态、课程备注）
+     * @return 同步结果信息（包含操作类型：insert/update）
+     */
+    @PostMapping("/handsOnCoursesSync")
+    public ResponseEntity<Result<Object>> handsOnCoursesSync(@RequestBody HandsOnCoursesSyncRequestVO request) {
+        try {
+            java.util.Map<String, Object> result = handsOnCourseService.syncHandsOnCourse(request);
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                // 构建返回数据，包含 action、account、taskType
+                java.util.Map<String, Object> responseData = new java.util.HashMap<>();
+                responseData.put("action", result.get("action"));
+                responseData.put("account", result.get("account"));
+                responseData.put("task_type", result.get("taskType"));
+                return ResponseEntity.ok(Result.success((String) result.get("message"), responseData));
+            } else {
+                String errorMessage = (String) result.get("message");
+                Integer errorCode = errorMessage != null && (errorMessage.contains("不能为空") || errorMessage.contains("参数")) ? 400 : 500;
+                return ResponseEntity.ok(Result.error(errorCode, errorMessage));
             }
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
