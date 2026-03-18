@@ -39,4 +39,22 @@ public interface EmployeeTrainingInfoMapper {
      * @return 该部门下人员记录列表
      */
     List<EmployeeTrainingInfoPO> listByDeptLevelAndCode(@Param("deptLevel") String deptLevel, @Param("deptCode") String deptCode);
+
+    /**
+     * 按工号查询一条训战信息（含 practical_courses）
+     *
+     * @param employeeNumber 工号
+     * @return 训战信息，未找到返回 null
+     */
+    EmployeeTrainingInfoPO selectByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
+
+    /**
+     * 按工号更新实战完课列表及更新时间
+     *
+     * @param employeeNumber  工号
+     * @param practicalCourses 逗号分隔的实战课程 ID 列表
+     * @return 更新行数
+     */
+    int updatePracticalCoursesByEmployeeNumber(@Param("employeeNumber") String employeeNumber,
+                                               @Param("practicalCourses") String practicalCourses);
 }

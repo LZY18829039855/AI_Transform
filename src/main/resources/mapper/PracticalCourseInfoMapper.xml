@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.PracticalCourseInfoMapper">
+
+    <!-- 根据 task_type 查询课程主键 ID -->
+    <select id="selectIdByTaskType" resultType="java.lang.Integer">
+        SELECT id
+        FROM ai_practical_course_info
+        WHERE task_type = #{taskType}
+        LIMIT 1
+    </select>
+
+</mapper>

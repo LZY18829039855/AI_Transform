@@ -152,6 +152,28 @@
         </foreach>
     </delete>
 
+    <!-- 按工号查询一条训战信息 -->
+    <select id="selectByEmployeeNumber" resultMap="BaseResultMap">
+        SELECT employee_number, last_name,
+               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+               job_type, job_category, job_subcategory,
+               period_id, updated_time,
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+        FROM t_employee_training_info
+        WHERE employee_number = #{employeeNumber}
+        LIMIT 1
+    </select>
+
+    <!-- 按工号更新实战完课列表及更新时间 -->
+    <update id="updatePracticalCoursesByEmployeeNumber">
+        UPDATE t_employee_training_info
+        SET practical_courses = #{practicalCourses},
+            updated_time = NOW()
+        WHERE employee_number = #{employeeNumber}
+    </update>
+
     <!-- 按部门层级与部门编码查询本部门人员（不含下级） -->
     <select id="listByDeptLevelAndCode" resultMap="BaseResultMap">
         SELECT employee_number, last_name,
