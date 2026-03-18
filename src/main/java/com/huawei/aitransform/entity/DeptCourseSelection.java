@@ -19,9 +19,14 @@ public class DeptCourseSelection implements Serializable {
     private String deptName;
 
     /**
-     * 选课ID集合（逗号分隔）
+     * 选课ID集合（逗号分隔，对应 ai_course_planning_info 基础+进阶）
      */
     private String courseSelections;
+
+    /**
+     * 实战选课ID集合（逗号分隔，对应 ai_practical_course_info.id）
+     */
+    private String practicalSelections;
 
     /**
      * 基础目标课程数
@@ -60,6 +65,14 @@ public class DeptCourseSelection implements Serializable {
 
     public void setCourseSelections(String courseSelections) {
         this.courseSelections = courseSelections;
+    }
+
+    public String getPracticalSelections() {
+        return practicalSelections;
+    }
+
+    public void setPracticalSelections(String practicalSelections) {
+        this.practicalSelections = practicalSelections;
     }
 
     public Integer getBasicTargetCoursesNum() {

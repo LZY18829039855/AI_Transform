@@ -29,6 +29,7 @@
             dept_code AS deptCode,
             dept_name AS deptName,
             course_selections AS courseSelections,
+            practical_selections AS practicalSelections,
             basic_target_courses_num AS basicTargetCoursesNum,
             advanced_target_courses_num AS advancedTargetCoursesNum,
             practical_target_courses_num AS practicalTargetCoursesNum
@@ -41,6 +42,7 @@
             dept_code AS deptCode,
             dept_name AS deptName,
             course_selections AS courseSelections,
+            practical_selections AS practicalSelections,
             basic_target_courses_num AS basicTargetCoursesNum,
             advanced_target_courses_num AS advancedTargetCoursesNum,
             practical_target_courses_num AS practicalTargetCoursesNum

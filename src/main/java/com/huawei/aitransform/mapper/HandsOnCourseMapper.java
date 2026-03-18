@@ -4,11 +4,22 @@ import com.huawei.aitransform.entity.HandsOnCourse;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
+import java.util.List;
+
 /**
  * 实战课程个人完课情况Mapper接口
  */
 @Mapper
 public interface HandsOnCourseMapper {
+
+    /**
+     * 查询指定工号在 hands_on_courses 中 task_status='finished' 的完课对应的实战课程 ID 列表
+     * （联表 ai_practical_course_info 按 task_type 得到 id）
+     *
+     * @param account 工号
+     * @return 已完课实战课程主键 ID 列表
+     */
+    List<Integer> selectCompletedPracticalCourseIdsByAccount(@Param("account") String account);
 
     /**
      * 根据工号和课程类型查询记录

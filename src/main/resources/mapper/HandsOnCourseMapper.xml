@@ -12,6 +12,16 @@
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
 
+    <!-- 查询工号下已完课（task_status=finished）对应的实战课程 ID 列表 -->
+    <select id="selectCompletedPracticalCourseIdsByAccount" resultType="java.lang.Integer">
+        SELECT DISTINCT p.id
+        FROM hands_on_courses h
+        INNER JOIN ai_practical_course_info p ON h.task_type = p.task_type
+        WHERE h.account = #{account}
+          AND h.task_status = 'finished'
+        ORDER BY p.id
+    </select>
+
     <!-- 根据工号和课程类型查询记录 -->
     <select id="selectByAccountAndTaskType" resultMap="BaseResultMap">
         SELECT 

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN"
+        "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.PracticalCourseMapper">
+
+    <resultMap id="BaseResultMap" type="com.huawei.aitransform.entity.PracticalCourseInfoVO">
+        <id column="id" property="id"/>
+        <result column="task_type" property="taskType"/>
+        <result column="task_name" property="taskName"/>
+    </resultMap>
+
+    <!-- 根据课程 ID 列表查询 -->
+    <select id="listByIds" resultMap="BaseResultMap">
+        SELECT id, task_type, task_name
+        FROM ai_practical_course_info
+        WHERE id IN
+        <foreach collection="ids" item="id" open="(" separator="," close=")">
+            #{id}
+        </foreach>
+        ORDER BY id
+    </select>
+
+    <!-- 查询全部实战课程 -->
+    <select id="listAll" resultMap="BaseResultMap">
+        SELECT id, task_type, task_name
+        FROM ai_practical_course_info
+        ORDER BY id
+    </select>
+</mapper>

@@ -4,10 +4,13 @@ import com.huawei.aitransform.entity.CourseInfoByLevelVO;
 import com.huawei.aitransform.entity.DeptCourseSelection;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
+import com.huawei.aitransform.entity.PracticalCourseInfoVO;
 import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
+import com.huawei.aitransform.mapper.HandsOnCourseMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
+import com.huawei.aitransform.mapper.PracticalCourseMapper;
 import com.huawei.aitransform.service.EmployeeTrainingInfoSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -21,20 +24,23 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
  * 全体员工训战信息同步服务实现
- * 参考文档 api-sync-employee-data-full.md
+ * 参考文档 api-sync-employee-data-full.md、接口修改文档-sync-employee-training-info-实战完课逻辑.md
  */
 @Service
 public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfoSyncService {
 
     /**
      * 目标课程列表及按级别统计的目标课程数（用于同步时填充 basicTargetCoursesNum 等）
+     * courses 仅含基础+进阶（来自 ai_course_planning_info）；实战来自 practicalTargetCourses（ai_practical_course_info）
      */
     private static class TargetCoursesWithCounts {
         List<CourseInfoByLevelVO> courses;
+        List<PracticalCourseInfoVO> practicalTargetCourses;
         Integer basicTargetCoursesNum;
         Integer advancedTargetCoursesNum;
         Integer practicalTargetCoursesNum;
@@ -51,6 +57,10 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     private CoursePlanningInfoMapper coursePlanningInfoMapper;
     @Autowired
     private PersonalCourseCompletionMapper personalCourseCompletionMapper;
+    @Autowired
+    private PracticalCourseMapper practicalCourseMapper;
+    @Autowired
+    private HandsOnCourseMapper handsOnCourseMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -171,21 +181,24 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     }
 
     /**
-     * 按文档 4.6：四级部门目标课程 + 完课判断，填充 basicCourses、advancedCourses、practicalCourses 及目标课程数
-     * 四级部门从本次同步的基本信息（emp 的 fourthdeptcode）获取
+     * 按文档 4.6：四级部门目标课程 + 完课判断，填充 basicCourses、advancedCourses、practicalCourses 及目标课程数。
+     * 基础/进阶来自 ai_course_planning_info + micro/mooc 完课；实战来自 ai_practical_course_info + hands_on_courses 完课。
      */
     private void fillTrainingCourseFields(String empNum, String fourthDeptCode, EmployeeTrainingInfoPO po) {
         TargetCoursesWithCounts withCounts = getTargetCoursesByFourthDept(fourthDeptCode);
         List<CourseInfoByLevelVO> targetCourses = withCounts.courses;
+        List<PracticalCourseInfoVO> practicalTargetCourses = withCounts.practicalTargetCourses != null
+                ? withCounts.practicalTargetCourses : new ArrayList<>();
+
         po.setBasicTargetCoursesNum(withCounts.basicTargetCoursesNum);
         po.setAdvancedTargetCoursesNum(withCounts.advancedTargetCoursesNum);
         po.setPracticalTargetCoursesNum(withCounts.practicalTargetCoursesNum);
 
+        // 基础、进阶：目标课程编码 + micro/mooc 完课
         List<String> targetCourseNumbers = targetCourses.stream()
                 .map(CourseInfoByLevelVO::getCourseNumber)
                 .distinct()
                 .collect(Collectors.toList());
-
         List<String> completedCourseNumbers = new ArrayList<>();
         if (!targetCourseNumbers.isEmpty()) {
             completedCourseNumbers = personalCourseCompletionMapper.getCompletedCourseNumbers(empNum, targetCourseNumbers);
@@ -194,21 +207,35 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         for (String cn : completedCourseNumbers) {
             completedMap.put(cn, true);
         }
-
         Map<String, List<CourseInfoByLevelVO>> byLevel = targetCourses.stream()
                 .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
-
         po.setBasicCourses(joinCompletedByLevel(byLevel.getOrDefault("基础", new ArrayList<>()), completedMap));
         po.setAdvancedCourses(joinCompletedByLevel(byLevel.getOrDefault("进阶", new ArrayList<>()), completedMap));
-        po.setPracticalCourses(joinCompletedByLevel(byLevel.getOrDefault("实战", new ArrayList<>()), completedMap));
+
+        // 实战：目标课程来自 ai_practical_course_info，已完课来自 hands_on_courses 联表，只写入目标范围内的 id
+        Set<Integer> targetPracticalIds = practicalTargetCourses.stream()
+                .map(PracticalCourseInfoVO::getId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
+        List<Integer> completedPracticalIds = handsOnCourseMapper.selectCompletedPracticalCourseIdsByAccount(empNum);
+        if (completedPracticalIds == null) {
+            completedPracticalIds = new ArrayList<>();
+        }
+        List<Integer> completedInTarget = completedPracticalIds.stream()
+                .filter(targetPracticalIds::contains)
+                .sorted()
+                .collect(Collectors.toList());
+        po.setPracticalCourses(joinIntegerIds(completedInTarget));
     }
 
     /**
      * 根据四级部门编码获取目标课程列表及基础/进阶/实战目标课程数。
-     * 若部门在 dept_course_selections 有配置则用其目标课程及三数字段；否则使用默认课程并按级别统计数量。
+     * 基础/进阶来自 dept_course_selections.course_selections + ai_course_planning_info；
+     * 实战来自 dept_course_selections.practical_selections + ai_practical_course_info。
      */
     private TargetCoursesWithCounts getTargetCoursesByFourthDept(String fourthDeptCode) {
         TargetCoursesWithCounts result = new TargetCoursesWithCounts();
+        result.practicalTargetCourses = new ArrayList<>();
         boolean useAllCourses = true;
         List<Integer> targetCourseIds = new ArrayList<>();
         DeptCourseSelection selection = null;
@@ -232,24 +259,71 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
             }
         }
 
+        // 基础、进阶：仅来自 ai_course_planning_info，过滤掉实战
         if (useAllCourses) {
-            result.courses = personalCourseCompletionMapper.getCourseInfoByLevel();
+            List<CourseInfoByLevelVO> all = personalCourseCompletionMapper.getCourseInfoByLevel();
+            result.courses = all.stream()
+                    .filter(c -> "基础".equals(c.getCourseLevel()) || "进阶".equals(c.getCourseLevel()))
+                    .collect(Collectors.toList());
             result.basicTargetCoursesNum = countByLevel(result.courses, "基础");
             result.advancedTargetCoursesNum = countByLevel(result.courses, "进阶");
-            result.practicalTargetCoursesNum = countByLevel(result.courses, "实战");
         } else {
             result.courses = personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
-            if (selection != null && selection.getBasicTargetCoursesNum() != null && selection.getAdvancedTargetCoursesNum() != null && selection.getPracticalTargetCoursesNum() != null) {
+            result.courses = result.courses.stream()
+                    .filter(c -> "基础".equals(c.getCourseLevel()) || "进阶".equals(c.getCourseLevel()))
+                    .collect(Collectors.toList());
+            if (selection != null && selection.getBasicTargetCoursesNum() != null && selection.getAdvancedTargetCoursesNum() != null) {
                 result.basicTargetCoursesNum = selection.getBasicTargetCoursesNum();
                 result.advancedTargetCoursesNum = selection.getAdvancedTargetCoursesNum();
-                result.practicalTargetCoursesNum = selection.getPracticalTargetCoursesNum();
             } else {
                 result.basicTargetCoursesNum = countByLevel(result.courses, "基础");
                 result.advancedTargetCoursesNum = countByLevel(result.courses, "进阶");
-                result.practicalTargetCoursesNum = countByLevel(result.courses, "实战");
             }
         }
+
+        // 实战：来自 practical_selections + ai_practical_course_info；无选课或为空则查全部有效
+        boolean hasPracticalSelection = selection != null && selection.getPracticalSelections() != null
+                && !selection.getPracticalSelections().trim().isEmpty();
+        List<Integer> practicalIds = hasPracticalSelection ? parseIdList(selection.getPracticalSelections()) : new ArrayList<>();
+        if (hasPracticalSelection && !practicalIds.isEmpty()) {
+            result.practicalTargetCourses = practicalCourseMapper.listByIds(practicalIds);
+        } else {
+            result.practicalTargetCourses = practicalCourseMapper.listAll();
+        }
+        if (selection != null && selection.getPracticalTargetCoursesNum() != null) {
+            result.practicalTargetCoursesNum = selection.getPracticalTargetCoursesNum();
+        } else {
+            result.practicalTargetCoursesNum = result.practicalTargetCourses.size();
+        }
+
         return result;
+    }
+
+    private List<Integer> parseIdList(String commaSeparated) {
+        List<Integer> ids = new ArrayList<>();
+        if (commaSeparated == null || commaSeparated.trim().isEmpty()) {
+            return ids;
+        }
+        for (String s : commaSeparated.split(",")) {
+            s = s.trim();
+            if (!s.isEmpty()) {
+                try {
+                    ids.add(Integer.parseInt(s));
+                } catch (NumberFormatException ignored) {
+                }
+            }
+        }
+        return ids;
+    }
+
+    /**
+     * 将已完课实战课程 ID 列表拼接为逗号分隔字符串
+     */
+    private String joinIntegerIds(List<Integer> ids) {
+        if (ids == null || ids.isEmpty()) {
+            return null;
+        }
+        return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
     }
 
     private static int countByLevel(List<CourseInfoByLevelVO> courses, String level) {
