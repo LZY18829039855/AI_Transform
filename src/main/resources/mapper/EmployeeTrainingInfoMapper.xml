@@ -134,9 +134,7 @@
             <trim prefix="advanced_courses = CASE" suffix="END,">
                 <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedCourses} </foreach>
             </trim>
-            <trim prefix="practical_courses = CASE" suffix="END,">
-                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalCourses} </foreach>
-            </trim>
+            <!-- practical_courses 不由本同步更新，保持库中原值 -->
         </trim>
         WHERE employee_number IN
         <foreach collection="list" item="item" open="(" separator="," close=")">

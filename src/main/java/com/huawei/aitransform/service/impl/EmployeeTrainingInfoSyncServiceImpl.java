@@ -7,7 +7,6 @@ import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
-import com.huawei.aitransform.mapper.HandsOnCourseMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import com.huawei.aitransform.service.EmployeeTrainingInfoSyncService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -22,7 +21,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -55,8 +53,6 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     private CoursePlanningInfoMapper coursePlanningInfoMapper;
     @Autowired
     private PersonalCourseCompletionMapper personalCourseCompletionMapper;
-    @Autowired
-    private HandsOnCourseMapper handsOnCourseMapper;
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -183,8 +179,6 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     private void fillTrainingCourseFields(String empNum, String fourthDeptCode, EmployeeTrainingInfoPO po) {
         TargetCoursesWithCounts withCounts = getTargetCoursesByFourthDept(fourthDeptCode);
         List<CourseInfoByLevelVO> targetCourses = withCounts.courses;
-        List<CourseInfoByLevelVO> practicalTargetCourses = withCounts.practicalCourses != null
-                ? withCounts.practicalCourses : new ArrayList<>();
 
         po.setBasicTargetCoursesNum(withCounts.basicTargetCoursesNum);
         po.setAdvancedTargetCoursesNum(withCounts.advancedTargetCoursesNum);
@@ -208,21 +202,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         po.setBasicCourses(joinCompletedByLevel(byLevel.getOrDefault("基础", new ArrayList<>()), completedMap));
         po.setAdvancedCourses(joinCompletedByLevel(byLevel.getOrDefault("进阶", new ArrayList<>()), completedMap));
 
-        // 实战：目标课程来自 ai_course_planning_info(course_level='实战'，按 practical_selections 或全量)，
-        // 已完课来自 hands_on_courses(task_status='finished') 联表 ai_course_planning_info（h.task_type = p.syb_type）
-        Set<Integer> targetPracticalIds = practicalTargetCourses.stream()
-                .map(CourseInfoByLevelVO::getId)
-                .filter(Objects::nonNull)
-                .collect(Collectors.toSet());
-        List<Integer> completedPracticalIds = handsOnCourseMapper.selectCompletedPracticalCourseIdsByAccount(empNum);
-        if (completedPracticalIds == null) {
-            completedPracticalIds = new ArrayList<>();
-        }
-        List<Integer> completedInTarget = completedPracticalIds.stream()
-                .filter(targetPracticalIds::contains)
-                .sorted()
-                .collect(Collectors.toList());
-        po.setPracticalCourses(joinIntegerIds(completedInTarget));
+        // 实战完课（practical_courses）：本接口不再更新，由其它入口维护，对比与更新时均不涉及此字段，维持库中原值
     }
 
     /**
@@ -319,16 +299,6 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         return ids;
     }
 
-    /**
-     * 将已完课实战课程 ID 列表拼接为逗号分隔字符串
-     */
-    private String joinIntegerIds(List<Integer> ids) {
-        if (ids == null || ids.isEmpty()) {
-            return null;
-        }
-        return ids.stream().map(String::valueOf).collect(Collectors.joining(","));
-    }
-
     private static int countByLevel(List<CourseInfoByLevelVO> courses, String level) {
         if (courses == null) {
             return 0;
@@ -415,9 +385,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         if (!Objects.equals(source.getAdvancedCourses(), target.getAdvancedCourses())) {
             return true;
         }
-        if (!Objects.equals(source.getPracticalCourses(), target.getPracticalCourses())) {
-            return true;
-        }
+        // practical_courses 不参与对比，由其它入口维护，本接口不更新
         if (!Objects.equals(source.getBasicTargetCoursesNum(), target.getBasicTargetCoursesNum())) {
             return true;
         }

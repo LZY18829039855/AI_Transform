@@ -10,6 +10,8 @@
 
 **不变部分**：基础、进阶的目标课程与完课逻辑**保持原样**（仍使用 `dept_course_selections.course_selections`、`ai_course_planning_info` 及 micro/mooc 完课表）。
 
+**补充说明（当前实现）**：本接口**不再更新** `practical_courses` 字段。对比与更新时均不涉及该字段，库中 `practical_courses` 维持原值，由其它入口（如 handsOnCoursesSync 等）维护。
+
 **文档用途**：供评审与确认，check 通过后再进行代码开发。
 
 ---
