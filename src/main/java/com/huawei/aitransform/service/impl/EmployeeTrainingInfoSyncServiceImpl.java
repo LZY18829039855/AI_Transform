@@ -213,6 +213,7 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
     private TargetCoursesWithCounts getTargetCoursesByFourthDept(String fourthDeptCode) {
         TargetCoursesWithCounts result = new TargetCoursesWithCounts();
         result.practicalCourses = new ArrayList<>();
+        result.practicalTargetCoursesNum = 0;
         boolean useAllCourses = true;
         List<Integer> targetCourseIds = new ArrayList<>();
         DeptCourseSelection selection = null;
@@ -273,10 +274,11 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
                     .filter(c -> "实战".equals(c.getCourseLevel()))
                     .collect(Collectors.toList());
         }
+        // 实战课程数量：优先用部门配置，否则取实战目标课程列表条数
         if (selection != null && selection.getPracticalTargetCoursesNum() != null) {
             result.practicalTargetCoursesNum = selection.getPracticalTargetCoursesNum();
         } else {
-            result.practicalTargetCoursesNum = result.practicalCourses.size();
+            result.practicalTargetCoursesNum = result.practicalCourses != null ? result.practicalCourses.size() : 0;
         }
 
         return result;
