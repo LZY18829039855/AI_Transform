@@ -16,9 +16,10 @@
     <select id="selectCompletedPracticalCourseIdsByAccount" resultType="java.lang.Integer">
         SELECT DISTINCT p.id
         FROM hands_on_courses h
-        INNER JOIN ai_practical_course_info p ON h.task_type = p.task_type
+        INNER JOIN ai_course_planning_info p ON h.task_type = p.syb_type
         WHERE h.account = #{account}
           AND h.task_status = 'finished'
+          AND p.course_level = '实战'
         ORDER BY p.id
     </select>
 
