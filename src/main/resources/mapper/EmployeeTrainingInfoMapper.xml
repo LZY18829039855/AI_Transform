@@ -39,7 +39,8 @@
                lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
                job_type, job_category, job_subcategory,
                period_id, updated_time,
-               basic_courses, advanced_courses, practical_courses
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
         FROM t_employee_training_info
     </select>
 
