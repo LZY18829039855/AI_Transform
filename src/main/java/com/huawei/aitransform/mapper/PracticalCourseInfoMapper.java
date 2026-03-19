@@ -4,7 +4,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 /**
- * 实战课程信息表 ai_practical_course_info Mapper
+ * 课程信息表 ai_course_planning_info Mapper（用于按 task_type 定位实战课程）
  */
 @Mapper
 public interface PracticalCourseInfoMapper {

@@ -3,11 +3,14 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.huawei.aitransform.mapper.PracticalCourseInfoMapper">
 
-    <!-- 根据 task_type 查询课程主键 ID -->
+    <!--
+        根据 task_type 查询课程主键 ID
+        说明：课程信息来源改为 ai_course_planning_info，使用 syb_type 与请求 task_type 匹配，返回课程主键 id
+    -->
     <select id="selectIdByTaskType" resultType="java.lang.Integer">
         SELECT id
-        FROM ai_practical_course_info
-        WHERE task_type = #{taskType}
+        FROM ai_course_planning_info
+        WHERE syb_type = #{taskType}
         LIMIT 1
     </select>
 
