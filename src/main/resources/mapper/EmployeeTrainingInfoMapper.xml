@@ -134,6 +134,15 @@
             <trim prefix="advanced_courses = CASE" suffix="END,">
                 <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedCourses} </foreach>
             </trim>
+            <trim prefix="basic_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.basicTargetCoursesNum} </foreach>
+            </trim>
+            <trim prefix="advanced_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.advancedTargetCoursesNum} </foreach>
+            </trim>
+            <trim prefix="practical_target_courses_num = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalTargetCoursesNum} </foreach>
+            </trim>
             <!-- practical_courses 不由本同步更新，保持库中原值 -->
         </trim>
         WHERE employee_number IN
