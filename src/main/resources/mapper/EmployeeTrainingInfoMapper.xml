@@ -215,10 +215,24 @@
                 <when test="deptLevel == 6">sixthdeptcode = #{deptCode}</when>
             </choose>
             <if test="personType != null and personType == 1">
-                AND cadre_position_ai_maturity IS NOT NULL AND TRIM(cadre_position_ai_maturity) != ''
+                <choose>
+                    <when test="aiMaturity != null and aiMaturity != ''">
+                        AND cadre_position_ai_maturity = #{aiMaturity}
+                    </when>
+                    <otherwise>
+                        AND cadre_position_ai_maturity IS NOT NULL AND TRIM(cadre_position_ai_maturity) != ''
+                    </otherwise>
+                </choose>
             </if>
             <if test="personType != null and personType == 2">
-                AND expert_position_ai_maturity IS NOT NULL AND TRIM(expert_position_ai_maturity) != ''
+                <choose>
+                    <when test="aiMaturity != null and aiMaturity != ''">
+                        AND expert_position_ai_maturity = #{aiMaturity}
+                    </when>
+                    <otherwise>
+                        AND expert_position_ai_maturity IS NOT NULL AND TRIM(expert_position_ai_maturity) != ''
+                    </otherwise>
+                </choose>
             </if>
         </where>
     </select>

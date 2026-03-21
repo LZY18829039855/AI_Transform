@@ -37,11 +37,13 @@ public interface EmployeeTrainingInfoMapper {
      * @param deptLevel  部门层级 '1'~'6'
      * @param deptCode   部门编码
      * @param personType 人员类型：0 或未传为全员；1 干部（cadre_position_ai_maturity 非空）；2 专家（expert_position_ai_maturity 非空）
+     * @param aiMaturity 岗位 AI 成熟度（可选）：L1、L2、L3；personType=1 时按 cadre_position_ai_maturity 等值过滤，personType=2 时按 expert_position_ai_maturity 等值过滤
      * @return 该部门下人员记录列表
      */
     List<EmployeeTrainingInfoPO> listByDeptLevelAndCode(@Param("deptLevel") String deptLevel,
                                                       @Param("deptCode") String deptCode,
-                                                      @Param("personType") Integer personType);
+                                                      @Param("personType") Integer personType,
+                                                      @Param("aiMaturity") String aiMaturity);
 
     /**
      * 按工号查询一条训战信息（含 practical_courses）

@@ -28,7 +28,7 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
     private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
 
     @Override
-    public List<DepartmentEmployeeTrainingOverviewVO> getDepartmentEmployeeTrainingOverview(String deptId, Integer personType) {
+    public List<DepartmentEmployeeTrainingOverviewVO> getDepartmentEmployeeTrainingOverview(String deptId, Integer personType, String aiMaturity) {
         if (deptId == null || deptId.trim().isEmpty()) {
             return Collections.emptyList();
         }
@@ -41,7 +41,7 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         if (deptLevel == null || deptCode == null) {
             return Collections.emptyList();
         }
-        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType);
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType, aiMaturity);
         List<DepartmentEmployeeTrainingOverviewVO> result = new ArrayList<>();
         for (EmployeeTrainingInfoPO po : list) {
             DepartmentEmployeeTrainingOverviewVO vo = buildOneEmployeeVO(po);

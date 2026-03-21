@@ -18,7 +18,10 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 个人课程完成情况控制器
@@ -26,6 +29,8 @@ import java.util.List;
 @RestController
 @RequestMapping("/personal-course")
 public class PersonalCourseCompletionController {
+
+    private static final Set<String> AI_MATURITY_VALUES = new HashSet<>(Arrays.asList("L1", "L2", "L3"));
 
     @Autowired
     private PersonalCourseCompletionService personalCourseCompletionService;
@@ -105,12 +110,14 @@ public class PersonalCourseCompletionController {
      * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
      * @param deptId    部门ID（部门编码）
      * @param personType 人员类型：0 全员；1 干部；2 专家
+     * @param aiMaturity 岗位 AI 成熟度（可选）：L1、L2、L3；与 personType 配合——干部按 cadre_position_ai_maturity 过滤，专家按 expert_position_ai_maturity 过滤
      * @return 该部门下每名员工的训战总览列表
      */
     @GetMapping("/department-employee-training-overview")
     public ResponseEntity<Result<List<DepartmentEmployeeTrainingOverviewVO>>> getDepartmentEmployeeTrainingOverview(
             @RequestParam(value = "deptId", required = true) String deptId,
-            @RequestParam(value = "personType", required = false) Integer personType) {
+            @RequestParam(value = "personType", required = false) Integer personType,
+            @RequestParam(value = "ai_maturity", required = false) String aiMaturity) {
         try {
             if (deptId == null || deptId.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
@@ -119,7 +126,18 @@ public class PersonalCourseCompletionController {
             if (pt != 0 && pt != 1 && pt != 2) {
                 return ResponseEntity.ok(Result.error(400, "不支持的人员类型，目前仅支持全员（personType=0）、干部（personType=1）、专家（personType=2）"));
             }
-            List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt);
+            String maturityFilter = null;
+            if (aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+                String normalized = aiMaturity.trim().toUpperCase();
+                if (!AI_MATURITY_VALUES.contains(normalized)) {
+                    return ResponseEntity.ok(Result.error(400, "ai_maturity 仅支持 L1、L2、L3"));
+                }
+                if (pt != 1 && pt != 2) {
+                    return ResponseEntity.ok(Result.error(400, "岗位成熟度筛选仅在使用干部（personType=1）或专家（personType=2）时可用"));
+                }
+                maturityFilter = normalized;
+            }
+            List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt, maturityFilter);
             return ResponseEntity.ok(Result.success("查询成功", list));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
