@@ -40,4 +40,10 @@ public class EmployeeTrainingInfoPO {
     private Integer advancedTargetCoursesNum;
     /** 实战目标课程数 */
     private Integer practicalTargetCoursesNum;
+
+    /** 干部岗位 AI 成熟度（同步自 t_cadre.position_ai_maturity） */
+    private String cadrePositionAiMaturity;
+
+    /** 专家岗位 AI 成熟度（同步自 t_expert.position_ai_maturity） */
+    private String expertPositionAiMaturity;
 }

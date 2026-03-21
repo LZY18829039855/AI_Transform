@@ -81,5 +81,11 @@ public class EmployeeSyncDataVO {
 
     @JsonProperty("competence_to")
     private String competenceTo;
+
+    /** 干部岗位 AI 成熟度（来自 t_cadre.position_ai_maturity，非干部为 null） */
+    private String cadrePositionAiMaturity;
+
+    /** 专家岗位 AI 成熟度（来自 t_expert.position_ai_maturity，非专家为 null） */
+    private String expertPositionAiMaturity;
 }
 

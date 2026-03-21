@@ -169,6 +169,8 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
         po.setJobSubcategory(emp.getJobSubcategory());
         po.setPeriodId(periodId);
         po.setUpdatedTime(updatedTime);
+        po.setCadrePositionAiMaturity(emp.getCadrePositionAiMaturity());
+        po.setExpertPositionAiMaturity(emp.getExpertPositionAiMaturity());
         return po;
     }
 
@@ -395,6 +397,12 @@ public class EmployeeTrainingInfoSyncServiceImpl implements EmployeeTrainingInfo
             return true;
         }
         if (!Objects.equals(source.getPracticalTargetCoursesNum(), target.getPracticalTargetCoursesNum())) {
+            return true;
+        }
+        if (!Objects.equals(source.getCadrePositionAiMaturity(), target.getCadrePositionAiMaturity())) {
+            return true;
+        }
+        if (!Objects.equals(source.getExpertPositionAiMaturity(), target.getExpertPositionAiMaturity())) {
             return true;
         }
         return false;

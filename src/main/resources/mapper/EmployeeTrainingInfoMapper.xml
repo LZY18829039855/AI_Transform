@@ -31,6 +31,8 @@
         <result column="basic_target_courses_num" property="basicTargetCoursesNum"/>
         <result column="advanced_target_courses_num" property="advancedTargetCoursesNum"/>
         <result column="practical_target_courses_num" property="practicalTargetCoursesNum"/>
+        <result column="cadre_position_ai_maturity" property="cadrePositionAiMaturity"/>
+        <result column="expert_position_ai_maturity" property="expertPositionAiMaturity"/>
     </resultMap>
 
     <select id="getAll" resultMap="BaseResultMap">
@@ -40,7 +42,8 @@
                job_type, job_category, job_subcategory,
                period_id, updated_time,
                basic_courses, advanced_courses, practical_courses,
-               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
+               cadre_position_ai_maturity, expert_position_ai_maturity
         FROM t_employee_training_info
     </select>
 
@@ -51,7 +54,8 @@
             lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
             job_type, job_category, job_subcategory,
             period_id, updated_time,
-            basic_courses, advanced_courses, practical_courses
+            basic_courses, advanced_courses, practical_courses,
+            cadre_position_ai_maturity, expert_position_ai_maturity
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -60,7 +64,8 @@
                 #{item.lowestdeptid}, #{item.firstdept}, #{item.seconddept}, #{item.thirddept}, #{item.fourthdept}, #{item.fifthdept}, #{item.sixthdept}, #{item.lowestdept},
                 #{item.jobType}, #{item.jobCategory}, #{item.jobSubcategory},
                 #{item.periodId}, #{item.updatedTime},
-                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses}
+                #{item.basicCourses}, #{item.advancedCourses}, #{item.practicalCourses},
+                #{item.cadrePositionAiMaturity}, #{item.expertPositionAiMaturity}
             )
         </foreach>
     </insert>
@@ -144,6 +149,12 @@
             <trim prefix="practical_target_courses_num = CASE" suffix="END,">
                 <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.practicalTargetCoursesNum} </foreach>
             </trim>
+            <trim prefix="cadre_position_ai_maturity = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.cadrePositionAiMaturity} </foreach>
+            </trim>
+            <trim prefix="expert_position_ai_maturity = CASE" suffix="END,">
+                <foreach collection="list" item="item">WHEN employee_number = #{item.employeeNumber} THEN #{item.expertPositionAiMaturity} </foreach>
+            </trim>
             <!-- practical_courses 不由本同步更新，保持库中原值 -->
         </trim>
         WHERE employee_number IN
@@ -168,7 +179,8 @@
                job_type, job_category, job_subcategory,
                period_id, updated_time,
                basic_courses, advanced_courses, practical_courses,
-               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
+               cadre_position_ai_maturity, expert_position_ai_maturity
         FROM t_employee_training_info
         WHERE employee_number = #{employeeNumber}
         LIMIT 1
@@ -190,7 +202,8 @@
                job_type, job_category, job_subcategory,
                period_id, updated_time,
                basic_courses, advanced_courses, practical_courses,
-               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
+               cadre_position_ai_maturity, expert_position_ai_maturity
         FROM t_employee_training_info
         <where>
             <choose>

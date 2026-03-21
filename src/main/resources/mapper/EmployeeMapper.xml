@@ -637,7 +637,15 @@
                 WHEN e.job_category LIKE '%-%-%' THEN SUBSTRING_INDEX(e.job_category, '-', -1)
                 ELSE NULL
             END AS jobSubcategory,
-            e.period_id AS periodId
+            e.period_id AS periodId,
+            (SELECT c.position_ai_maturity
+             FROM t_cadre c
+             WHERE c.account = e.employee_number
+             LIMIT 1) AS cadrePositionAiMaturity,
+            (SELECT x.position_ai_maturity
+             FROM t_expert x
+             WHERE x.account = e.employee_number
+             LIMIT 1) AS expertPositionAiMaturity
         FROM t_employee_sync e
         WHERE e.period_id = #{periodId}
           AND e.employee_number IS NOT NULL
