@@ -56,13 +56,16 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
     private DepartmentEmployeeTrainingOverviewVO buildOneEmployeeVO(EmployeeTrainingInfoPO po) {
         int basicTarget = po.getBasicTargetCoursesNum() != null ? po.getBasicTargetCoursesNum() : 0;
         int advancedTarget = po.getAdvancedTargetCoursesNum() != null ? po.getAdvancedTargetCoursesNum() : 0;
+        int practicalTarget = po.getPracticalTargetCoursesNum() != null ? po.getPracticalTargetCoursesNum() : 0;
         int basicCompleted = countCompletedCourses(po.getBasicCourses());
         int advancedCompleted = countCompletedCourses(po.getAdvancedCourses());
+        int practicalCompleted = countCompletedCourses(po.getPracticalCourses());
 
         double basicRate = basicTarget > 0 ? basicCompleted * 100.0 / basicTarget : 0.0;
         double advancedRate = advancedTarget > 0 ? advancedCompleted * 100.0 / advancedTarget : 0.0;
-        int totalTarget = basicTarget + advancedTarget;
-        int totalCompleted = basicCompleted + advancedCompleted;
+        double practicalRate = practicalTarget > 0 ? practicalCompleted * 100.0 / practicalTarget : 0.0;
+        int totalTarget = basicTarget + advancedTarget + practicalTarget;
+        int totalCompleted = basicCompleted + advancedCompleted + practicalCompleted;
         double totalRate = totalTarget > 0 ? totalCompleted * 100.0 / totalTarget : 0.0;
 
         DepartmentEmployeeTrainingOverviewVO vo = new DepartmentEmployeeTrainingOverviewVO();
@@ -82,6 +85,9 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         vo.setAdvancedTargetCourseCount(advancedTarget);
         vo.setAdvancedCompletedCount(advancedCompleted);
         vo.setAdvancedCompletionRate(round2(advancedRate));
+        vo.setPracticalTargetCourseCount(practicalTarget);
+        vo.setPracticalCompletedCount(practicalCompleted);
+        vo.setPracticalCompletionRate(round2(practicalRate));
         vo.setTotalTargetCourseCount(totalTarget);
         vo.setTotalCompletedCount(totalCompleted);
         vo.setTotalCompletionRate(round2(totalRate));

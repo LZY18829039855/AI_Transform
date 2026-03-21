@@ -99,7 +99,7 @@ public class PersonalCourseCompletionController {
     }
 
     /**
-     * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细
+     * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
      * @param deptId    部门ID（部门编码）
      * @param personType 人员类型，当前仅处理 0
      * @return 该部门下每名员工的训战总览列表
