@@ -79,7 +79,7 @@ public class PersonalCourseCompletionController {
     /**
      * 部门课程完成率查询：根据父部门ID返回下一层级各部门的课程完成率统计
      * @param deptId    父部门ID（0 或云核心网二级部门时仅返回白名单内四级部门；三级返回四级子部门；四/五/六级返回下一层级子部门）
-     * @param personType 人员类型，当前仅处理 0
+     * @param personType 人员类型：0 全员；1 干部；2 专家（与证书统计等接口约定一致）
      * @return 各部门统计列表
      */
     @GetMapping("/department-completion-rate")
@@ -91,6 +91,9 @@ public class PersonalCourseCompletionController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
             Integer pt = (personType != null) ? personType : 0;
+            if (pt != 0 && pt != 1 && pt != 2) {
+                return ResponseEntity.ok(Result.error(400, "不支持的人员类型，目前仅支持全员（personType=0）、干部（personType=1）、专家（personType=2）"));
+            }
             List<DepartmentCourseCompletionRateVO> list = departmentCourseCompletionRateService.getDepartmentCourseCompletionRate(deptId.trim(), pt);
             return ResponseEntity.ok(Result.success("查询成功", list));
         } catch (Exception e) {
@@ -101,7 +104,7 @@ public class PersonalCourseCompletionController {
     /**
      * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
      * @param deptId    部门ID（部门编码）
-     * @param personType 人员类型，当前仅处理 0
+     * @param personType 人员类型：0 全员；1 干部；2 专家
      * @return 该部门下每名员工的训战总览列表
      */
     @GetMapping("/department-employee-training-overview")
@@ -113,6 +116,9 @@ public class PersonalCourseCompletionController {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
             }
             Integer pt = (personType != null) ? personType : 0;
+            if (pt != 0 && pt != 1 && pt != 2) {
+                return ResponseEntity.ok(Result.error(400, "不支持的人员类型，目前仅支持全员（personType=0）、干部（personType=1）、专家（personType=2）"));
+            }
             List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt);
             return ResponseEntity.ok(Result.success("查询成功", list));
         } catch (Exception e) {

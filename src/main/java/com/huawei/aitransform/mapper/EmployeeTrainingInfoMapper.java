@@ -34,11 +34,14 @@ public interface EmployeeTrainingInfoMapper {
 
     /**
      * 按部门层级与部门编码查询本部门人员训战信息（不含下级）
-     * @param deptLevel 部门层级 '1'~'6'
-     * @param deptCode  部门编码
+     * @param deptLevel  部门层级 '1'~'6'
+     * @param deptCode   部门编码
+     * @param personType 人员类型：0 或未传为全员；1 干部（cadre_position_ai_maturity 非空）；2 专家（expert_position_ai_maturity 非空）
      * @return 该部门下人员记录列表
      */
-    List<EmployeeTrainingInfoPO> listByDeptLevelAndCode(@Param("deptLevel") String deptLevel, @Param("deptCode") String deptCode);
+    List<EmployeeTrainingInfoPO> listByDeptLevelAndCode(@Param("deptLevel") String deptLevel,
+                                                      @Param("deptCode") String deptCode,
+                                                      @Param("personType") Integer personType);
 
     /**
      * 按工号查询一条训战信息（含 practical_courses）

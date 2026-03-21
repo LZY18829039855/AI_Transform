@@ -32,7 +32,6 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         if (deptId == null || deptId.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        // 当前仅处理 personType = 0
         DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(deptId.trim());
         if (dept == null) {
             return Collections.emptyList();
@@ -42,7 +41,7 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         if (deptLevel == null || deptCode == null) {
             return Collections.emptyList();
         }
-        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode);
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType);
         List<DepartmentEmployeeTrainingOverviewVO> result = new ArrayList<>();
         for (EmployeeTrainingInfoPO po : list) {
             DepartmentEmployeeTrainingOverviewVO vo = buildOneEmployeeVO(po);

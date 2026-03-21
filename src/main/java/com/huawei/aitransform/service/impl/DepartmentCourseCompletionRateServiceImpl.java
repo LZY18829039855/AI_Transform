@@ -46,7 +46,6 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         if (deptId == null || deptId.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        // 当前仅处理 personType = 0
         List<DepartmentInfoVO> departmentList = resolveDepartmentList(deptId.trim());
         if (departmentList == null || departmentList.isEmpty()) {
             return Collections.emptyList();
@@ -57,7 +56,7 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         }
         List<DepartmentCourseCompletionRateVO> result = new ArrayList<>();
         for (DepartmentInfoVO dept : departmentList) {
-            DepartmentCourseCompletionRateVO vo = buildOneDeptStats(dept, inputDeptIdForLevel5);
+            DepartmentCourseCompletionRateVO vo = buildOneDeptStats(dept, inputDeptIdForLevel5, personType);
             if (vo != null) {
                 result.add(vo);
             }
@@ -130,13 +129,14 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
     /**
      * 构建单个部门的统计 VO；当子部门为五级时，targetCourseDeptId 为入参四级部门ID
      */
-    private DepartmentCourseCompletionRateVO buildOneDeptStats(DepartmentInfoVO dept, String targetCourseDeptIdForLevel5) {
+    private DepartmentCourseCompletionRateVO buildOneDeptStats(DepartmentInfoVO dept, String targetCourseDeptIdForLevel5,
+                                                               Integer personType) {
         String deptLevel = dept.getDeptLevel();
         String deptCode = dept.getDeptCode();
         if (deptLevel == null || deptCode == null) {
             return null;
         }
-        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode);
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType);
         int baselineCount = list.size();
 
         String level4DeptCodeForTarget = resolveLevel4DeptCodeForTarget(dept, targetCourseDeptIdForLevel5);
