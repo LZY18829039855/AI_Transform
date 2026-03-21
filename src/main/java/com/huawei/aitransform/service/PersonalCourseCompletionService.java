@@ -3,9 +3,9 @@ package com.huawei.aitransform.service;
 import com.huawei.aitransform.entity.CourseCategoryStatisticsVO;
 import com.huawei.aitransform.entity.CourseInfoByLevelVO;
 import com.huawei.aitransform.entity.CourseInfoVO;
-import com.huawei.aitransform.entity.DeptCourseSelection;
+import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
-import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
+import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -13,9 +13,12 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
@@ -24,166 +27,124 @@ import java.util.stream.Collectors;
 @Service
 public class PersonalCourseCompletionService {
 
+    private static final String LEVEL_BASIC = "基础";
+    private static final String LEVEL_ADVANCED = "进阶";
+    private static final String LEVEL_HIGH = "高阶";
+    private static final String LEVEL_PRACTICAL = "实战";
+
     @Autowired
     private PersonalCourseCompletionMapper personalCourseCompletionMapper;
 
     @Autowired
-    private CoursePlanningInfoMapper coursePlanningInfoMapper;
+    private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
 
     /**
      * 查询个人课程完成情况
+     *
      * @param empNum 员工工号（不带首字母）
      * @return 个人课程完成情况响应对象
      */
     public PersonalCourseCompletionResponseVO getPersonalCourseCompletion(String empNum) {
-        // 1. 查询所有课程信息（用于计算totalCourses）
+        // 1. 全量课程（按级别分组），用于 totalCourses 与 courseList
         List<CourseInfoByLevelVO> allCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
         Map<String, List<CourseInfoByLevelVO>> allCoursesByLevel = allCourses.stream()
                 .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
-        
-        // 2. 查询员工四级部门ID
-        String fourthDeptCode = personalCourseCompletionMapper.getFourthDeptCodeByEmployeeNumber(empNum);
-        
-        // 3. 获取部门选定的目标课程
-        List<CourseInfoByLevelVO> targetCourses;
-        boolean useAllCourses = false; // 标记是否使用所有课程
-        
-        if (fourthDeptCode != null && !fourthDeptCode.trim().isEmpty()) {
-            // 根据部门ID直接查询部门选课信息
-            DeptCourseSelection userDeptSelection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode);
-            
-            // 解析目标课程ID列表
-            List<Integer> targetCourseIds = new ArrayList<>();
-            if (userDeptSelection != null && userDeptSelection.getCourseSelections() != null 
-                    && !userDeptSelection.getCourseSelections().trim().isEmpty()) {
-                // 部门有选课信息，解析选定的课程ID
-                String courseSelectionsStr = userDeptSelection.getCourseSelections();
-                String[] courseIdStrs = courseSelectionsStr.split(",");
-                for (String courseIdStr : courseIdStrs) {
-                    courseIdStr = courseIdStr.trim();
-                    if (!courseIdStr.isEmpty()) {
-                        try {
-                            targetCourseIds.add(Integer.parseInt(courseIdStr));
-                        } catch (NumberFormatException e) {
-                            // 忽略无效的课程ID
-                        }
-                    }
-                }
-                // 如果解析后没有有效的课程ID，则使用所有课程
-                if (targetCourseIds.isEmpty()) {
-                    useAllCourses = true;
-                }
-            } else {
-                // 部门没有选课信息，使用所有课程作为默认目标课程
-                useAllCourses = true;
-            }
-            
-            // 根据标志位决定查询方式
-            if (useAllCourses) {
-                // 使用所有课程作为目标课程（fallback逻辑）
-                targetCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
-            } else {
-                // 根据目标课程ID列表查询课程信息
-                targetCourses = personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
-            }
-        } else {
-            // 如果未找到部门信息，使用所有课程作为默认目标课程
-            targetCourses = personalCourseCompletionMapper.getCourseInfoByLevel();
+
+        // 2. 员工训战信息：目标课程数、完课课程 ID 列表
+        EmployeeTrainingInfoPO training = employeeTrainingInfoMapper.selectByEmployeeNumber(empNum);
+
+        Map<String, Integer> targetNumByLevel = new HashMap<>();
+        Map<String, Set<Integer>> completedIdsByLevel = new HashMap<>();
+        if (training != null) {
+            targetNumByLevel.put(LEVEL_BASIC, nullToZero(training.getBasicTargetCoursesNum()));
+            targetNumByLevel.put(LEVEL_ADVANCED, nullToZero(training.getAdvancedTargetCoursesNum()));
+            targetNumByLevel.put(LEVEL_PRACTICAL, nullToZero(training.getPracticalTargetCoursesNum()));
+            completedIdsByLevel.put(LEVEL_BASIC, parseCommaSeparatedCourseIds(training.getBasicCourses()));
+            completedIdsByLevel.put(LEVEL_ADVANCED, parseCommaSeparatedCourseIds(training.getAdvancedCourses()));
+            completedIdsByLevel.put(LEVEL_PRACTICAL, parseCommaSeparatedCourseIds(training.getPracticalCourses()));
         }
+        targetNumByLevel.putIfAbsent(LEVEL_BASIC, 0);
+        targetNumByLevel.putIfAbsent(LEVEL_ADVANCED, 0);
+        targetNumByLevel.putIfAbsent(LEVEL_PRACTICAL, 0);
+        completedIdsByLevel.putIfAbsent(LEVEL_BASIC, Collections.emptySet());
+        completedIdsByLevel.putIfAbsent(LEVEL_ADVANCED, Collections.emptySet());
+        completedIdsByLevel.putIfAbsent(LEVEL_PRACTICAL, Collections.emptySet());
+        // 高阶在 t_employee_training_info 中无对应字段
+        targetNumByLevel.put(LEVEL_HIGH, 0);
+        completedIdsByLevel.put(LEVEL_HIGH, Collections.emptySet());
 
-        // 4. 按课程级别分组目标课程
-        Map<String, List<CourseInfoByLevelVO>> targetCoursesByLevel = targetCourses.stream()
-                .collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
-
-        // 4. 获取目标课程编码列表
-        List<String> targetCourseNumbers = targetCourses.stream()
-                .map(CourseInfoByLevelVO::getCourseNumber)
-                .distinct()
-                .collect(Collectors.toList());
-
-        // 5. 查询用户已完成的课程编码列表（只查询目标课程中的完课数据）
-        List<String> completedCourseNumbers = new ArrayList<>();
-        if (!targetCourseNumbers.isEmpty()) {
-            completedCourseNumbers = personalCourseCompletionMapper.getCompletedCourseNumbers(empNum, targetCourseNumbers);
-        }
-
-        // 6. 将已完成的课程编码转换为Map，便于快速查找
-        Map<String, Boolean> completedCourseMap = new HashMap<>();
-        for (String courseNumber : completedCourseNumbers) {
-            completedCourseMap.put(courseNumber, true);
-        }
-
-        // 7. 组装各分类的课程统计信息
+        // 3. 按固定顺序遍历级别，保证输出稳定
         List<CourseCategoryStatisticsVO> courseStatistics = new ArrayList<>();
-        
-        // 遍历所有课程级别，确保每个级别都有统计信息
-        for (Map.Entry<String, List<CourseInfoByLevelVO>> entry : allCoursesByLevel.entrySet()) {
-            String courseLevel = entry.getKey();
-            List<CourseInfoByLevelVO> allCoursesInLevel = entry.getValue();
-            
-            // 获取该级别下的目标课程
-            List<CourseInfoByLevelVO> targetCoursesInLevel = targetCoursesByLevel.getOrDefault(courseLevel, new ArrayList<>());
-            
-            // 构建目标课程列表
-            List<CourseInfoVO> courseList = new ArrayList<>();
-            int completedCount = 0;
-            for (CourseInfoByLevelVO course : targetCoursesInLevel) {
-                Boolean isCompleted = completedCourseMap.containsKey(course.getCourseNumber());
-                if (isCompleted) {
-                    completedCount++;
-                }
-                // 为每门课程设置 bigType、isTargetCourse（固定为true）和 courseLink
-                courseList.add(new CourseInfoVO(course.getCourseName(), course.getCourseNumber(), isCompleted, 
-                        course.getBigType(), true, course.getCourseLink()));
+        List<String> levelOrderList = new ArrayList<>();
+        levelOrderList.add(LEVEL_BASIC);
+        levelOrderList.add(LEVEL_ADVANCED);
+        levelOrderList.add(LEVEL_HIGH);
+        levelOrderList.add(LEVEL_PRACTICAL);
+        // 规划中存在的其它级别排在后面
+        for (String level : allCoursesByLevel.keySet()) {
+            if (!levelOrderList.contains(level)) {
+                levelOrderList.add(level);
+            }
+        }
+
+        for (String courseLevel : levelOrderList) {
+            List<CourseInfoByLevelVO> allCoursesInLevel = allCoursesByLevel.get(courseLevel);
+            if (allCoursesInLevel == null || allCoursesInLevel.isEmpty()) {
+                continue;
             }
 
-            // 计算完课占比（基于目标课程数）
-            int totalCourses = allCoursesInLevel.size(); // 所有课程数量
-            int targetCoursesCount = targetCoursesInLevel.size(); // 目标课程数量
+            int targetCoursesCount = targetNumByLevel.getOrDefault(courseLevel, 0);
+            Set<Integer> completedIdSet = completedIdsByLevel.getOrDefault(courseLevel, Collections.emptySet());
+
+            // 实际完课数：训战表中该级别完课 ID 列表的去重数量（与规划表 id 对应）
+            int completedFromTraining = completedIdSet.size();
+
+            List<CourseInfoVO> courseList = new ArrayList<>();
+            for (CourseInfoByLevelVO course : allCoursesInLevel) {
+                Integer id = course.getId();
+                boolean isCompleted = id != null && completedIdSet.contains(id);
+                courseList.add(new CourseInfoVO(
+                        course.getCourseName(),
+                        course.getCourseNumber(),
+                        isCompleted,
+                        course.getBigType(),
+                        true,
+                        course.getCourseLink()));
+            }
+
+            // 展示用 completedCourses：以训战表 ID 列表为准；若与目录交集不一致仍以列表计数为主
+            int completedCourses = completedFromTraining;
+
             double completionRate = 0.0;
             if (targetCoursesCount > 0) {
-                completionRate = (double) completedCount / targetCoursesCount * 100;
-                // 保留2位小数
-                BigDecimal bd = new BigDecimal(completionRate);
+                completionRate = (double) completedCourses / targetCoursesCount * 100;
+                BigDecimal bd = BigDecimal.valueOf(completionRate);
                 bd = bd.setScale(2, RoundingMode.HALF_UP);
                 completionRate = bd.doubleValue();
             }
 
-            // 创建分类统计对象
             CourseCategoryStatisticsVO statistics = new CourseCategoryStatisticsVO();
             statistics.setCourseLevel(courseLevel);
-            statistics.setTotalCourses(totalCourses); // 所有课程数量
-            statistics.setTargetCourses(targetCoursesCount); // 目标课程数量
-            statistics.setCompletedCourses(completedCount);
+            statistics.setTotalCourses(allCoursesInLevel.size());
+            statistics.setTargetCourses(targetCoursesCount);
+            statistics.setCompletedCourses(completedCourses);
             statistics.setCompletionRate(completionRate);
             statistics.setCourseList(courseList);
 
             courseStatistics.add(statistics);
         }
 
-        // 8. 按照指定顺序排序：基础、进阶、高阶、实战
-        Map<String, Integer> levelOrder = new HashMap<>();
-        levelOrder.put("基础", 1);
-        levelOrder.put("进阶", 2);
-        levelOrder.put("高阶", 3);
-        levelOrder.put("实战", 4);
-        
-        // 对courseStatistics进行排序
-        courseStatistics.sort((a, b) -> {
-            String levelA = a.getCourseLevel();
-            String levelB = b.getCourseLevel();
-            Integer orderA = levelOrder.getOrDefault(levelA, 999); // 未匹配的排在最后
-            Integer orderB = levelOrder.getOrDefault(levelB, 999);
-            return orderA.compareTo(orderB);
-        });
+        // 未在规划表出现、但排序表要求的级别（通常不会发生）：若需要可补空块，当前跳过
 
-        // 9. 查询员工中文名
-        String empName = personalCourseCompletionMapper.getLastNameByEmployeeNumber(empNum);
-        if (empName == null) {
-            empName = "";
+        // 4. 员工姓名：优先训战表，否则员工同步表
+        String empName = "";
+        if (training != null && training.getLastName() != null && !training.getLastName().trim().isEmpty()) {
+            empName = training.getLastName().trim();
+        } else {
+            String name = personalCourseCompletionMapper.getLastNameByEmployeeNumber(empNum);
+            empName = name != null ? name : "";
         }
 
-        // 10. 创建响应对象
         PersonalCourseCompletionResponseVO response = new PersonalCourseCompletionResponseVO();
         response.setEmpNum(empNum);
         response.setEmpName(empName);
@@ -191,5 +152,30 @@ public class PersonalCourseCompletionService {
 
         return response;
     }
-}
 
+    private static int nullToZero(Integer value) {
+        return value == null ? 0 : value;
+    }
+
+    /**
+     * 解析逗号分隔的课程主键 ID（ai_course_planning_info.id），去重、忽略非法项
+     */
+    private static Set<Integer> parseCommaSeparatedCourseIds(String raw) {
+        if (raw == null || raw.trim().isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<Integer> ids = new HashSet<>();
+        for (String part : raw.split(",")) {
+            String s = part.trim();
+            if (s.isEmpty()) {
+                continue;
+            }
+            try {
+                ids.add(Integer.parseInt(s));
+            } catch (NumberFormatException ignored) {
+                // 跳过非数字
+            }
+        }
+        return ids.isEmpty() ? Collections.emptySet() : ids;
+    }
+}

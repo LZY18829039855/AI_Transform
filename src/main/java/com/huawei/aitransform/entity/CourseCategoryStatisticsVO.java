@@ -21,7 +21,7 @@ public class CourseCategoryStatisticsVO implements Serializable {
     private Integer totalCourses;
 
     /**
-     * 目标课程数（等于课程总数）
+     * 目标课程数（个人接口来自 t_employee_training_info 各级别目标数字段）
      */
     private Integer targetCourses;
 

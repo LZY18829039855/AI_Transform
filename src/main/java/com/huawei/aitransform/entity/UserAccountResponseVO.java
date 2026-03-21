@@ -10,12 +10,12 @@ public class UserAccountResponseVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 带首字母的工号信息（emp_num）
+     * 不带首字母的工号信息（emp_num）
      */
     private String empNum;
 
     /**
-     * 去除首字母的工号信息（w3_account）
+     * 带首字母的工号信息（w3_account）
      */
     private String w3Account;
 
