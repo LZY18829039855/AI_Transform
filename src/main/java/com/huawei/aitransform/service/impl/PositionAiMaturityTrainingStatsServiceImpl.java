@@ -47,7 +47,7 @@ public class PositionAiMaturityTrainingStatsServiceImpl implements PositionAiMat
         }
         String deptLevel = dept.getDeptLevel().trim();
         List<EmployeeTrainingInfoPO> rows =
-                employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, resolvedDeptId, personType);
+                employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, resolvedDeptId, personType, null);
         if (rows == null || rows.isEmpty()) {
             return Collections.emptyList();
         }

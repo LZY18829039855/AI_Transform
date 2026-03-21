@@ -136,7 +136,7 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         if (deptLevel == null || deptCode == null) {
             return null;
         }
-        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType);
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType, null);
         int baselineCount = list.size();
 
         String level4DeptCodeForTarget = resolveLevel4DeptCodeForTarget(dept, targetCourseDeptIdForLevel5);
