@@ -12,7 +12,7 @@ public interface PositionAiMaturityTrainingStatsService {
     /**
      * 按部门与人员类型（仅干部/专家）查询各岗位 AI 成熟度下的训战汇总
      *
-     * @param deptId     部门编码
+     * @param deptId     部门编码；为 {@code "0"} 时按 {@link com.huawei.aitransform.constant.DepartmentConstants#CLOUD_CORE_NETWORK_DEPT_CODE} 解析
      * @param personType 1 干部；2 专家
      * @return 按成熟度分组列表，排序 L1 → L2 → L3 → 其它
      */

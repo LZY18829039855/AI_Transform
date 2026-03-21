@@ -12,7 +12,7 @@
 
 | 参数名       | 类型    | 必填 | 说明 |
 |--------------|---------|------|------|
-| `deptId`     | String  | 是   | 部门编码。为空返回 400。 |
+| `deptId`     | String  | 是   | 部门编码。为空返回 400。**传 `0` 时视为云核心网产品线二级部门**，在服务端转换为常量 `DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE`（当前为 `031562`）后再查询。 |
 | `personType` | Integer | 是   | **仅** `1` = 干部、`2` = 专家。不支持 `0`（全员）及其它值；非法返回 400。 |
 
 ---
@@ -21,7 +21,8 @@
 
 ### 3.1 部门范围
 
-1. 根据 `deptId` 查询部门信息，得到 **`deptLevel`**（1～6）。
+0. **入参 `deptId` 为 `0` 时**：先替换为二级部门「云核心网产品线」部门编码 `CLOUD_CORE_NETWORK_DEPT_CODE`（与 `department-completion-rate` 等接口对 `0` 的约定一致），再执行后续步骤。
+1. 根据（解析后的）`deptId` 查询部门信息，得到 **`deptLevel`**（1～6）。
 2. 在 **`t_employee_training_info`** 中按与现有 `listByDeptLevelAndCode` **相同规则**筛选**本部门直属人员（不含下级）**（例如四级部门：`fourthdeptcode = deptId`）。
 3. 部门不存在或无法解析层级时，与现有接口风格一致（如返回空列表）。
 

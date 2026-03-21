@@ -25,7 +25,7 @@ public class TrainingCoursesController {
     /**
      * 专家、干部训战查询：按岗位 AI 成熟度（L1/L2/L3…）汇总课程目标均值、平均完课人数与完课率
      *
-     * @param deptId     部门编码（必填）
+     * @param deptId     部门编码（必填）；传 0 时在服务端转换为云核心网产品线二级部门 {@link com.huawei.aitransform.constant.DepartmentConstants#CLOUD_CORE_NETWORK_DEPT_CODE}
      * @param personType 人员类型：1 干部；2 专家（必填）
      */
     @GetMapping("/maturity-trainning-courses")

@@ -1,5 +1,6 @@
 package com.huawei.aitransform.service.impl;
 
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.entity.PositionAiMaturityCourseCompletionRateVO;
@@ -37,13 +38,16 @@ public class PositionAiMaturityTrainingStatsServiceImpl implements PositionAiMat
         if (deptId == null || deptId.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(deptId.trim());
+        String resolvedDeptId = "0".equals(deptId.trim())
+                ? DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE
+                : deptId.trim();
+        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(resolvedDeptId);
         if (dept == null || dept.getDeptLevel() == null || dept.getDeptLevel().trim().isEmpty()) {
             return Collections.emptyList();
         }
         String deptLevel = dept.getDeptLevel().trim();
         List<EmployeeTrainingInfoPO> rows =
-                employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptId.trim(), personType);
+                employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, resolvedDeptId, personType);
         if (rows == null || rows.isEmpty()) {
             return Collections.emptyList();
         }
