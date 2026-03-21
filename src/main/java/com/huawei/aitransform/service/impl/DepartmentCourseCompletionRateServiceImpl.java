@@ -140,11 +140,10 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         int baselineCount = list.size();
 
         String level4DeptCodeForTarget = resolveLevel4DeptCodeForTarget(dept, targetCourseDeptIdForLevel5);
-        List<CourseInfoByLevelVO> targetCourses = getTargetCoursesByFourthDept(level4DeptCodeForTarget);
-        Map<String, List<CourseInfoByLevelVO>> byLevel = targetCourses.stream().collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
-        int basicCourseCount = byLevel.getOrDefault("基础", Collections.emptyList()).size();
-        int advancedCourseCount = byLevel.getOrDefault("进阶", Collections.emptyList()).size();
-        int practicalCourseCount = byLevel.getOrDefault("实战", Collections.emptyList()).size();
+        TargetCourseCounts targetCounts = resolveTargetCourseCounts(level4DeptCodeForTarget);
+        int basicCourseCount = targetCounts.basicCourseCount;
+        int advancedCourseCount = targetCounts.advancedCourseCount;
+        int practicalCourseCount = targetCounts.practicalCourseCount;
 
         int basicTotalCompleted = 0;
         int advancedTotalCompleted = 0;
@@ -218,32 +217,86 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         return null;
     }
 
-    private List<CourseInfoByLevelVO> getTargetCoursesByFourthDept(String fourthDeptCode) {
-        boolean useAllCourses = true;
-        List<Integer> targetCourseIds = new ArrayList<>();
-        if (fourthDeptCode != null && !fourthDeptCode.trim().isEmpty()) {
-            DeptCourseSelection selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode);
-            if (selection != null && selection.getCourseSelections() != null && !selection.getCourseSelections().trim().isEmpty()) {
-                String[] parts = selection.getCourseSelections().split(",");
-                for (String s : parts) {
-                    s = s.trim();
-                    if (!s.isEmpty()) {
-                        try {
-                            targetCourseIds.add(Integer.parseInt(s));
-                        } catch (NumberFormatException ignored) {
-                        }
-                    }
-                }
-                if (!targetCourseIds.isEmpty()) {
-                    useAllCourses = false;
-                }
+    /**
+     * 目标课程数口径：
+     * <ul>
+     *   <li>无四级部门编码、或 dept_course_selections 无对应行：全量 {@code ai_course_planning_info}，按 course_level 统计 基础/进阶/实战。</li>
+     *   <li>有选课行：基础/进阶仅来自 {@code course_selections} 对应的 {@code ai_course_planning_info}（为空则二者为 0）；</li>
+     *   <li>实战不混在 course_selections 中：优先 {@code practical_target_courses_num}，否则为 {@code practical_selections} 中有效 ID 个数。</li>
+     * </ul>
+     */
+    private TargetCourseCounts resolveTargetCourseCounts(String fourthDeptCode) {
+        TargetCourseCounts out = new TargetCourseCounts();
+        if (fourthDeptCode == null || fourthDeptCode.trim().isEmpty()) {
+            fillTargetCourseCountsFromFullCatalog(out);
+            return out;
+        }
+        DeptCourseSelection selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode.trim());
+        if (selection == null) {
+            fillTargetCourseCountsFromFullCatalog(out);
+            return out;
+        }
+        List<Integer> planningIds = parseCommaSeparatedIntegerIds(selection.getCourseSelections());
+        if (!planningIds.isEmpty()) {
+            List<CourseInfoByLevelVO> courses = personalCourseCompletionMapper.getCourseInfoByLevelAndIds(planningIds);
+            Map<String, List<CourseInfoByLevelVO>> byLevel =
+                    courses.stream().collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
+            out.basicCourseCount = byLevel.getOrDefault("基础", Collections.emptyList()).size();
+            out.advancedCourseCount = byLevel.getOrDefault("进阶", Collections.emptyList()).size();
+        } else {
+            out.basicCourseCount = 0;
+            out.advancedCourseCount = 0;
+        }
+        out.practicalCourseCount = resolvePracticalTargetCount(selection);
+        return out;
+    }
+
+    private void fillTargetCourseCountsFromFullCatalog(TargetCourseCounts out) {
+        List<CourseInfoByLevelVO> all = personalCourseCompletionMapper.getCourseInfoByLevel();
+        Map<String, List<CourseInfoByLevelVO>> byLevel =
+                all.stream().collect(Collectors.groupingBy(CourseInfoByLevelVO::getCourseLevel));
+        out.basicCourseCount = byLevel.getOrDefault("基础", Collections.emptyList()).size();
+        out.advancedCourseCount = byLevel.getOrDefault("进阶", Collections.emptyList()).size();
+        out.practicalCourseCount = byLevel.getOrDefault("实战", Collections.emptyList()).size();
+    }
+
+    /**
+     * 实战目标课程数：优先部门表 {@code practical_target_courses_num}；未配置时按 {@code practical_selections} 中有效 ID 个数。
+     */
+    private static int resolvePracticalTargetCount(DeptCourseSelection selection) {
+        if (selection.getPracticalTargetCoursesNum() != null) {
+            return Math.max(0, selection.getPracticalTargetCoursesNum());
+        }
+        return countCommaSeparatedIntegerIds(selection.getPracticalSelections());
+    }
+
+    private static List<Integer> parseCommaSeparatedIntegerIds(String raw) {
+        List<Integer> ids = new ArrayList<>();
+        if (raw == null || raw.trim().isEmpty()) {
+            return ids;
+        }
+        for (String s : raw.split(",")) {
+            s = s.trim();
+            if (s.isEmpty()) {
+                continue;
+            }
+            try {
+                ids.add(Integer.parseInt(s));
+            } catch (NumberFormatException ignored) {
+                // skip invalid token
             }
         }
-        if (useAllCourses) {
-            return personalCourseCompletionMapper.getCourseInfoByLevel();
-        } else {
-            return personalCourseCompletionMapper.getCourseInfoByLevelAndIds(targetCourseIds);
-        }
+        return ids;
+    }
+
+    private static int countCommaSeparatedIntegerIds(String raw) {
+        return parseCommaSeparatedIntegerIds(raw).size();
+    }
+
+    private static final class TargetCourseCounts {
+        int basicCourseCount;
+        int advancedCourseCount;
+        int practicalCourseCount;
     }
 
     private static int countCompletedCourses(String commaSeparatedIds) {
