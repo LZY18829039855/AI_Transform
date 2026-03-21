@@ -1,5 +1,6 @@
 package com.huawei.aitransform.service.impl;
 
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
@@ -32,7 +33,11 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         if (deptId == null || deptId.trim().isEmpty()) {
             return Collections.emptyList();
         }
-        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(deptId.trim());
+        String resolvedDeptId = deptId.trim();
+        if ("0".equals(resolvedDeptId)) {
+            resolvedDeptId = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+        }
+        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(resolvedDeptId);
         if (dept == null) {
             return Collections.emptyList();
         }

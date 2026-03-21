@@ -108,7 +108,7 @@ public class PersonalCourseCompletionController {
 
     /**
      * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
-     * @param deptId    部门ID（部门编码）
+     * @param deptId    部门ID（部门编码）；传 0 时在服务层解析为云核心网二级部门编码
      * @param personType 人员类型：0 全员；1 干部；2 专家
      * @param aiMaturity 岗位 AI 成熟度（可选）：L1、L2、L3；与 personType 配合——干部按 cadre_position_ai_maturity 过滤，专家按 expert_position_ai_maturity 过滤
      * @return 该部门下每名员工的训战总览列表
