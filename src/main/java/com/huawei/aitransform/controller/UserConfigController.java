@@ -42,7 +42,7 @@ public class UserConfigController {
     }
 
     /**
-     * 验证用户是否为有效用户
+     * 验证用户是否为有效用户（工号取自 request 中的 account cookie；若首字符为英文字母，校验前会去掉该首字符）
      * @param request HTTP请求对象，用于获取cookie
      * @param accountCookie 从cookie中获取的工号（可选，如果cookie名称为account）
      * @return true表示是有效用户，false表示不是有效用户或不存在

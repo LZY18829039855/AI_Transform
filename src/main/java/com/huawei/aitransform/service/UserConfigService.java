@@ -52,16 +52,38 @@ public class UserConfigService {
     }
 
     /**
+     * 若工号首字符为英文字母（A-Z 或 a-z），则去掉该首字符，再用于库表匹配。
+     */
+    private static String normalizeAccountForLookup(String account) {
+        if (account == null) {
+            return null;
+        }
+        String trimmed = account.trim();
+        if (trimmed.isEmpty()) {
+            return trimmed;
+        }
+        char c = trimmed.charAt(0);
+        if ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z')) {
+            return trimmed.substring(1);
+        }
+        return trimmed;
+    }
+
+    /**
      * 验证指定工号是否为有效用户
-     * @param account 工号
+     * @param account 工号（若首字符为英文字母会先去掉再查询，与 cookie/request 中 account 约定一致）
      * @return true表示是有效用户，false表示不是有效用户或不存在
      */
     public boolean isValidUser(String account) {
         if (account == null || account.trim().isEmpty()) {
             return false;
         }
-        
-        UserConfigVO user = userConfigMapper.selectValidUserByAccount(account.trim());
+        String normalized = normalizeAccountForLookup(account);
+        if (normalized.isEmpty()) {
+            return false;
+        }
+
+        UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
         return user != null;
     }
 
