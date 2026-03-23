@@ -174,8 +174,10 @@ public class PersonalCourseCompletionService {
         if (raw == null || raw.trim().isEmpty()) {
             return Collections.emptySet();
         }
+        // 同时兼容中文逗号：避免 practical_selections 里是“，”导致解析为 0 个 ID
+        String normalized = raw.replace('，', ',');
         Set<Integer> ids = new HashSet<>();
-        for (String part : raw.split(",")) {
+        for (String part : normalized.split(",")) {
             String s = part.trim();
             if (s.isEmpty()) {
                 continue;
