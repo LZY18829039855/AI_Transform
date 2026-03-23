@@ -3,8 +3,10 @@ package com.huawei.aitransform.service;
 import com.huawei.aitransform.entity.CourseCategoryStatisticsVO;
 import com.huawei.aitransform.entity.CourseInfoByLevelVO;
 import com.huawei.aitransform.entity.CourseInfoVO;
+import com.huawei.aitransform.entity.DeptCourseSelection;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
+import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -37,6 +39,9 @@ public class PersonalCourseCompletionService {
 
     @Autowired
     private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
+
+    @Autowired
+    private CoursePlanningInfoMapper coursePlanningInfoMapper;
 
     /**
      * 查询个人课程完成情况
@@ -73,7 +78,11 @@ public class PersonalCourseCompletionService {
         targetNumByLevel.put(LEVEL_HIGH, 0);
         completedIdsByLevel.put(LEVEL_HIGH, Collections.emptySet());
 
-        // 3. 按固定顺序遍历级别，保证输出稳定
+        // 3. 按四级部门读取目标课程清单，用于单门课程 isTargetCourse 标识
+        String fourthDeptCode = personalCourseCompletionMapper.getFourthDeptCodeByEmployeeNumber(empNum);
+        TargetCourseIdSets targetCourseIdSets = resolveTargetCourseIdSetsByDept(fourthDeptCode);
+
+        // 4. 按固定顺序遍历级别，保证输出稳定
         List<CourseCategoryStatisticsVO> courseStatistics = new ArrayList<>();
         List<String> levelOrderList = new ArrayList<>();
         levelOrderList.add(LEVEL_BASIC);
@@ -103,12 +112,13 @@ public class PersonalCourseCompletionService {
             for (CourseInfoByLevelVO course : allCoursesInLevel) {
                 Integer id = course.getId();
                 boolean isCompleted = id != null && completedIdSet.contains(id);
+                boolean isTargetCourse = isCourseInTargetSet(courseLevel, id, targetCourseIdSets);
                 courseList.add(new CourseInfoVO(
                         course.getCourseName(),
                         course.getCourseNumber(),
                         isCompleted,
                         course.getBigType(),
-                        true,
+                        isTargetCourse,
                         course.getCourseLink()));
             }
 
@@ -136,7 +146,7 @@ public class PersonalCourseCompletionService {
 
         // 未在规划表出现、但排序表要求的级别（通常不会发生）：若需要可补空块，当前跳过
 
-        // 4. 员工姓名：优先训战表，否则员工同步表
+        // 5. 员工姓名：优先训战表，否则员工同步表
         String empName = "";
         if (training != null && training.getLastName() != null && !training.getLastName().trim().isEmpty()) {
             empName = training.getLastName().trim();
@@ -177,5 +187,43 @@ public class PersonalCourseCompletionService {
             }
         }
         return ids.isEmpty() ? Collections.emptySet() : ids;
+    }
+
+    private static boolean isCourseInTargetSet(String courseLevel, Integer courseId, TargetCourseIdSets targetCourseIdSets) {
+        if (courseId == null || targetCourseIdSets == null) {
+            return false;
+        }
+        if (LEVEL_PRACTICAL.equals(courseLevel)) {
+            return targetCourseIdSets.practicalTargetIds.contains(courseId)
+                    || targetCourseIdSets.baseAndAdvancedTargetIds.contains(courseId);
+        }
+        return targetCourseIdSets.baseAndAdvancedTargetIds.contains(courseId);
+    }
+
+    private TargetCourseIdSets resolveTargetCourseIdSetsByDept(String fourthDeptCode) {
+        if (fourthDeptCode == null || fourthDeptCode.trim().isEmpty()) {
+            return TargetCourseIdSets.empty();
+        }
+        DeptCourseSelection selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode.trim());
+        if (selection == null) {
+            return TargetCourseIdSets.empty();
+        }
+        Set<Integer> baseAndAdvancedTargetIds = parseCommaSeparatedCourseIds(selection.getCourseSelections());
+        Set<Integer> practicalTargetIds = parseCommaSeparatedCourseIds(selection.getPracticalSelections());
+        return new TargetCourseIdSets(baseAndAdvancedTargetIds, practicalTargetIds);
+    }
+
+    private static final class TargetCourseIdSets {
+        private final Set<Integer> baseAndAdvancedTargetIds;
+        private final Set<Integer> practicalTargetIds;
+
+        private TargetCourseIdSets(Set<Integer> baseAndAdvancedTargetIds, Set<Integer> practicalTargetIds) {
+            this.baseAndAdvancedTargetIds = baseAndAdvancedTargetIds;
+            this.practicalTargetIds = practicalTargetIds;
+        }
+
+        private static TargetCourseIdSets empty() {
+            return new TargetCourseIdSets(Collections.emptySet(), Collections.emptySet());
+        }
     }
 }
