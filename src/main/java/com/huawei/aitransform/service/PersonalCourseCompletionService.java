@@ -194,8 +194,7 @@ public class PersonalCourseCompletionService {
             return false;
         }
         if (LEVEL_PRACTICAL.equals(courseLevel)) {
-            return targetCourseIdSets.practicalTargetIds.contains(courseId)
-                    || targetCourseIdSets.baseAndAdvancedTargetIds.contains(courseId);
+            return targetCourseIdSets.practicalTargetIds.contains(courseId);
         }
         return targetCourseIdSets.baseAndAdvancedTargetIds.contains(courseId);
     }
