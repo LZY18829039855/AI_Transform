@@ -193,6 +193,10 @@ public class PersonalCourseCompletionService {
         if (courseId == null || targetCourseIdSets == null) {
             return false;
         }
+        // 未配置目标课程时：目标课默认等于全量课程
+        if (targetCourseIdSets.allCoursesTarget) {
+            return true;
+        }
         if (LEVEL_PRACTICAL.equals(courseLevel)) {
             return targetCourseIdSets.practicalTargetIds.contains(courseId);
         }
@@ -201,28 +205,36 @@ public class PersonalCourseCompletionService {
 
     private TargetCourseIdSets resolveTargetCourseIdSetsByDept(String fourthDeptCode) {
         if (fourthDeptCode == null || fourthDeptCode.trim().isEmpty()) {
-            return TargetCourseIdSets.empty();
+            return TargetCourseIdSets.all();
         }
         DeptCourseSelection selection = coursePlanningInfoMapper.getDeptSelectionByDeptCode(fourthDeptCode.trim());
         if (selection == null) {
-            return TargetCourseIdSets.empty();
+            return TargetCourseIdSets.all();
         }
         Set<Integer> baseAndAdvancedTargetIds = parseCommaSeparatedCourseIds(selection.getCourseSelections());
         Set<Integer> practicalTargetIds = parseCommaSeparatedCourseIds(selection.getPracticalSelections());
-        return new TargetCourseIdSets(baseAndAdvancedTargetIds, practicalTargetIds);
+
+        // 如果四级部门未配置目标课清单（两类选课字段均为空），则默认全量课程为目标课
+        if (baseAndAdvancedTargetIds.isEmpty() && practicalTargetIds.isEmpty()) {
+            return TargetCourseIdSets.all();
+        }
+
+        return new TargetCourseIdSets(baseAndAdvancedTargetIds, practicalTargetIds, false);
     }
 
     private static final class TargetCourseIdSets {
+        private final boolean allCoursesTarget;
         private final Set<Integer> baseAndAdvancedTargetIds;
         private final Set<Integer> practicalTargetIds;
 
-        private TargetCourseIdSets(Set<Integer> baseAndAdvancedTargetIds, Set<Integer> practicalTargetIds) {
+        private TargetCourseIdSets(Set<Integer> baseAndAdvancedTargetIds, Set<Integer> practicalTargetIds, boolean allCoursesTarget) {
+            this.allCoursesTarget = allCoursesTarget;
             this.baseAndAdvancedTargetIds = baseAndAdvancedTargetIds;
             this.practicalTargetIds = practicalTargetIds;
         }
 
-        private static TargetCourseIdSets empty() {
-            return new TargetCourseIdSets(Collections.emptySet(), Collections.emptySet());
+        private static TargetCourseIdSets all() {
+            return new TargetCourseIdSets(Collections.emptySet(), Collections.emptySet(), true);
         }
     }
 }
