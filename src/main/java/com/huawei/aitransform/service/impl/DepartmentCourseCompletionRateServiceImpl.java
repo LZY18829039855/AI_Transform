@@ -67,6 +67,7 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
     /**
      * 根据入参 deptId 解析待统计部门列表。
      * 当 deptId 为 0 或云核心网二级部门时，仅查询并返回白名单内的四级部门（按固定顺序），以节省接口时间。
+     * 其余情况优先返回下一级子部门；若无子部门（含六级叶子），则返回仅包含本部门的一条列表。
      */
     private List<DepartmentInfoVO> resolveDepartmentList(String deptId) {
         if ("0".equals(deptId) || DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE.equals(deptId)) {
@@ -82,22 +83,29 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
         if (level == null) {
             return Collections.emptyList();
         }
+        List<DepartmentInfoVO> children;
         switch (level) {
             case "1":
-                return departmentInfoMapper.getChildDepartments(deptId);
+                children = departmentInfoMapper.getChildDepartments(deptId);
+                break;
             case "2":
-                return departmentInfoMapper.getLevel4DepartmentsUnderLevel2(deptId);
+                children = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(deptId);
+                break;
             case "3":
-                return departmentInfoMapper.getChildDepartments(deptId);
             case "4":
-                return departmentInfoMapper.getChildDepartments(deptId);
             case "5":
-                return departmentInfoMapper.getChildDepartments(deptId);
+                children = departmentInfoMapper.getChildDepartments(deptId);
+                break;
             case "6":
-                return Collections.emptyList();
+                children = Collections.emptyList();
+                break;
             default:
                 return Collections.emptyList();
         }
+        if (children != null && !children.isEmpty()) {
+            return children;
+        }
+        return Collections.singletonList(inputDept);
     }
 
     /**
@@ -116,10 +124,15 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
     }
 
     /**
-     * 判断当前解析出的部门列表是否来自四级入参（此时子部门为五级，目标课程用入参四级）
+     * 判断是否为「四级父部门 + 下一级为五级子部门」场景（目标课程用入参四级）。
+     * 无子部门回退为五级本部门时，首行也是五级，但入参非四级，不得误判。
      */
     private boolean isLevel4Input(String deptId, List<DepartmentInfoVO> departmentList) {
         if (departmentList.isEmpty()) {
+            return false;
+        }
+        DepartmentInfoVO inputDept = departmentInfoMapper.getDepartmentByCode(deptId);
+        if (inputDept == null || !"4".equals(inputDept.getDeptLevel())) {
             return false;
         }
         DepartmentInfoVO first = departmentList.get(0);
