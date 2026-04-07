@@ -288,25 +288,21 @@ public class ExpertCertStatisticsService {
         List<DepartmentInfoVO> targetDepts;
         Integer currentLevel;
         String actualDeptCode;
+        boolean fallbackToSelf = false;
 
         // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
             // 查询云核心网产品线部门下的所有四级部门
             targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
             if (targetDepts == null || targetDepts.isEmpty()) {
-                // 如果没有四级部门，返回空统计
-                EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
-                response.setDepartmentStatistics(new ArrayList<>());
-                DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
-                total.setDeptCode("总计");
-                total.setDeptName("总计");
-                total.setTotalCount(0);
-                total.setCertifiedCount(0);
-                total.setQualifiedCount(0);
-                total.setCertRate(BigDecimal.ZERO);
-                total.setQualifiedRate(BigDecimal.ZERO);
-                response.setTotalStatistics(total);
-                return response;
+                // 下层部门为空时：退化为查本部门自身（云核心网产品线）
+                DepartmentInfoVO selfDept = departmentInfoMapper.getDepartmentByCode(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+                if (selfDept == null) {
+                    throw new IllegalArgumentException("部门不存在：" + DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+                }
+                targetDepts = new ArrayList<>();
+                targetDepts.add(selfDept);
+                fallbackToSelf = true;
             }
             // 查询四级部门的员工，云核心网产品线是二级部门，需要查询其下的四级部门
             currentLevel = 2; // 云核心网产品线是二级部门（虽然不会用到，但需要初始化）
@@ -321,19 +317,10 @@ public class ExpertCertStatisticsService {
             // 2. 查询下一层子部门列表
             targetDepts = departmentInfoMapper.getChildDepartments(deptCode);
             if (targetDepts == null || targetDepts.isEmpty()) {
-                // 如果没有子部门，返回空统计
-                EmployeeCertStatisticsResponseVO response = new EmployeeCertStatisticsResponseVO();
-                response.setDepartmentStatistics(new ArrayList<>());
-                DepartmentCertStatisticsVO total = new DepartmentCertStatisticsVO();
-                total.setDeptCode("总计");
-                total.setDeptName("总计");
-                total.setTotalCount(0);
-                total.setCertifiedCount(0);
-                total.setQualifiedCount(0);
-                total.setCertRate(BigDecimal.ZERO);
-                total.setQualifiedRate(BigDecimal.ZERO);
-                response.setTotalStatistics(total);
-                return response;
+                // 下层部门为空时：退化为查本部门自身
+                targetDepts = new ArrayList<>();
+                targetDepts.add(deptInfo);
+                fallbackToSelf = true;
             }
 
             // 3. 根据当前部门层级，确定查询的部门层级
@@ -343,7 +330,17 @@ public class ExpertCertStatisticsService {
 
         // 4. 批量查询所有子部门的统计数据（从 t_employee 表）
         List<DepartmentCertStatisticsVO> statisticsList;
-        if ("0".equals(deptCode)) {
+        if (fallbackToSelf) {
+            // 退化场景：直接查询本部门（包含其所有子部门；叶子部门时等同于本部门自身）
+            DepartmentCertStatisticsVO totalStat = employeeMapper.getTotalDeptStatisticsByLevel(currentLevel, actualDeptCode);
+            DepartmentCertStatisticsVO selfStat = new DepartmentCertStatisticsVO();
+            selfStat.setDeptCode(actualDeptCode);
+            selfStat.setTotalCount(totalStat != null && totalStat.getTotalCount() != null ? totalStat.getTotalCount() : 0);
+            selfStat.setCertifiedCount(totalStat != null && totalStat.getCertifiedCount() != null ? totalStat.getCertifiedCount() : 0);
+            selfStat.setQualifiedCount(totalStat != null && totalStat.getQualifiedCount() != null ? totalStat.getQualifiedCount() : 0);
+            statisticsList = new ArrayList<>();
+            statisticsList.add(selfStat);
+        } else if ("0".equals(deptCode)) {
             // 特殊处理：查询二级部门（云核心网产品线）下的四级部门
             statisticsList = employeeMapper.getLevel4DeptStatisticsUnderLevel2(actualDeptCode);
         } else {
@@ -417,7 +414,7 @@ public class ExpertCertStatisticsService {
         totalStatistics.setDeptCode("总计");
         totalStatistics.setDeptName("总计");
         
-        if ("0".equals(deptCode)) {
+        if ("0".equals(deptCode) && !fallbackToSelf) {
             // 当 deptCode="0" 时，总计直接统计整个表中的数据
             DepartmentCertStatisticsVO totalStat = employeeMapper.getTotalStatisticsForAllEmployees();
             if (totalStat != null) {
@@ -912,32 +909,25 @@ public class ExpertCertStatisticsService {
         Integer currentLevel;
         String actualDeptCode;
         DepartmentInfoVO deptInfo;
+        boolean fallbackToSelf = false;
 
         // 特殊处理：当 deptCode 为 "0" 时，查询云核心网产品线部门下的所有四级部门
         if ("0".equals(deptCode)) {
             // 查询云核心网产品线部门下的所有四级部门
             targetDepts = departmentInfoMapper.getLevel4DepartmentsUnderLevel2(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
             if (targetDepts == null || targetDepts.isEmpty()) {
-                // 如果没有四级部门，返回空统计
-                CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
-                response.setDeptCode(deptCode);
-                response.setDeptName("云核心网产品线");
-                response.setCategoryStatistics(new ArrayList<>());
-                CompetenceCategoryCertStatisticsVO total = new CompetenceCategoryCertStatisticsVO();
-                total.setCompetenceCategory("总计");
-                total.setTotalCount(0);
-                total.setCertifiedCount(0);
-                total.setQualifiedCount(0);
-                total.setCertRate(BigDecimal.ZERO);
-                total.setQualifiedRate(BigDecimal.ZERO);
-                response.setTotalStatistics(total);
-                return response;
+                // 子部门列表为空时：退化为查本部门自身（云核心网产品线）
+                targetDepts = new ArrayList<>();
+                fallbackToSelf = true;
             }
             currentLevel = 2; // 云核心网产品线是二级部门
             actualDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
             deptInfo = departmentInfoMapper.getDepartmentByCode(actualDeptCode);
             if (deptInfo == null) {
                 throw new IllegalArgumentException("部门不存在：" + actualDeptCode);
+            }
+            if (fallbackToSelf) {
+                targetDepts.add(deptInfo);
             }
         } else {
             // 1. 查询部门信息
@@ -949,20 +939,10 @@ public class ExpertCertStatisticsService {
             // 2. 查询下一层子部门列表
             targetDepts = departmentInfoMapper.getChildDepartments(deptCode);
             if (targetDepts == null || targetDepts.isEmpty()) {
-                // 如果没有子部门，返回空统计
-                CompetenceCategoryCertStatisticsResponseVO response = new CompetenceCategoryCertStatisticsResponseVO();
-                response.setDeptCode(deptCode);
-                response.setDeptName(deptInfo.getDeptName());
-                response.setCategoryStatistics(new ArrayList<>());
-                CompetenceCategoryCertStatisticsVO total = new CompetenceCategoryCertStatisticsVO();
-                total.setCompetenceCategory("总计");
-                total.setTotalCount(0);
-                total.setCertifiedCount(0);
-                total.setQualifiedCount(0);
-                total.setCertRate(BigDecimal.ZERO);
-                total.setQualifiedRate(BigDecimal.ZERO);
-                response.setTotalStatistics(total);
-                return response;
+                // 子部门列表为空时：退化为查本部门自身
+                targetDepts = new ArrayList<>();
+                targetDepts.add(deptInfo);
+                fallbackToSelf = true;
             }
 
             // 3. 根据当前部门层级，确定查询的部门层级
@@ -972,7 +952,10 @@ public class ExpertCertStatisticsService {
 
         // 4. 批量查询明细统计数据（下一层部门的统计数据）
         List<CompetenceCategoryDeptStatisticsVO> statisticsList;
-        if ("0".equals(deptCode)) {
+        if (fallbackToSelf) {
+            // 退化场景：按本部门维度统计职位类
+            statisticsList = employeeMapper.getCompetenceCategoryStatisticsForDept(currentLevel, actualDeptCode);
+        } else if ("0".equals(deptCode)) {
             // 特殊处理：查询二级部门（云核心网产品线）下的四级部门
             statisticsList = employeeMapper.getLevel4CompetenceCategoryStatisticsUnderLevel2(actualDeptCode);
         } else {
@@ -1048,7 +1031,7 @@ public class ExpertCertStatisticsService {
 
         // 7. 查询总计数据
         DepartmentCertStatisticsVO totalStat;
-        if ("0".equals(deptCode)) {
+        if ("0".equals(deptCode) && !fallbackToSelf) {
             // 当 deptCode="0" 时，总计直接统计整个表中的数据
             totalStat = employeeMapper.getTotalCompetenceCategoryStatisticsForAllEmployees();
         } else {

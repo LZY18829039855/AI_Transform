@@ -212,6 +212,18 @@ public interface EmployeeMapper {
             @Param("deptCode") String deptCode);
 
     /**
+     * 按职位类统计当前部门自身的统计数据（从 t_employee 表）
+     * 用于在“无子部门”场景下退化为查询本部门自身的统计。
+     *
+     * @param currentLevel 当前部门层级（1-6）
+     * @param deptCode 当前部门编码
+     * @return 职位类统计列表，每个元素包含：competenceCategory（职位类）、totalCount、certifiedCount、qualifiedCount
+     */
+    List<CompetenceCategoryDeptStatisticsVO> getCompetenceCategoryStatisticsForDept(
+            @Param("currentLevel") Integer currentLevel,
+            @Param("deptCode") String deptCode);
+
+    /**
      * 查询总计数据（统计当前部门及其所有子部门的人员）
      * @param currentLevel 当前部门层级（1-6）
      * @param deptCode 当前部门编码
