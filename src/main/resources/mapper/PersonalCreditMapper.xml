@@ -1,0 +1,446 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.huawei.aitransform.mapper.PersonalCreditMapper">
+
+    <resultMap id="BaseResultMap" type="com.huawei.aitransform.entity.PersonalCredit">
+        <id column="id" property="id" jdbcType="BIGINT"/>
+        <result column="employee_number" property="employeeNumber" jdbcType="VARCHAR"/>
+        <result column="last_name" property="lastName" jdbcType="VARCHAR"/>
+        <result column="lowest_dept_number" property="lowestDeptNumber" jdbcType="VARCHAR"/>
+        <result column="lowest_dept" property="lowestDept" jdbcType="VARCHAR"/>
+        <result column="l0_department_code" property="l0DepartmentCode" jdbcType="VARCHAR"/>
+        <result column="l0_department_cn_name" property="l0DepartmentCnName" jdbcType="VARCHAR"/>
+        <result column="firstdeptcode" property="firstdeptcode" jdbcType="VARCHAR"/>
+        <result column="firstdept" property="firstdept" jdbcType="VARCHAR"/>
+        <result column="seconddeptcode" property="seconddeptcode" jdbcType="VARCHAR"/>
+        <result column="seconddept" property="seconddept" jdbcType="VARCHAR"/>
+        <result column="thirddeptcode" property="thirddeptcode" jdbcType="VARCHAR"/>
+        <result column="thirddept" property="thirddept" jdbcType="VARCHAR"/>
+        <result column="fourthdeptcode" property="fourthdeptcode" jdbcType="VARCHAR"/>
+        <result column="fourthdept" property="fourthdept" jdbcType="VARCHAR"/>
+        <result column="fifthdeptcode" property="fifthdeptcode" jdbcType="VARCHAR"/>
+        <result column="fifthdept" property="fifthdept" jdbcType="VARCHAR"/>
+        <result column="sixthdeptcode" property="sixthdeptcode" jdbcType="VARCHAR"/>
+        <result column="sixthdept" property="sixthdept" jdbcType="VARCHAR"/>
+        <result column="job_family" property="jobFamily" jdbcType="VARCHAR"/>
+        <result column="job_category" property="jobCategory" jdbcType="VARCHAR"/>
+        <result column="job_subcategory" property="jobSubcategory" jdbcType="VARCHAR"/>
+        <result column="target_credit" property="targetCredit" jdbcType="DECIMAL"/>
+        <result column="current_credit" property="currentCredit" jdbcType="DECIMAL"/>
+        <result column="personal_credit_completion_rate" property="personalCreditCompletionRate" jdbcType="DECIMAL"/>
+        <result column="dept_benchmark_completion_rate" property="deptBenchmarkCompletionRate" jdbcType="DECIMAL"/>
+        <result column="credit_completion_date" property="creditCompletionDate" jdbcType="TIMESTAMP"/>
+        <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
+        <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, employee_number, last_name, lowest_dept_number, lowest_dept,
+        l0_department_code, l0_department_cn_name, firstdeptcode, firstdept,
+        seconddeptcode, seconddept, thirddeptcode, thirddept, fourthdeptcode, fourthdept,
+        fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
+        job_family, job_category, job_subcategory,
+        target_credit, current_credit, personal_credit_completion_rate,
+        dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+    </sql>
+
+    <select id="getByEmployeeNumber" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM t_personal_credit
+        WHERE employee_number = #{employeeNumber}
+    </select>
+
+    <select id="getByEmployeeNumbers" resultMap="BaseResultMap">
+        SELECT
+        <include refid="Base_Column_List" />
+        FROM t_personal_credit
+        WHERE employee_number IN
+        <foreach collection="employeeNumbers" item="item" open="(" separator="," close=")">
+            #{item}
+        </foreach>
+    </select>
+
+    <insert id="insertOrUpdate" parameterType="com.huawei.aitransform.entity.PersonalCredit">
+        INSERT INTO t_personal_credit (
+            employee_number, last_name, lowest_dept_number, lowest_dept,
+            l0_department_code, l0_department_cn_name, firstdeptcode, firstdept,
+            seconddeptcode, seconddept, thirddeptcode, thirddept, fourthdeptcode, fourthdept,
+            fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
+            job_family, job_category, job_subcategory,
+            target_credit, current_credit, personal_credit_completion_rate,
+            dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+        ) VALUES (
+                     #{employeeNumber}, #{lastName}, #{lowestDeptNumber}, #{lowestDept},
+                     #{l0DepartmentCode}, #{l0DepartmentCnName}, #{firstdeptcode}, #{firstdept},
+                     #{seconddeptcode}, #{seconddept}, #{thirddeptcode}, #{thirddept}, #{fourthdeptcode}, #{fourthdept},
+                     #{fifthdeptcode}, #{fifthdept}, #{sixthdeptcode}, #{sixthdept},
+                     #{jobFamily}, #{jobCategory}, #{jobSubcategory},
+                     #{targetCredit}, #{currentCredit}, #{personalCreditCompletionRate},
+                     #{deptBenchmarkCompletionRate}, #{creditCompletionDate}, NOW(), NOW()
+                 )
+            ON DUPLICATE KEY UPDATE
+                                 last_name = VALUES(last_name),
+                                 lowest_dept_number = VALUES(lowest_dept_number),
+                                 lowest_dept = VALUES(lowest_dept),
+                                 l0_department_code = VALUES(l0_department_code),
+                                 l0_department_cn_name = VALUES(l0_department_cn_name),
+                                 firstdeptcode = VALUES(firstdeptcode),
+                                 firstdept = VALUES(firstdept),
+                                 seconddeptcode = VALUES(seconddeptcode),
+                                 seconddept = VALUES(seconddept),
+                                 thirddeptcode = VALUES(thirddeptcode),
+                                 thirddept = VALUES(thirddept),
+                                 fourthdeptcode = VALUES(fourthdeptcode),
+                                 fourthdept = VALUES(fourthdept),
+                                 fifthdeptcode = VALUES(fifthdeptcode),
+                                 fifthdept = VALUES(fifthdept),
+                                 sixthdeptcode = VALUES(sixthdeptcode),
+                                 sixthdept = VALUES(sixthdept),
+                                 job_family = VALUES(job_family),
+                                 job_category = VALUES(job_category),
+                                 job_subcategory = VALUES(job_subcategory),
+                                 target_credit = VALUES(target_credit),
+                                 current_credit = VALUES(current_credit),
+                                 personal_credit_completion_rate = VALUES(personal_credit_completion_rate),
+                                 dept_benchmark_completion_rate = VALUES(dept_benchmark_completion_rate),
+                                 credit_completion_date = IF(VALUES(credit_completion_date) IS NOT NULL, VALUES(credit_completion_date), credit_completion_date),
+                                 update_time = NOW()
+    </insert>
+
+    <insert id="batchInsertOrUpdate" parameterType="java.util.List">
+        INSERT INTO t_personal_credit (
+        employee_number, last_name, lowest_dept_number, lowest_dept,
+        l0_department_code, l0_department_cn_name, firstdeptcode, firstdept,
+        seconddeptcode, seconddept, thirddeptcode, thirddept, fourthdeptcode, fourthdept,
+        fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
+        job_family, job_category, job_subcategory,
+        target_credit, current_credit, personal_credit_completion_rate,
+        dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+        ) VALUES
+        <foreach collection="list" item="item" separator=",">
+            (
+            #{item.employeeNumber}, #{item.lastName}, #{item.lowestDeptNumber}, #{item.lowestDept},
+            #{item.l0DepartmentCode}, #{item.l0DepartmentCnName}, #{item.firstdeptcode}, #{item.firstdept},
+            #{item.seconddeptcode}, #{item.seconddept}, #{item.thirddeptcode}, #{item.thirddept},
+            #{item.fourthdeptcode}, #{item.fourthdept}, #{item.fifthdeptcode}, #{item.fifthdept},
+            #{item.sixthdeptcode}, #{item.sixthdept},
+            #{item.jobFamily}, #{item.jobCategory}, #{item.jobSubcategory},
+            #{item.targetCredit}, #{item.currentCredit}, #{item.personalCreditCompletionRate},
+            #{item.deptBenchmarkCompletionRate}, #{item.creditCompletionDate}, NOW(), NOW()
+            )
+        </foreach>
+        ON DUPLICATE KEY UPDATE
+        last_name = VALUES(last_name),
+        lowest_dept_number = VALUES(lowest_dept_number),
+        lowest_dept = VALUES(lowest_dept),
+        l0_department_code = VALUES(l0_department_code),
+        l0_department_cn_name = VALUES(l0_department_cn_name),
+        firstdeptcode = VALUES(firstdeptcode),
+        firstdept = VALUES(firstdept),
+        seconddeptcode = VALUES(seconddeptcode),
+        seconddept = VALUES(seconddept),
+        thirddeptcode = VALUES(thirddeptcode),
+        thirddept = VALUES(thirddept),
+        fourthdeptcode = VALUES(fourthdeptcode),
+        fourthdept = VALUES(fourthdept),
+        fifthdeptcode = VALUES(fifthdeptcode),
+        fifthdept = VALUES(fifthdept),
+        sixthdeptcode = VALUES(sixthdeptcode),
+        sixthdept = VALUES(sixthdept),
+        job_family = VALUES(job_family),
+        job_category = VALUES(job_category),
+        job_subcategory = VALUES(job_subcategory),
+        target_credit = VALUES(target_credit),
+        current_credit = VALUES(current_credit),
+        personal_credit_completion_rate = VALUES(personal_credit_completion_rate),
+        dept_benchmark_completion_rate = VALUES(dept_benchmark_completion_rate),
+        credit_completion_date = IF(VALUES(credit_completion_date) IS NOT NULL, VALUES(credit_completion_date), credit_completion_date),
+        update_time = NOW()
+    </insert>
+
+    <update id="updateBenchmarkRateByDept">
+        UPDATE t_personal_credit
+        SET dept_benchmark_completion_rate = #{benchmarkRate},
+            update_time = NOW()
+        WHERE lowest_dept_number = #{lowestDeptNumber}
+    </update>
+
+    <select id="getMaxCompletionRateByDept" resultType="java.math.BigDecimal">
+        SELECT MAX(personal_credit_completion_rate)
+        FROM t_personal_credit
+        WHERE lowest_dept_number = #{lowestDeptNumber}
+    </select>
+
+    <select id="getAllLowestDeptNumbers" resultType="java.lang.String">
+        SELECT DISTINCT lowest_dept_number
+        FROM t_personal_credit
+        WHERE lowest_dept_number IS NOT NULL AND lowest_dept_number != ''
+    </select>
+
+    <select id="getPositionStatistics" resultType="com.huawei.aitransform.entity.CreditOverviewVO">
+        SELECT 
+            job_category as categoryName,
+            job_category as categoryCode,
+            COUNT(*) as baselineHeadcount,
+            MAX(current_credit) as maxScore,
+            MIN(current_credit) as minScore,
+            ROUND(AVG(current_credit), 2) as averageCurrentCredit,
+            ROUND(AVG(target_credit), 2) as averageTargetCredit,
+            SUM(CASE WHEN current_credit >= target_credit THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as achievementRate
+        FROM t_personal_credit
+        WHERE job_category IS NOT NULL AND job_category != ''
+        <if test="deptCode != null and deptCode != ''">
+            AND (
+            l0_department_code = #{deptCode} OR
+            firstdeptcode = #{deptCode} OR
+            seconddeptcode = #{deptCode} OR
+            thirddeptcode = #{deptCode} OR
+            fourthdeptcode = #{deptCode} OR
+            fifthdeptcode = #{deptCode} OR
+            sixthdeptcode = #{deptCode}
+            )
+        </if>
+        <if test="role != null and role != ''">
+            <choose>
+                <when test="role == '1'">
+                    AND job_category LIKE '%干部%'
+                </when>
+                <when test="role == '2'">
+                    AND job_category LIKE '%专家%'
+                </when>
+                <when test="role == '3'">
+                    AND job_category LIKE '%主管%'
+                </when>
+            </choose>
+        </if>
+        GROUP BY job_category
+    </select>
+
+    <select id="getDepartmentStatistics" resultType="com.huawei.aitransform.entity.CreditOverviewVO">
+        SELECT 
+            ${level} as categoryName,
+            ${levelCode} as categoryCode,
+            COUNT(*) as baselineHeadcount,
+            MAX(current_credit) as maxScore,
+            MIN(current_credit) as minScore,
+            ROUND(AVG(current_credit), 2) as averageCurrentCredit,
+            ROUND(AVG(target_credit), 2) as averageTargetCredit,
+            SUM(CASE WHEN current_credit >= target_credit THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as achievementRate
+        FROM t_personal_credit
+        WHERE ${level} IS NOT NULL AND ${level} != ''
+        <if test="deptCode != null and deptCode != ''">
+            AND (
+            l0_department_code = #{deptCode} OR
+            firstdeptcode = #{deptCode} OR
+            seconddeptcode = #{deptCode} OR
+            thirddeptcode = #{deptCode} OR
+            fourthdeptcode = #{deptCode} OR
+            fifthdeptcode = #{deptCode} OR
+            sixthdeptcode = #{deptCode}
+            )
+        </if>
+        <if test="role != null and role != ''">
+            <choose>
+                <when test="role == '1'">
+                    AND job_category LIKE '%干部%'
+                </when>
+                <when test="role == '2'">
+                    AND job_category LIKE '%专家%'
+                </when>
+                <when test="role == '3'">
+                    AND job_category LIKE '%主管%'
+                </when>
+            </choose>
+        </if>
+        GROUP BY ${level}, ${levelCode}
+    </select>
+
+    <select id="getTotalStatistics" resultType="com.huawei.aitransform.entity.CreditOverviewVO">
+        SELECT
+        '总计' as categoryName,
+        COUNT(*) as baselineHeadcount,
+        MAX(current_credit) as maxScore,
+        MIN(current_credit) as minScore,
+        ROUND(AVG(current_credit), 2) as averageCurrentCredit,
+        ROUND(AVG(target_credit), 2) as averageTargetCredit,
+        SUM(CASE WHEN current_credit >= target_credit THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as achievementRate
+        FROM t_personal_credit
+        WHERE 1=1
+        <if test="deptCode != null and deptCode != ''">
+            AND (
+            l0_department_code = #{deptCode} OR
+            firstdeptcode = #{deptCode} OR
+            seconddeptcode = #{deptCode} OR
+            thirddeptcode = #{deptCode} OR
+            fourthdeptcode = #{deptCode} OR
+            fifthdeptcode = #{deptCode} OR
+            sixthdeptcode = #{deptCode}
+            )
+        </if>
+        <if test="role != null and role != ''">
+            <choose>
+                <when test="role == '1'">
+                    AND job_category LIKE '%干部%'
+                </when>
+                <when test="role == '2'">
+                    AND job_category LIKE '%专家%'
+                </when>
+                <when test="role == '3'">
+                    AND job_category LIKE '%主管%'
+                </when>
+            </choose>
+        </if>
+    </select>
+
+    <select id="countByDeptCodeColumn" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_personal_credit
+        WHERE ${columnName} = #{deptCode}
+    </select>
+
+    <delete id="deleteNotInEmployeeNumbers" parameterType="java.util.List">
+        DELETE FROM t_personal_credit
+        WHERE employee_number NOT IN
+        <foreach collection="list" item="employeeNumber" open="(" separator="," close=")">
+            #{employeeNumber}
+        </foreach>
+    </delete>
+
+    <!-- 公共 WHERE 条件片段，detail 查询和 count 查询复用 -->
+    <sql id="creditDetailWhere">
+        WHERE 1=1
+        <!-- 部门过滤：根据 deptLevel 匹配对应层级的 code 列 -->
+        <if test="deptCode != null and deptCode != '' and deptCode != '0'">
+            <choose>
+                <when test="deptLevel == 1">AND firstdeptcode  = #{deptCode}</when>
+                <when test="deptLevel == 2">AND seconddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 3">AND thirddeptcode  = #{deptCode}</when>
+                <when test="deptLevel == 4">AND fourthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 5">AND fifthdeptcode  = #{deptCode}</when>
+                <when test="deptLevel == 6">AND sixthdeptcode  = #{deptCode}</when>
+                <!-- deptLevel=0 或未传：模糊匹配所有层级 -->
+                <otherwise>
+                    AND (
+                    l0_department_code = #{deptCode} OR
+                    firstdeptcode      = #{deptCode} OR
+                    seconddeptcode     = #{deptCode} OR
+                    thirddeptcode      = #{deptCode} OR
+                    fourthdeptcode     = #{deptCode} OR
+                    fifthdeptcode      = #{deptCode} OR
+                    sixthdeptcode      = #{deptCode}
+                    )
+                </otherwise>
+            </choose>
+        </if>
+        <!-- 角色过滤 -->
+        <if test="roleType != null">
+            <choose>
+                <when test="roleType == 1">
+                    AND cadre_position_ai_maturity IS NOT NULL AND cadre_position_ai_maturity != ''
+                </when>
+                <when test="roleType == 2">
+                    AND expert_position_ai_maturity IS NOT NULL AND expert_position_ai_maturity != ''
+                </when>
+            </choose>
+        </if>
+        <!-- 职位类过滤（职位学分总览下钻时传入） -->
+        <if test="jobCategory != null and jobCategory != ''">
+            AND job_category = #{jobCategory}
+        </if>
+    </sql>
+
+    <select id="getSchoolCreditDetailList" resultType="com.huawei.aitransform.entity.SchoolCreditDetailVO">
+        SELECT
+        id,
+        last_name                        AS name,
+        employee_number                  AS employeeId,
+        job_family                       AS jobFamily,
+        job_category                     AS jobCategory,
+        job_subcategory                  AS jobSubCategory,
+        firstdept                        AS departmentLevel1,
+        seconddept                       AS departmentLevel2,
+        thirddept                        AS departmentLevel3,
+        fourthdept                       AS departmentLevel4,
+        fifthdept                        AS departmentLevel5,
+        sixthdept                        AS departmentLevel6,
+        CONCAT(lowest_dept, '/', lowest_dept_number) AS minDepartment,
+        CASE WHEN cadre_position_ai_maturity  IS NOT NULL AND cadre_position_ai_maturity  != '' THEN 1 ELSE 0 END AS isCadre,
+        CASE WHEN expert_position_ai_maturity IS NOT NULL AND expert_position_ai_maturity != '' THEN 1 ELSE 0 END AS isExpert,
+        cadre_position_ai_maturity       AS positionMaturity,
+        current_credit                   AS currentCredits,
+        personal_credit_completion_rate  AS completionRate,
+        dept_benchmark_completion_rate   AS benchmarkRate,
+        DATE_FORMAT(credit_completion_date, '%Y-%m-%d') AS completionDate
+        FROM t_personal_credit
+        <include refid="creditDetailWhere"/>
+        ORDER BY personal_credit_completion_rate ASC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
+    <select id="countSchoolCreditDetail" resultType="java.lang.Long">
+        SELECT COUNT(*)
+        FROM t_personal_credit
+        <include refid="creditDetailWhere"/>
+    </select>
+    <select id="getExpertRoleSummary" resultType="com.huawei.aitransform.entity.SchoolRoleSummaryVO">
+        SELECT
+        expert_position_ai_maturity                                                     AS maturityLevel,
+        COUNT(*)                                                                        AS baseline,
+        MAX(current_credit)                                                             AS maxCredits,
+        MIN(current_credit)                                                             AS minCredits,
+        ROUND(AVG(current_credit), 2)                                                   AS averageCredits,
+        ROUND(AVG(target_credit), 2)                                                    AS targetCredits,
+        ROUND(
+        SUM(CASE WHEN current_credit >= target_credit THEN 1 ELSE 0 END)
+        * 100.0 / COUNT(*), 2
+        )                                                                               AS completionRate
+        FROM t_personal_credit
+        WHERE expert_position_ai_maturity IS NOT NULL
+        AND expert_position_ai_maturity != ''
+        <if test="deptCode != null and deptCode != ''">
+            AND (
+            l0_department_code = #{deptCode} OR
+            firstdeptcode      = #{deptCode} OR
+            seconddeptcode     = #{deptCode} OR
+            thirddeptcode      = #{deptCode} OR
+            fourthdeptcode     = #{deptCode} OR
+            fifthdeptcode      = #{deptCode} OR
+            sixthdeptcode      = #{deptCode}
+            )
+        </if>
+        GROUP BY expert_position_ai_maturity
+        ORDER BY expert_position_ai_maturity
+    </select>
+
+    <!-- 干部学分总览：cadre_position_ai_maturity 有值即为干部 -->
+    <select id="getCadreRoleSummary" resultType="com.huawei.aitransform.entity.SchoolRoleSummaryVO">
+        SELECT
+        cadre_position_ai_maturity                                                      AS maturityLevel,
+        COUNT(*)                                                                        AS baseline,
+        MAX(current_credit)                                                             AS maxCredits,
+        MIN(current_credit)                                                             AS minCredits,
+        ROUND(AVG(current_credit), 2)                                                   AS averageCredits,
+        ROUND(AVG(target_credit), 2)                                                    AS targetCredits,
+        ROUND(
+        SUM(CASE WHEN current_credit >= target_credit THEN 1 ELSE 0 END)
+        * 100.0 / COUNT(*), 2
+        )                                                                               AS completionRate
+        FROM t_personal_credit
+        WHERE cadre_position_ai_maturity IS NOT NULL
+        AND cadre_position_ai_maturity != ''
+        <if test="deptCode != null and deptCode != ''">
+            AND (
+            l0_department_code = #{deptCode} OR
+            firstdeptcode      = #{deptCode} OR
+            seconddeptcode     = #{deptCode} OR
+            thirddeptcode      = #{deptCode} OR
+            fourthdeptcode     = #{deptCode} OR
+            fifthdeptcode      = #{deptCode} OR
+            sixthdeptcode      = #{deptCode}
+            )
+        </if>
+        GROUP BY cadre_position_ai_maturity
+        ORDER BY cadre_position_ai_maturity
+    </select>
+</mapper>
