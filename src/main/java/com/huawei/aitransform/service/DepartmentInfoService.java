@@ -24,5 +24,14 @@ public class DepartmentInfoService {
     public List<DepartmentInfoVO> getChildDepartments(String deptId) {
         return departmentInfoMapper.getChildDepartments(deptId);
     }
+
+    /**
+     * 根据部门编码查询部门信息
+     * @param deptCode 部门编码
+     * @return 部门信息
+     */
+    public DepartmentInfoVO getDepartmentInfo(String deptCode) {
+        return departmentInfoMapper.getDepartmentByCode(deptCode);
+    }
 }
 
