@@ -5,6 +5,7 @@ import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
 
 import java.util.List;
+import java.util.Set;
 
 /**
  * 个人课程完成情况Mapper接口
@@ -60,5 +61,16 @@ public interface PersonalCourseCompletionMapper {
      * @return 员工列表
      */
     List<com.huawei.aitransform.entity.EmployeeSyncDataVO> getEmployeesByPeriodId(@Param("periodId") Integer periodId);
+
+    /**
+     * 根据周期ID与工号集合查询员工列表（用于增量刷新个人学分）
+     *
+     * @param periodId 周期ID
+     * @param employeeNumbers 工号集合（不带首字母），非空
+     * @return 员工列表
+     */
+    List<com.huawei.aitransform.entity.EmployeeSyncDataVO> getEmployeesByPeriodIdAndEmployeeNumbers(
+            @Param("periodId") Integer periodId,
+            @Param("employeeNumbers") Set<String> employeeNumbers);
 }
 

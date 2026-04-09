@@ -116,5 +116,39 @@
         WHERE e.period_id = #{periodId}
     </select>
 
+    <!-- 根据周期ID与工号集合查询员工列表（增量刷新个人学分用） -->
+    <select id="getEmployeesByPeriodIdAndEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
+        SELECT
+            e.employee_number AS employeeNumber,
+            e.last_name AS lastName,
+            e.lowest_dept_number AS lowestDeptNumber,
+            e.lowest_dept AS lowestDept,
+            e.l0_department_code AS l0DepartmentCode,
+            e.l0_department_cn_name AS l0DepartmentCnName,
+            e.firstdeptcode AS firstdeptcode,
+            e.firstdept AS firstdept,
+            e.seconddeptcode AS seconddeptcode,
+            e.seconddept AS seconddept,
+            e.thirddeptcode AS thirddeptcode,
+            e.thirddept AS thirddept,
+            e.fourthdeptcode AS fourthdeptcode,
+            e.fourthdept AS fourthdept,
+            e.fifthdeptcode AS fifthdeptcode,
+            e.fifthdept AS fifthdept,
+            e.sixthdeptcode AS sixthdeptcode,
+            e.sixthdept AS sixthdept,
+            e.job_category AS jobCategory,
+            c.position_ai_maturity AS cadrePositionAiMaturity,
+            ex.position_ai_maturity AS expertPositionAiMaturity
+        FROM t_employee_sync e
+        LEFT JOIN t_cadre c ON e.employee_number = c.account
+        LEFT JOIN t_expert ex ON e.employee_number = ex.account
+        WHERE e.period_id = #{periodId}
+          AND e.employee_number IN
+        <foreach collection="employeeNumbers" item="n" open="(" separator="," close=")">
+            #{n}
+        </foreach>
+    </select>
+
 </mapper>
 

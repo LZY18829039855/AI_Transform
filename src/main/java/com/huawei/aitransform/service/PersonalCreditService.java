@@ -205,6 +205,143 @@ public class PersonalCreditService {
         logger.info("Finished syncing personal credits for {} employees.", employees.size());
     }
 
+    /**
+     * 增量同步：仅重算并更新指定工号的个人学分，并刷新相关部门标杆。
+     * <p>
+     * 规则：基于 t_employee_sync 最新周期（period_id=MAX），查询指定工号的人员信息；
+     * 若任一工号在最新周期不存在，则抛异常并回滚外层事务。
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public void syncPersonalCreditsForEmployees(Set<String> employeeNumbers) {
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return;
+        }
+        Set<String> empNums = employeeNumbers.stream()
+                .filter(Objects::nonNull)
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toCollection(LinkedHashSet::new));
+        if (empNums.isEmpty()) {
+            return;
+        }
+
+        Integer latestPeriodId = personalCourseCompletionMapper.getLatestPeriodId();
+        if (latestPeriodId == null) {
+            throw new IllegalStateException("未找到最新周期（t_employee_sync.period_id），无法刷新个人学分");
+        }
+
+        List<EmployeeSyncDataVO> employees =
+                personalCourseCompletionMapper.getEmployeesByPeriodIdAndEmployeeNumbers(latestPeriodId, empNums);
+        Map<String, EmployeeSyncDataVO> employeeMap = new HashMap<>();
+        if (employees != null) {
+            for (EmployeeSyncDataVO e : employees) {
+                if (e != null && e.getEmployeeNumber() != null) {
+                    employeeMap.put(e.getEmployeeNumber(), e);
+                }
+            }
+        }
+        List<String> missing = empNums.stream()
+                .filter(n -> !employeeMap.containsKey(n))
+                .collect(Collectors.toList());
+        if (!missing.isEmpty()) {
+            throw new IllegalArgumentException("以下工号在最新周期人员信息中不存在，无法刷新个人学分：" + String.join("、", missing));
+        }
+
+        // 预加载课程信息与部门选课信息（与全量同步保持一致）
+        List<CoursePlanningInfoVO> allCoursesRaw = coursePlanningInfoMapper.getAllCoursePlanningInfo();
+        List<CoursePlanningInfoVO> allCourses = allCoursesRaw.stream()
+                .filter(c -> c.getCourseLevel() != null && c.getCourseName() != null && c.getCourseNumber() != null)
+                .collect(Collectors.toList());
+
+        Map<Integer, BigDecimal> courseCreditMap = new HashMap<>();
+        Map<String, BigDecimal> courseNumberCreditMap = new HashMap<>();
+        for (CoursePlanningInfoVO course : allCourses) {
+            BigDecimal credit = BigDecimal.ZERO;
+            try {
+                if (course.getCredit() != null && !course.getCredit().isEmpty()) {
+                    credit = new BigDecimal(course.getCredit());
+                }
+            } catch (Exception e) {
+                logger.warn("Invalid credit format for course {}: {}", course.getId(), course.getCredit());
+            }
+            if (course.getId() != null) {
+                courseCreditMap.put(course.getId(), credit);
+            }
+            if (course.getCourseNumber() != null) {
+                courseNumberCreditMap.put(course.getCourseNumber(), credit);
+            }
+        }
+
+        List<DeptCourseSelection> allDeptSelections = coursePlanningInfoMapper.getAllDeptSelections();
+        Map<String, List<Integer>> deptSelectionMap = new HashMap<>();
+        for (DeptCourseSelection selection : allDeptSelections) {
+            List<Integer> courseIds = new ArrayList<>();
+            if (selection.getCourseSelections() != null && !selection.getCourseSelections().trim().isEmpty()) {
+                String[] ids = selection.getCourseSelections().split(",");
+                for (String idStr : ids) {
+                    try {
+                        courseIds.add(Integer.parseInt(idStr.trim()));
+                    } catch (NumberFormatException ignore) {
+                    }
+                }
+            }
+            deptSelectionMap.put(selection.getDeptCode(), courseIds);
+        }
+
+        // 手工录入学分汇总（employee_number -> SUM(credits)）
+        Map<String, BigDecimal> manualCreditSumMap = new HashMap<>();
+        List<String> empList = new ArrayList<>(empNums);
+        List<ManualCreditSumRow> manualRows = manualEnterCreditMapper.sumCreditsByEmployeeNumbers(empList);
+        if (manualRows != null) {
+            for (ManualCreditSumRow row : manualRows) {
+                if (row == null || row.getEmployeeNumber() == null) {
+                    continue;
+                }
+                manualCreditSumMap.put(row.getEmployeeNumber(),
+                        row.getTotalCredits() != null ? row.getTotalCredits() : BigDecimal.ZERO);
+            }
+        }
+
+        // 批量查询现有 personal_credit（用于保留 creditCompletionDate 等）
+        Map<String, PersonalCredit> existingCreditMap = new HashMap<>();
+        List<PersonalCredit> existingList = personalCreditMapper.getByEmployeeNumbers(empList);
+        if (existingList != null) {
+            for (PersonalCredit pc : existingList) {
+                if (pc != null && pc.getEmployeeNumber() != null) {
+                    existingCreditMap.put(pc.getEmployeeNumber(), pc);
+                }
+            }
+        }
+
+        List<PersonalCredit> toSaveList = new ArrayList<>(empNums.size());
+        Set<String> affectedLowestDeptNumbers = new LinkedHashSet<>();
+        for (String emp : empNums) {
+            EmployeeSyncDataVO employee = employeeMap.get(emp);
+            PersonalCredit credit = calculateEmployeeCredit(
+                    employee,
+                    courseCreditMap,
+                    courseNumberCreditMap,
+                    deptSelectionMap,
+                    allCourses,
+                    existingCreditMap,
+                    manualCreditSumMap
+            );
+            if (credit != null) {
+                toSaveList.add(credit);
+                if (credit.getLowestDeptNumber() != null && !credit.getLowestDeptNumber().trim().isEmpty()) {
+                    affectedLowestDeptNumbers.add(credit.getLowestDeptNumber().trim());
+                }
+            }
+        }
+
+        if (!toSaveList.isEmpty()) {
+            personalCreditMapper.batchInsertOrUpdate(toSaveList);
+        }
+
+        // 局部刷新部门标杆（仅本次涉及的部门）
+        updateDeptBenchmarksForDeptNumbers(affectedLowestDeptNumbers);
+    }
+
     private PersonalCredit calculateEmployeeCredit(EmployeeSyncDataVO employee,
                                                    Map<Integer, BigDecimal> courseCreditMap,
                                                    Map<String, BigDecimal> courseNumberCreditMap,
@@ -358,6 +495,22 @@ public class PersonalCreditService {
             if (maxRate == null) maxRate = BigDecimal.ZERO;
 
             personalCreditMapper.updateBenchmarkRateByDept(deptNum, maxRate);
+        }
+    }
+
+    private void updateDeptBenchmarksForDeptNumbers(Collection<String> lowestDeptNumbers) {
+        if (lowestDeptNumbers == null || lowestDeptNumbers.isEmpty()) {
+            return;
+        }
+        for (String deptNum : lowestDeptNumbers) {
+            if (deptNum == null || deptNum.trim().isEmpty()) {
+                continue;
+            }
+            BigDecimal maxRate = personalCreditMapper.getMaxCompletionRateByDept(deptNum.trim());
+            if (maxRate == null) {
+                maxRate = BigDecimal.ZERO;
+            }
+            personalCreditMapper.updateBenchmarkRateByDept(deptNum.trim(), maxRate);
         }
     }
 

@@ -5,6 +5,7 @@ import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.ManualEnterCreditBatchImportResult;
 import com.huawei.aitransform.entity.PersonalCreditNameRow;
 import com.huawei.aitransform.mapper.ManualEnterCreditMapper;
+import com.huawei.aitransform.service.PersonalCreditService;
 import com.huawei.aitransform.service.ManualEnterCreditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -32,6 +33,9 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
     @Autowired
     private ManualEnterCreditMapper manualEnterCreditMapper;
 
+    @Autowired
+    private PersonalCreditService personalCreditService;
+
     @Override
     public PageResult<ManualEnterCredit> page(String employeeNumber, String employeeName, int pageNum, int pageSize) {
         int pn = pageNum < 1 ? 1 : pageNum;
@@ -55,6 +59,7 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ManualEnterCredit create(ManualEnterCredit record, String modifierNumber) {
         if (record == null) {
             throw new IllegalArgumentException("记录不能为空");
@@ -73,10 +78,13 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         }
         record.setModifierNumber(modifierNumber.trim());
         manualEnterCreditMapper.insert(record);
-        return manualEnterCreditMapper.selectById(record.getId());
+        ManualEnterCredit saved = manualEnterCreditMapper.selectById(record.getId());
+        personalCreditService.syncPersonalCreditsForEmployees(Collections.singleton(record.getEmployeeNumber()));
+        return saved;
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public ManualEnterCredit update(Integer id, ManualEnterCredit record, String modifierNumber) {
         if (id == null) {
             throw new IllegalArgumentException("id 不能为空");
@@ -91,6 +99,16 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         if (existing == null) {
             return null;
         }
+        // 工号不允许修改
+        if (StringUtils.hasText(record.getEmployeeNumber())) {
+            String reqEmp = record.getEmployeeNumber().trim();
+            String oldEmp = existing.getEmployeeNumber() == null ? "" : existing.getEmployeeNumber().trim();
+            if (!reqEmp.equals(oldEmp)) {
+                throw new IllegalArgumentException("工号不允许修改");
+            }
+        } else {
+            record.setEmployeeNumber(existing.getEmployeeNumber());
+        }
         validateEmployeeNumberAndCredits(record.getEmployeeNumber(), record.getCredits());
         applyEmployeeNameFromPersonalCredit(record);
         record.setId(id);
@@ -100,7 +118,9 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         record.setUpdateTime(new Date());
         record.setModifierNumber(modifierNumber.trim());
         manualEnterCreditMapper.updateById(record);
-        return manualEnterCreditMapper.selectById(id);
+        ManualEnterCredit updated = manualEnterCreditMapper.selectById(id);
+        personalCreditService.syncPersonalCreditsForEmployees(Collections.singleton(existing.getEmployeeNumber()));
+        return updated;
     }
 
     @Override
@@ -158,15 +178,32 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
             throw new IllegalArgumentException("请确认工号或学分信息都填写完整");
         }
         int n = manualEnterCreditMapper.insertBatch(prepared);
+        // 增量刷新个人学分（同一事务内，失败则回滚导入）
+        LinkedHashSet<String> affected = new LinkedHashSet<>();
+        for (ManualEnterCredit r : prepared) {
+            if (r != null && StringUtils.hasText(r.getEmployeeNumber())) {
+                affected.add(r.getEmployeeNumber().trim());
+            }
+        }
+        personalCreditService.syncPersonalCreditsForEmployees(affected);
         return new ManualEnterCreditBatchImportResult(n);
     }
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public boolean delete(Integer id) {
         if (id == null) {
             return false;
         }
-        return manualEnterCreditMapper.deleteById(id) > 0;
+        ManualEnterCredit existing = manualEnterCreditMapper.selectById(id);
+        if (existing == null) {
+            return false;
+        }
+        boolean ok = manualEnterCreditMapper.deleteById(id) > 0;
+        if (ok && StringUtils.hasText(existing.getEmployeeNumber())) {
+            personalCreditService.syncPersonalCreditsForEmployees(Collections.singleton(existing.getEmployeeNumber().trim()));
+        }
+        return ok;
     }
 
     private static String trimToNull(String s) {
