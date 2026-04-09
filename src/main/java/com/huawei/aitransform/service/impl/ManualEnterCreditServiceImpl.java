@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * 手动录入学分服务实现
@@ -116,22 +115,21 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         if (rows.size() > MAX_BATCH_IMPORT_SIZE) {
             throw new IllegalArgumentException("单次最多导入 " + MAX_BATCH_IMPORT_SIZE + " 条");
         }
-        List<String> validationErrors = new ArrayList<>();
-        for (int i = 0; i < rows.size(); i++) {
-            ManualEnterCredit src = rows.get(i);
+        boolean missingRequired = false;
+        for (ManualEnterCredit src : rows) {
             if (src == null) {
-                validationErrors.add("第" + (i + 1) + "条：数据为空");
+                missingRequired = true;
                 continue;
             }
             if (!StringUtils.hasText(src.getEmployeeNumber())) {
-                validationErrors.add("第" + (i + 1) + "条：工号不能为空");
+                missingRequired = true;
             }
             if (!StringUtils.hasText(src.getCredits())) {
-                validationErrors.add("第" + (i + 1) + "条：获得学分不能为空");
+                missingRequired = true;
             }
         }
-        if (!validationErrors.isEmpty()) {
-            throw new IllegalArgumentException(validationErrors.stream().distinct().collect(Collectors.joining("；")));
+        if (missingRequired) {
+            throw new IllegalArgumentException("请确认工号或学分信息都填写完整");
         }
         Map<String, String> empToLastName = loadPersonalCreditNamesForImport(rows);
         String mod = modifierNumber.trim();
@@ -157,7 +155,7 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
             prepared.add(row);
         }
         if (prepared.isEmpty()) {
-            throw new IllegalArgumentException("没有有效行可导入");
+            throw new IllegalArgumentException("请确认工号或学分信息都填写完整");
         }
         int n = manualEnterCreditMapper.insertBatch(prepared);
         return new ManualEnterCreditBatchImportResult(n);
@@ -201,8 +199,7 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         List<PersonalCreditNameRow> found =
                 manualEnterCreditMapper.selectPersonalCreditNamesByEmployeeNumbers(Collections.singletonList(emp));
         if (found == null || found.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "工号「" + emp + "」在全员学分信息表（t_personal_credit）中不存在，请核对后重试");
+            throw new IllegalArgumentException("请校验以下工号信息是否正确：" + emp);
         }
         PersonalCreditNameRow first = found.get(0);
         String lastName = first.getLastName();
@@ -248,9 +245,7 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
             }
         }
         if (!missing.isEmpty()) {
-            throw new IllegalArgumentException(
-                    "以下工号在全员学分信息表（t_personal_credit）中不存在，请修正后重新上传："
-                            + String.join("、", missing));
+            throw new IllegalArgumentException("请校验以下工号信息是否正确：" + String.join("、", missing));
         }
         return empToLastName;
     }
