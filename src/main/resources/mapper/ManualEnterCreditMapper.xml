@@ -164,4 +164,17 @@
         </foreach>
     </select>
 
+    <!-- 手工录入学分汇总：按工号聚合 credits（可能为字符串，统一 CAST 为 DECIMAL 参与求和） -->
+    <select id="sumCreditsByEmployeeNumbers" resultType="com.huawei.aitransform.entity.ManualCreditSumRow">
+        SELECT
+            employee_number AS employeeNumber,
+            COALESCE(SUM(CAST(credits AS DECIMAL(18, 4))), 0) AS totalCredits
+        FROM t_manual_enter_credit
+        WHERE employee_number IN
+        <foreach collection="numbers" item="n" open="(" separator="," close=")">
+            #{n}
+        </foreach>
+        GROUP BY employee_number
+    </select>
+
 </mapper>

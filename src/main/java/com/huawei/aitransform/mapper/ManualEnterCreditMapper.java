@@ -1,5 +1,6 @@
 package com.huawei.aitransform.mapper;
 
+import com.huawei.aitransform.entity.ManualCreditSumRow;
 import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.PersonalCreditNameRow;
 import org.apache.ibatis.annotations.Mapper;
@@ -42,4 +43,11 @@ public interface ManualEnterCreditMapper {
      * @param numbers 非空、已 trim 的工号列表（调用方保证非空以避免 IN ()）
      */
     List<PersonalCreditNameRow> selectPersonalCreditNamesByEmployeeNumbers(@Param("numbers") List<String> numbers);
+
+    /**
+     * 按工号批量汇总手工录入学分（t_manual_enter_credit.credits）。
+     *
+     * @param numbers 非空、已 trim 的工号列表（调用方保证非空以避免 IN ()）
+     */
+    List<ManualCreditSumRow> sumCreditsByEmployeeNumbers(@Param("numbers") List<String> numbers);
 }

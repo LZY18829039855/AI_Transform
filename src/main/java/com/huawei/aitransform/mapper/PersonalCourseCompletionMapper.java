@@ -47,5 +47,18 @@ public interface PersonalCourseCompletionMapper {
      * @return 课程信息列表
      */
     List<CourseInfoByLevelVO> getCourseInfoByLevelAndIds(@Param("courseIds") List<Integer> courseIds);
+
+    /**
+     * 获取最新周期ID
+     * @return 最新周期ID
+     */
+    Integer getLatestPeriodId();
+
+    /**
+     * 根据周期ID查询员工列表
+     * @param periodId 周期ID
+     * @return 员工列表
+     */
+    List<com.huawei.aitransform.entity.EmployeeSyncDataVO> getEmployeesByPeriodId(@Param("periodId") Integer periodId);
 }
 

@@ -6,7 +6,9 @@ import com.huawei.aitransform.entity.CreditStatisticsResponseVO;
 import com.huawei.aitransform.entity.DeptCourseSelection;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
+import com.huawei.aitransform.entity.ManualCreditSumRow;
 import com.huawei.aitransform.entity.PersonalCredit;
+import com.huawei.aitransform.mapper.ManualEnterCreditMapper;
 import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import com.huawei.aitransform.mapper.PersonalCreditMapper;
@@ -42,6 +44,9 @@ public class PersonalCreditService {
 
     @Autowired
     private CoursePlanningInfoMapper coursePlanningInfoMapper;
+
+    @Autowired
+    private ManualEnterCreditMapper manualEnterCreditMapper;
 
     @Autowired
     private DepartmentInfoService departmentService;
@@ -128,6 +133,27 @@ public class PersonalCreditService {
                 .map(EmployeeSyncDataVO::getEmployeeNumber)
                 .collect(Collectors.toList());
 
+        // 4.1 批量查询手工录入学分汇总（employee_number -> SUM(credits)）
+        Map<String, BigDecimal> manualCreditSumMap = new HashMap<>();
+        if (!employeeNumbers.isEmpty()) {
+            int batchSize = 1000;
+            for (int i = 0; i < employeeNumbers.size(); i += batchSize) {
+                int end = Math.min(i + batchSize, employeeNumbers.size());
+                List<String> subList = employeeNumbers.subList(i, end);
+                List<ManualCreditSumRow> rows = manualEnterCreditMapper.sumCreditsByEmployeeNumbers(subList);
+                if (rows == null || rows.isEmpty()) {
+                    continue;
+                }
+                for (ManualCreditSumRow row : rows) {
+                    if (row == null || row.getEmployeeNumber() == null) {
+                        continue;
+                    }
+                    manualCreditSumMap.put(row.getEmployeeNumber(),
+                            row.getTotalCredits() != null ? row.getTotalCredits() : BigDecimal.ZERO);
+                }
+            }
+        }
+
         // 批量查询现有记录
         Map<String, PersonalCredit> existingCreditMap = new HashMap<>();
         if (!employeeNumbers.isEmpty()) {
@@ -144,7 +170,15 @@ public class PersonalCreditService {
 
         List<PersonalCredit> toSaveList = new ArrayList<>();
         for (EmployeeSyncDataVO employee : employees) {
-            PersonalCredit credit = calculateEmployeeCredit(employee, courseCreditMap, courseNumberCreditMap, deptSelectionMap, allCourses, existingCreditMap);
+            PersonalCredit credit = calculateEmployeeCredit(
+                    employee,
+                    courseCreditMap,
+                    courseNumberCreditMap,
+                    deptSelectionMap,
+                    allCourses,
+                    existingCreditMap,
+                    manualCreditSumMap
+            );
             if (credit != null) {
                 toSaveList.add(credit);
             }
@@ -176,7 +210,8 @@ public class PersonalCreditService {
                                                    Map<String, BigDecimal> courseNumberCreditMap,
                                                    Map<String, List<Integer>> deptSelectionMap,
                                                    List<CoursePlanningInfoVO> allCourses,
-                                                   Map<String, PersonalCredit> existingCreditMap) {
+                                                   Map<String, PersonalCredit> existingCreditMap,
+                                                   Map<String, BigDecimal> manualCreditSumMap) {
         String empNum = employee.getEmployeeNumber();
         String fourthDeptCode = employee.getFourthdeptcode();
 
@@ -220,10 +255,22 @@ public class PersonalCreditService {
             }
         }
 
+        // 叠加手工录入学分（一个人可能多条，已在同步前按工号汇总）
+        BigDecimal manualCredit = BigDecimal.ZERO;
+        if (manualCreditSumMap != null) {
+            manualCredit = manualCreditSumMap.getOrDefault(empNum, BigDecimal.ZERO);
+            if (manualCredit == null) {
+                manualCredit = BigDecimal.ZERO;
+            }
+        }
+        BigDecimal totalCurrentCredit = currentCredit.add(manualCredit);
+
         // 计算达成率
         BigDecimal completionRate = BigDecimal.ZERO;
         if (targetCredit.compareTo(BigDecimal.ZERO) > 0) {
-            completionRate = currentCredit.divide(targetCredit, 4, RoundingMode.HALF_UP).multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+            completionRate = totalCurrentCredit.divide(targetCredit, 4, RoundingMode.HALF_UP)
+                    .multiply(new BigDecimal("100"))
+                    .setScale(2, RoundingMode.HALF_UP);
         }
 
         // 准备保存数据
@@ -272,7 +319,7 @@ public class PersonalCreditService {
         }
 
         toSave.setTargetCredit(targetCredit);
-        toSave.setCurrentCredit(currentCredit);
+        toSave.setCurrentCredit(totalCurrentCredit);
         toSave.setPersonalCreditCompletionRate(completionRate);
         toSave.setDeptBenchmarkCompletionRate(BigDecimal.ZERO); // 先置0，后续统一更新
 
@@ -287,11 +334,11 @@ public class PersonalCreditService {
 
         // 如果当前已达标（current >= target）且之前没有日期，则设置当前时间
         // 注意：targetCredit可能为0，需处理
-        if (targetCredit.compareTo(BigDecimal.ZERO) > 0 && currentCredit.compareTo(targetCredit) >= 0) {
+        if (targetCredit.compareTo(BigDecimal.ZERO) > 0 && totalCurrentCredit.compareTo(targetCredit) >= 0) {
             if (toSave.getCreditCompletionDate() == null) {
                 toSave.setCreditCompletionDate(new Date());
             }
-        } else if (targetCredit.compareTo(BigDecimal.ZERO) == 0 && currentCredit.compareTo(BigDecimal.ZERO) >= 0) {
+        } else if (targetCredit.compareTo(BigDecimal.ZERO) == 0 && totalCurrentCredit.compareTo(BigDecimal.ZERO) >= 0) {
             // 目标为0，视为达标？通常应该有学分。这里假设不处理或视为达标
             if (toSave.getCreditCompletionDate() == null) {
                 toSave.setCreditCompletionDate(new Date());
