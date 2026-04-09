@@ -8,6 +8,7 @@ import com.huawei.aitransform.service.EmployeeTrainingInfoSyncService;
 import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import com.huawei.aitransform.service.HandsOnCourseService;
+import com.huawei.aitransform.service.PersonalCreditService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -43,6 +44,9 @@ public class ExternalApiController {
 
     @Autowired
     private HandsOnCourseService handsOnCourseService;
+
+    @Autowired
+    private PersonalCreditService personalCreditService;
 
     /**
      * 对外开放数据同步更新接口
@@ -299,4 +303,17 @@ public class ExternalApiController {
         }
     }
 
+    /**
+     * 触发个人学分数据同步（供外部定时任务平台调）
+     * @return 同步结果
+     */
+    @PostMapping("/sync")
+    public ResponseEntity<Result<String>> syncPersonalCredits() {
+        try {
+            personalCreditService.syncAllPersonalCredits();
+            return ResponseEntity.ok(Result.success("同步成功", "Sync completed successfully"));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "同步失败：" + e.getMessage()));
+        }
+    }
 }
