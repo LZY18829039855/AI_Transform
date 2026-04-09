@@ -11,6 +11,11 @@ public class EmployeeSyncDataVO {
     @JsonProperty("last_name")
     private String lastName;
 
+    @JsonProperty("l0_department_code")
+    private String l0DepartmentCode;
+
+    @JsonProperty("l0_department_cn_name")
+    private String l0DepartmentCnName;
     private String firstdeptcode;
     private String seconddeptcode;
     private String thirddeptcode;
