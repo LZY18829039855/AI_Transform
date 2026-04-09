@@ -149,4 +149,19 @@
         DELETE FROM t_manual_enter_credit WHERE id = #{id}
     </delete>
 
+    <!-- 全员学分信息表：按工号查姓名，供新增/更新/批量导入校验 -->
+    <resultMap id="PersonalCreditNameRowMap" type="com.huawei.aitransform.entity.PersonalCreditNameRow">
+        <result column="employee_number" property="employeeNumber"/>
+        <result column="last_name" property="lastName"/>
+    </resultMap>
+
+    <select id="selectPersonalCreditNamesByEmployeeNumbers" resultMap="PersonalCreditNameRowMap">
+        SELECT employee_number, last_name
+        FROM t_personal_credit
+        WHERE employee_number IN
+        <foreach collection="numbers" item="n" open="(" separator="," close=")">
+            #{n}
+        </foreach>
+    </select>
+
 </mapper>
