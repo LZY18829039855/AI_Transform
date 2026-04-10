@@ -1,12 +1,15 @@
 package com.huawei.aitransform.controller;
 
+import com.huawei.aitransform.common.PageResult;
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.DepartmentCourseCompletionRateVO;
 import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
+import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.service.DepartmentCourseCompletionRateService;
 import com.huawei.aitransform.service.DepartmentEmployeeTrainingOverviewService;
+import com.huawei.aitransform.service.ManualEnterCreditService;
 import com.huawei.aitransform.service.PersonalCourseCompletionService;
 import com.huawei.aitransform.service.UserConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -44,6 +47,9 @@ public class PersonalCourseCompletionController {
     @Autowired
     private DepartmentEmployeeTrainingOverviewService departmentEmployeeTrainingOverviewService;
 
+    @Autowired
+    private ManualEnterCreditService manualEnterCreditService;
+
     /**
      * 查询个人课程完成情况
      * @param request HTTP请求对象，用于获取cookie
@@ -76,6 +82,42 @@ public class PersonalCourseCompletionController {
             PersonalCourseCompletionResponseVO result = personalCourseCompletionService.getPersonalCourseCompletion(empNum);
             
             return ResponseEntity.ok(Result.success("查询成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 个人场景下手工录入学分分页查询：入参与 {@link #getPersonalCourseCompletion} 一致（account 优先，否则从 Cookie 解析工号），
+     * 内部调用 {@link ManualEnterCreditService#page}，与 /manual-enter-credit/list 相同查询逻辑。
+     *
+     * @param account       工号（可选），与 /completion 一致
+     * @param accountCookie Cookie account（可选）
+     * @param pageNum       页码
+     * @param pageSize      每页条数
+     */
+    @GetMapping("/manual-enter-credit-list")
+    public ResponseEntity<Result<PageResult<ManualEnterCredit>>> getManualEnterCreditListForPersonal(
+            HttpServletRequest request,
+            @RequestParam(value = "account", required = false) String account,
+            @CookieValue(value = "account", required = false) String accountCookie,
+            @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
+        try {
+            String empNum = null;
+            if (account != null && !account.trim().isEmpty()) {
+                empNum = account.trim();
+            } else {
+                UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
+                if (accountInfo != null && accountInfo.getEmpNum() != null && !accountInfo.getEmpNum().trim().isEmpty()) {
+                    empNum = accountInfo.getEmpNum().trim();
+                }
+            }
+            if (empNum == null || empNum.isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "未获取到用户信息，请先登录"));
+            }
+            PageResult<ManualEnterCredit> data = manualEnterCreditService.page(empNum, null, pageNum, pageSize);
+            return ResponseEntity.ok(Result.success("查询成功", data));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
