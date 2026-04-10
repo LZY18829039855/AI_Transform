@@ -17,7 +17,8 @@ public class ManualEnterCredit implements Serializable {
     private String employeeName;
     private String creditType;
     private String activityName;
-    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss", timezone = "GMT+8")
+    /** 活动日期：JSON 与库表均按「日」粒度，统一 yyyy-MM-dd */
+    @JsonFormat(pattern = "yyyy-MM-dd", timezone = "GMT+8")
     private Date activityDate;
     private String credits;
     private String description;
