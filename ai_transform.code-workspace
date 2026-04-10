@@ -10,6 +10,10 @@
     },
     {
       "path": "../ai--dashboard-main"
+    },
+    {
+      "path": "../ai--dashboard-main/ai-dashboard",
+      "name": "ai-dashboard (前端)"
     }
   ],
   "settings": {}
