@@ -39,6 +39,11 @@ public class CourseInfoByLevelVO implements Serializable {
      */
     private String courseLink;
 
+    /**
+     * 课程学分
+     */
+    private String credit;
+
     public CourseInfoByLevelVO() {
     }
 
@@ -88,6 +93,14 @@ public class CourseInfoByLevelVO implements Serializable {
 
     public void setCourseLink(String courseLink) {
         this.courseLink = courseLink;
+    }
+
+    public String getCredit() {
+        return credit;
+    }
+
+    public void setCredit(String credit) {
+        this.credit = credit;
     }
 }
 

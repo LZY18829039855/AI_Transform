@@ -119,7 +119,8 @@ public class PersonalCourseCompletionService {
                         isCompleted,
                         course.getBigType(),
                         isTargetCourse,
-                        course.getCourseLink()));
+                        course.getCourseLink(),
+                        course.getCredit()));
             }
 
             // 展示用 completedCourses：以训战表 ID 列表为准；若与目录交集不一致仍以列表计数为主

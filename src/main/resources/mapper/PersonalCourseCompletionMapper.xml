@@ -11,7 +11,8 @@
             course_name AS courseName,
             course_number AS courseNumber,
             big_type AS bigType,
-            course_link AS courseLink
+            course_link AS courseLink,
+            credit
         FROM ai_course_planning_info
         WHERE course_level IS NOT NULL
           AND course_name IS NOT NULL
@@ -69,7 +70,8 @@
             course_name AS courseName,
             course_number AS courseNumber,
             big_type AS bigType,
-            course_link AS courseLink
+            course_link AS courseLink,
+            credit
         FROM ai_course_planning_info
         WHERE id IN
         <foreach collection="courseIds" item="courseId" open="(" separator="," close=")">

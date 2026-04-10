@@ -39,6 +39,11 @@ public class CourseInfoVO implements Serializable {
      */
     private String courseLink;
 
+    /**
+     * 课程学分（与规划表 credit 一致）
+     */
+    private String credit;
+
     public CourseInfoVO() {
     }
 
@@ -56,12 +61,17 @@ public class CourseInfoVO implements Serializable {
     }
 
     public CourseInfoVO(String courseName, String courseNumber, Boolean isCompleted, String bigType, Boolean isTargetCourse, String courseLink) {
+        this(courseName, courseNumber, isCompleted, bigType, isTargetCourse, courseLink, null);
+    }
+
+    public CourseInfoVO(String courseName, String courseNumber, Boolean isCompleted, String bigType, Boolean isTargetCourse, String courseLink, String credit) {
         this.courseName = courseName;
         this.courseNumber = courseNumber;
         this.isCompleted = isCompleted;
         this.bigType = bigType;
         this.isTargetCourse = isTargetCourse;
         this.courseLink = courseLink;
+        this.credit = credit;
     }
 
     public String getCourseName() {
@@ -110,6 +120,14 @@ public class CourseInfoVO implements Serializable {
 
     public void setCourseLink(String courseLink) {
         this.courseLink = courseLink;
+    }
+
+    public String getCredit() {
+        return credit;
+    }
+
+    public void setCredit(String credit) {
+        this.credit = credit;
     }
 }
 
