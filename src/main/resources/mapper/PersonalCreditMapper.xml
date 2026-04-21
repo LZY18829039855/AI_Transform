@@ -443,4 +443,69 @@
         GROUP BY cadre_position_ai_maturity
         ORDER BY cadre_position_ai_maturity
     </select>
+
+    <!-- 批量查询 AI 认证学分：专业级 15 / 工作级 10，同一人 MAX 取最高，自然上限 15 -->
+    <select id="getAiCertCreditsByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeCreditRow">
+        SELECT
+            COALESCE(c.employee_number, c.w3_account) AS employeeNumber,
+            MAX(CASE
+                  WHEN c.cer_title IN (
+                      '华为研究类能力认证（专业级，AI算法技术）',
+                      '华为研究类能力认证（专业级，AI决策推理）',
+                      '华为研究类能力认证（专业级，AI图像语言语义）'
+                  ) THEN 15
+                  WHEN c.cer_title IN (
+                      '华为研究类能力认证（工作级，AI算法技术）',
+                      '华为研究类能力认证（工作级，AI决策推理）',
+                      '华为研究类能力认证（工作级，AI图像语言语义）'
+                  ) THEN 10
+                  ELSE 0
+                END) AS credit
+        FROM dwr_t_cert_record_t c
+        WHERE (c.status = 1 OR c.approved_status = 1)
+          AND (
+               c.employee_number IN
+               <foreach collection="employeeNumbers" item="e" open="(" separator="," close=")">#{e}</foreach>
+               OR c.w3_account IN
+               <foreach collection="employeeNumbers" item="e" open="(" separator="," close=")">#{e}</foreach>
+          )
+          AND c.cer_title IN (
+              '华为研究类能力认证（专业级，AI算法技术）',
+              '华为研究类能力认证（专业级，AI决策推理）',
+              '华为研究类能力认证（专业级，AI图像语言语义）',
+              '华为研究类能力认证（工作级，AI算法技术）',
+              '华为研究类能力认证（工作级，AI决策推理）',
+              '华为研究类能力认证（工作级，AI图像语言语义）'
+          )
+        GROUP BY COALESCE(c.employee_number, c.w3_account)
+        HAVING credit > 0
+    </select>
+
+    <!-- 批量查询 AI 任职学分：4 级及以上 25 / 3 级 10，同一人 MAX 取最高，自然上限 25，仅当前有效任职 -->
+    <select id="getAiQualificationCreditsByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeCreditRow">
+        SELECT
+            q.employee_number AS employeeNumber,
+            MAX(CASE
+                  WHEN q.competence_rating_cn IN ('4级','5级','6级','7级','8级') THEN 25
+                  WHEN q.competence_rating_cn = '3级' THEN 10
+                  ELSE 0
+                END) AS credit
+        FROM t_qualifications q
+        WHERE q.employee_number IN
+            <foreach collection="employeeNumbers" item="e" open="(" separator="," close=")">#{e}</foreach>
+          AND q.employee_number IS NOT NULL
+          AND q.employee_number != ''
+          AND (
+                q.direction_cn_name IN (
+                  '数据科学与AI工程（ICT）','AI算法及应用（ICT）',
+                  'AI软件工程与工具（ICT）','AI系统测试（ICT）'
+                )
+                OR q.competence_subcategory_cn = 'AI算法及应用'
+              )
+          AND q.competence_from IS NOT NULL
+          AND q.competence_to IS NOT NULL
+          AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+        GROUP BY q.employee_number
+        HAVING credit > 0
+    </select>
 </mapper>

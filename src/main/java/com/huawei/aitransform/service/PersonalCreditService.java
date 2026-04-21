@@ -5,6 +5,7 @@ import com.huawei.aitransform.entity.CreditOverviewVO;
 import com.huawei.aitransform.entity.CreditStatisticsResponseVO;
 import com.huawei.aitransform.entity.DeptCourseSelection;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
+import com.huawei.aitransform.entity.EmployeeCreditRow;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.entity.ManualCreditSumRow;
 import com.huawei.aitransform.entity.PersonalCredit;
@@ -26,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.*;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -168,6 +170,13 @@ public class PersonalCreditService {
             }
         }
 
+        // 4.2 批量查询 AI 认证学分（工号 -> 认证学分，自然上限 15）
+        Map<String, BigDecimal> certCreditMap = loadCreditMap(
+                personalCreditMapper::getAiCertCreditsByEmployeeNumbers, employeeNumbers);
+        // 4.3 批量查询 AI 任职学分（工号 -> 任职学分，自然上限 25）
+        Map<String, BigDecimal> qualCreditMap = loadCreditMap(
+                personalCreditMapper::getAiQualificationCreditsByEmployeeNumbers, employeeNumbers);
+
         List<PersonalCredit> toSaveList = new ArrayList<>();
         for (EmployeeSyncDataVO employee : employees) {
             PersonalCredit credit = calculateEmployeeCredit(
@@ -177,7 +186,9 @@ public class PersonalCreditService {
                     deptSelectionMap,
                     allCourses,
                     existingCreditMap,
-                    manualCreditSumMap
+                    manualCreditSumMap,
+                    certCreditMap,
+                    qualCreditMap
             );
             if (credit != null) {
                 toSaveList.add(credit);
@@ -313,6 +324,13 @@ public class PersonalCreditService {
             }
         }
 
+        // AI 认证学分（工号 -> 认证学分，自然上限 15）
+        Map<String, BigDecimal> certCreditMap = loadCreditMap(
+                personalCreditMapper::getAiCertCreditsByEmployeeNumbers, empList);
+        // AI 任职学分（工号 -> 任职学分，自然上限 25）
+        Map<String, BigDecimal> qualCreditMap = loadCreditMap(
+                personalCreditMapper::getAiQualificationCreditsByEmployeeNumbers, empList);
+
         List<PersonalCredit> toSaveList = new ArrayList<>(empNums.size());
         Set<String> affectedLowestDeptNumbers = new LinkedHashSet<>();
         for (String emp : empNums) {
@@ -324,7 +342,9 @@ public class PersonalCreditService {
                     deptSelectionMap,
                     allCourses,
                     existingCreditMap,
-                    manualCreditSumMap
+                    manualCreditSumMap,
+                    certCreditMap,
+                    qualCreditMap
             );
             if (credit != null) {
                 toSaveList.add(credit);
@@ -348,7 +368,9 @@ public class PersonalCreditService {
                                                    Map<String, List<Integer>> deptSelectionMap,
                                                    List<CoursePlanningInfoVO> allCourses,
                                                    Map<String, PersonalCredit> existingCreditMap,
-                                                   Map<String, BigDecimal> manualCreditSumMap) {
+                                                   Map<String, BigDecimal> manualCreditSumMap,
+                                                   Map<String, BigDecimal> certCreditMap,
+                                                   Map<String, BigDecimal> qualCreditMap) {
         String empNum = employee.getEmployeeNumber();
         String fourthDeptCode = employee.getFourthdeptcode();
 
@@ -393,14 +415,15 @@ public class PersonalCreditService {
         }
 
         // 叠加手工录入学分（一个人可能多条，已在同步前按工号汇总）
-        BigDecimal manualCredit = BigDecimal.ZERO;
-        if (manualCreditSumMap != null) {
-            manualCredit = manualCreditSumMap.getOrDefault(empNum, BigDecimal.ZERO);
-            if (manualCredit == null) {
-                manualCredit = BigDecimal.ZERO;
-            }
-        }
-        BigDecimal totalCurrentCredit = currentCredit.add(manualCredit);
+        BigDecimal manualCredit = safeGet(manualCreditSumMap, empNum);
+        // 叠加 AI 认证学分（专业级 15 / 工作级 10，同人 MAX，自然上限 15）
+        BigDecimal certCredit = safeGet(certCreditMap, empNum);
+        // 叠加 AI 任职学分（4 级及以上 25 / 3 级 10，同人 MAX，自然上限 25，仅当前有效）
+        BigDecimal qualCredit = safeGet(qualCreditMap, empNum);
+        BigDecimal totalCurrentCredit = currentCredit
+                .add(manualCredit)
+                .add(certCredit)
+                .add(qualCredit);
 
         // 计算达成率
         BigDecimal completionRate = BigDecimal.ZERO;
@@ -483,6 +506,43 @@ public class PersonalCreditService {
         }
 
         return toSave;
+    }
+
+    /**
+     * 分批加载 "工号 -> 学分" 映射，按 1000/批调用指定查询函数。
+     * 用于 AI 认证学分、AI 任职学分等按工号聚合的批量查询。
+     */
+    private Map<String, BigDecimal> loadCreditMap(
+            Function<List<String>, List<EmployeeCreditRow>> queryFn,
+            List<String> employeeNumbers) {
+        Map<String, BigDecimal> map = new HashMap<>();
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return map;
+        }
+        int batchSize = 1000;
+        for (int i = 0; i < employeeNumbers.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, employeeNumbers.size());
+            List<EmployeeCreditRow> rows = queryFn.apply(employeeNumbers.subList(i, end));
+            if (rows == null) {
+                continue;
+            }
+            for (EmployeeCreditRow r : rows) {
+                if (r == null || r.getEmployeeNumber() == null) {
+                    continue;
+                }
+                map.put(r.getEmployeeNumber(),
+                        r.getCredit() != null ? r.getCredit() : BigDecimal.ZERO);
+            }
+        }
+        return map;
+    }
+
+    private static BigDecimal safeGet(Map<String, BigDecimal> m, String k) {
+        if (m == null) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal v = m.get(k);
+        return v != null ? v : BigDecimal.ZERO;
     }
 
     private void updateDeptBenchmarks() {

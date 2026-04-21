@@ -1,6 +1,7 @@
 package com.huawei.aitransform.mapper;
 
 import com.huawei.aitransform.entity.CreditOverviewVO;
+import com.huawei.aitransform.entity.EmployeeCreditRow;
 import com.huawei.aitransform.entity.PersonalCredit;
 import org.apache.ibatis.annotations.Mapper;
 import org.apache.ibatis.annotations.Param;
@@ -110,4 +111,22 @@ public interface PersonalCreditMapper {
 
     List<SchoolRoleSummaryVO> getExpertRoleSummary(@Param("deptCode") String deptCode);
     List<SchoolRoleSummaryVO> getCadreRoleSummary(@Param("deptCode") String deptCode);
+
+    /**
+     * 批量查询 AI 认证学分（工号 -> 认证学分）。
+     * 专业级 15、工作级 10，同一人 MAX 取最高，自然上限 15。
+     * 来源表：dwr_t_cert_record_t；过滤：status=1 OR approved_status=1；
+     * 标题白名单：华为研究类能力认证（专业级/工作级，AI算法技术/AI决策推理/AI图像语言语义）。
+     * 工号匹配：employee_number 或 w3_account 命中任一即可，结果以 COALESCE 聚合。
+     */
+    List<EmployeeCreditRow> getAiCertCreditsByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量查询 AI 任职学分（工号 -> 任职学分）。
+     * 4 级及以上 25、3 级 10，同一人 MAX 取最高，自然上限 25。
+     * 来源表：t_qualifications；
+     * 范围过滤：direction_cn_name 属于指定 AI 方向 或 competence_subcategory_cn='AI算法及应用'；
+     * 有效性：competence_from/competence_to 非空，且 CURDATE() 位于区间内。
+     */
+    List<EmployeeCreditRow> getAiQualificationCreditsByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 }
