@@ -30,6 +30,8 @@
         <result column="personal_credit_completion_rate" property="personalCreditCompletionRate" jdbcType="DECIMAL"/>
         <result column="dept_benchmark_completion_rate" property="deptBenchmarkCompletionRate" jdbcType="DECIMAL"/>
         <result column="credit_completion_date" property="creditCompletionDate" jdbcType="TIMESTAMP"/>
+        <result column="cadre_position_ai_maturity" property="cadrePositionAiMaturity" jdbcType="VARCHAR"/>
+        <result column="expert_position_ai_maturity" property="expertPositionAiMaturity" jdbcType="VARCHAR"/>
         <result column="create_time" property="createTime" jdbcType="TIMESTAMP"/>
         <result column="update_time" property="updateTime" jdbcType="TIMESTAMP"/>
     </resultMap>
@@ -41,7 +43,9 @@
         fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
         job_family, job_category, job_subcategory,
         target_credit, current_credit, personal_credit_completion_rate,
-        dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+        dept_benchmark_completion_rate, credit_completion_date,
+        cadre_position_ai_maturity, expert_position_ai_maturity,
+        create_time, update_time
     </sql>
 
     <select id="getByEmployeeNumber" resultMap="BaseResultMap">
@@ -69,7 +73,9 @@
             fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
             job_family, job_category, job_subcategory,
             target_credit, current_credit, personal_credit_completion_rate,
-            dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+            dept_benchmark_completion_rate, credit_completion_date,
+            cadre_position_ai_maturity, expert_position_ai_maturity,
+            create_time, update_time
         ) VALUES (
                      #{employeeNumber}, #{lastName}, #{lowestDeptNumber}, #{lowestDept},
                      #{l0DepartmentCode}, #{l0DepartmentCnName}, #{firstdeptcode}, #{firstdept},
@@ -77,7 +83,9 @@
                      #{fifthdeptcode}, #{fifthdept}, #{sixthdeptcode}, #{sixthdept},
                      #{jobFamily}, #{jobCategory}, #{jobSubcategory},
                      #{targetCredit}, #{currentCredit}, #{personalCreditCompletionRate},
-                     #{deptBenchmarkCompletionRate}, #{creditCompletionDate}, NOW(), NOW()
+                     #{deptBenchmarkCompletionRate}, #{creditCompletionDate},
+                     #{cadrePositionAiMaturity}, #{expertPositionAiMaturity},
+                     NOW(), NOW()
                  )
             ON DUPLICATE KEY UPDATE
                                  last_name = VALUES(last_name),
@@ -105,6 +113,8 @@
                                  personal_credit_completion_rate = VALUES(personal_credit_completion_rate),
                                  dept_benchmark_completion_rate = VALUES(dept_benchmark_completion_rate),
                                  credit_completion_date = IF(VALUES(credit_completion_date) IS NOT NULL, VALUES(credit_completion_date), credit_completion_date),
+                                 cadre_position_ai_maturity = VALUES(cadre_position_ai_maturity),
+                                 expert_position_ai_maturity = VALUES(expert_position_ai_maturity),
                                  update_time = NOW()
     </insert>
 
@@ -116,7 +126,9 @@
         fifthdeptcode, fifthdept, sixthdeptcode, sixthdept,
         job_family, job_category, job_subcategory,
         target_credit, current_credit, personal_credit_completion_rate,
-        dept_benchmark_completion_rate, credit_completion_date, create_time, update_time
+        dept_benchmark_completion_rate, credit_completion_date,
+        cadre_position_ai_maturity, expert_position_ai_maturity,
+        create_time, update_time
         ) VALUES
         <foreach collection="list" item="item" separator=",">
             (
@@ -127,7 +139,9 @@
             #{item.sixthdeptcode}, #{item.sixthdept},
             #{item.jobFamily}, #{item.jobCategory}, #{item.jobSubcategory},
             #{item.targetCredit}, #{item.currentCredit}, #{item.personalCreditCompletionRate},
-            #{item.deptBenchmarkCompletionRate}, #{item.creditCompletionDate}, NOW(), NOW()
+            #{item.deptBenchmarkCompletionRate}, #{item.creditCompletionDate},
+            #{item.cadrePositionAiMaturity}, #{item.expertPositionAiMaturity},
+            NOW(), NOW()
             )
         </foreach>
         ON DUPLICATE KEY UPDATE
@@ -156,6 +170,8 @@
         personal_credit_completion_rate = VALUES(personal_credit_completion_rate),
         dept_benchmark_completion_rate = VALUES(dept_benchmark_completion_rate),
         credit_completion_date = IF(VALUES(credit_completion_date) IS NOT NULL, VALUES(credit_completion_date), credit_completion_date),
+        cadre_position_ai_maturity = VALUES(cadre_position_ai_maturity),
+        expert_position_ai_maturity = VALUES(expert_position_ai_maturity),
         update_time = NOW()
     </insert>
 
