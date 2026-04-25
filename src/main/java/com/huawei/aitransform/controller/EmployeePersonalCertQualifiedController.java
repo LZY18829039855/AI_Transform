@@ -61,10 +61,41 @@ public class EmployeePersonalCertQualifiedController {
                 return ResponseEntity.ok(Result.error(404, "未查询到该工号对应的员工信息"));
             }
 
+            employee.setQualifiedCredit(calcQualifiedCredit(employee.getCompetenceRatingCn()));
+            employee.setCertCredit(calcCertCredit(employee.getCertTitle()));
+
             return ResponseEntity.ok(Result.success("查询成功", employee));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
+    }
+
+    private Integer calcQualifiedCredit(String competenceRatingCn) {
+        if (competenceRatingCn == null || competenceRatingCn.trim().isEmpty()) {
+            return 0;
+        }
+        String v = competenceRatingCn.trim();
+        if ("3级".equals(v)) {
+            return 10;
+        }
+        if ("4级".equals(v) || "5级".equals(v) || "6级".equals(v) || "7级".equals(v) || "8级".equals(v)) {
+            return 25;
+        }
+        return 0;
+    }
+
+    private Integer calcCertCredit(String certTitle) {
+        if (certTitle == null || certTitle.trim().isEmpty()) {
+            return 0;
+        }
+        String v = certTitle.trim();
+        if (v.contains("专业级")) {
+            return 15;
+        }
+        if (v.contains("工作级")) {
+            return 10;
+        }
+        return 0;
     }
 }
 

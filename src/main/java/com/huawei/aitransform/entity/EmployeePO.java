@@ -58,5 +58,15 @@ public class EmployeePO {
     private String competenceFrom;
 
     private String competenceTo;
+
+    /**
+     * 任职学分（根据 competenceRatingCn 计算）
+     */
+    private Integer qualifiedCredit;
+
+    /**
+     * 认证学分（根据 certTitle 计算）
+     */
+    private Integer certCredit;
 }
 
