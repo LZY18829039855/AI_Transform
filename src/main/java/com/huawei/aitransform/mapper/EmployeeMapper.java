@@ -39,6 +39,13 @@ public interface EmployeeMapper {
     List<EmployeePO> getEmployeesByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 
     /**
+     * 根据工号从 t_employee 表查询员工全字段信息（含任职/认证相关字段）
+     * @param employeeNumber 工号
+     * @return 员工PO（不存在返回null）
+     */
+    EmployeePO getEmployeeByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
+
+    /**
      * 根据工号列表和期号查询员工同步数据（不过滤职位族）
      * @param periodId 期号
      * @param employeeNumbers 工号列表

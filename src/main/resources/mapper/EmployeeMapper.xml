@@ -674,6 +674,37 @@
         </foreach>
     </select>
 
+    <!-- 根据工号从 t_employee 表查询员工全字段信息（含任职/认证字段） -->
+    <select id="getEmployeeByEmployeeNumber" resultType="com.huawei.aitransform.entity.EmployeePO">
+        SELECT
+            employee_number AS employeeNumber,
+            last_name AS lastName,
+            firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+            lowestdeptid AS lowestDeptId,
+            firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept,
+            lowestdept AS lowestDept,
+            job_type AS jobType,
+            job_category AS jobCategory,
+            job_subcategory AS jobSubcategory,
+            period_id AS periodId,
+            updated_time AS updatedTime,
+            is_qualifications_standard AS isQualificationsStandard,
+            is_cert_standard AS isCertStandard,
+            cert_title AS certTitle,
+            is_passed_subject2 AS isPassedSubject2,
+            competence_family_cn AS competenceFamilyCn,
+            competence_category_cn AS competenceCategoryCn,
+            competence_subcategory_cn AS competenceSubcategoryCn,
+            direction_cn_name AS directionCnName,
+            competence_rating_cn AS competenceRatingCn,
+            competence_grade_cn AS competenceGradeCn,
+            competence_from AS competenceFrom,
+            competence_to AS competenceTo
+        FROM t_employee
+        WHERE employee_number = #{employeeNumber}
+        LIMIT 1
+    </select>
+
     <select id="getEmployeeSyncData" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
         SELECT 
             e.employee_number AS employeeNumber,
