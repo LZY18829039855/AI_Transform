@@ -1,6 +1,7 @@
 package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.SchoolCreditDetailRequestVO;
 import com.huawei.aitransform.entity.SchoolCreditDetailResponseVO;
 import com.huawei.aitransform.service.SchoolCreditDetailService;
@@ -33,6 +34,11 @@ public class SchoolCreditDetailController {
             // 参数校验
             if (request.getDeptCode() == null || request.getDeptCode().trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门编码不能为空"));
+            }
+            // 约定：deptCode=0 时默认视为二级部门「云核心网产品线DI」
+            if ("0".equals(request.getDeptCode().trim())) {
+                request.setDeptCode(DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE);
+                request.setDeptLevel(2);
             }
 
             SchoolCreditDetailResponseVO response = schoolCreditDetailService.getCreditDetailList(request);
@@ -68,6 +74,11 @@ public class SchoolCreditDetailController {
             @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
+            // 约定：deptCode=0 时默认视为二级部门「云核心网产品线DI」
+            if (deptCode != null && "0".equals(deptCode.trim())) {
+                deptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+                deptLevel = 2;
+            }
             SchoolCreditDetailRequestVO request = new SchoolCreditDetailRequestVO();
             request.setDeptCode(deptCode);
             request.setDeptLevel(deptLevel);
