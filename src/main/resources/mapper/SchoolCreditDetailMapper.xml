@@ -2,6 +2,89 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.huawei.aitransform.mapper.SchoolCreditDetailMapper">
 
+    <!-- 列表与条数复用的 WHERE：部门、职位、人员类型(干部/专家)、岗位AI成熟度（专家+L1 走 cadre_position_ai_maturity） -->
+    <sql id="schoolCreditDetailWhere">
+        WHERE 1=1
+        <choose>
+            <when test="request.deptLevel == 0 or request.deptCode == null or '0'.equals(request.deptCode)">
+            </when>
+            <when test="request.deptLevel == 1">
+                AND pc.firstdeptcode = #{request.deptCode}
+            </when>
+            <when test="request.deptLevel == 2">
+                AND pc.seconddeptcode = #{request.deptCode}
+            </when>
+            <when test="request.deptLevel == 3">
+                AND pc.thirddeptcode = #{request.deptCode}
+            </when>
+            <when test="request.deptLevel == 4">
+                AND pc.fourthdeptcode = #{request.deptCode}
+            </when>
+            <when test="request.deptLevel == 5">
+                AND pc.fifthdeptcode = #{request.deptCode}
+            </when>
+            <when test="request.deptLevel == 6">
+                AND pc.sixthdeptcode = #{request.deptCode}
+            </when>
+            <otherwise>
+                AND (pc.firstdeptcode = #{request.deptCode}
+                OR pc.seconddeptcode = #{request.deptCode}
+                OR pc.thirddeptcode = #{request.deptCode}
+                OR pc.fourthdeptcode = #{request.deptCode}
+                OR pc.fifthdeptcode = #{request.deptCode}
+                OR pc.sixthdeptcode = #{request.deptCode}
+                OR pc.lowest_dept_number = #{request.deptCode})
+            </otherwise>
+        </choose>
+        <if test="request.jobFamily != null and request.jobFamily != ''">
+            AND pc.job_family = #{request.jobFamily}
+        </if>
+        <if test="request.jobCategory != null and request.jobCategory != ''">
+            AND pc.job_category = #{request.jobCategory}
+        </if>
+        <if test="request.jobSubCategory != null and request.jobSubCategory != ''">
+            AND pc.job_subcategory = #{request.jobSubCategory}
+        </if>
+        <!-- 人员类型：0 全员；1 干部（cadre 字段非空）；2 专家（expert 字段非空）。与 positionMaturity 联用时加等值条件 -->
+        <if test="request.roleType != null and request.roleType != 0">
+            <choose>
+                <when test="request.roleType == 1">
+                    <choose>
+                        <when test="request.positionMaturity != null and request.positionMaturity != ''">
+                            AND pc.cadre_position_ai_maturity IS NOT NULL
+                            AND TRIM(pc.cadre_position_ai_maturity) != ''
+                            AND UPPER(TRIM(pc.cadre_position_ai_maturity)) = UPPER(TRIM(#{request.positionMaturity}))
+                        </when>
+                        <otherwise>
+                            AND pc.cadre_position_ai_maturity IS NOT NULL
+                            AND TRIM(pc.cadre_position_ai_maturity) != ''
+                        </otherwise>
+                    </choose>
+                </when>
+                <when test="request.roleType == 2">
+                    <choose>
+                        <!-- 专家 + 岗位成熟度 L1：按 t_personal_credit.cadre_position_ai_maturity 为 L1 过滤（且仍为专家行） -->
+                        <when test="request.positionMaturity != null and request.positionMaturity != '' and 'L1'.equalsIgnoreCase(request.positionMaturity)">
+                            AND pc.expert_position_ai_maturity IS NOT NULL
+                            AND TRIM(pc.expert_position_ai_maturity) != ''
+                            AND pc.cadre_position_ai_maturity IS NOT NULL
+                            AND UPPER(TRIM(pc.cadre_position_ai_maturity)) = UPPER(TRIM(#{request.positionMaturity}))
+                        </when>
+                        <when test="request.positionMaturity != null and request.positionMaturity != ''">
+                            AND pc.expert_position_ai_maturity IS NOT NULL
+                            AND TRIM(pc.expert_position_ai_maturity) != ''
+                            AND UPPER(TRIM(pc.expert_position_ai_maturity)) = UPPER(TRIM(#{request.positionMaturity}))
+                        </when>
+                        <otherwise>
+                            AND pc.expert_position_ai_maturity IS NOT NULL
+                            AND TRIM(pc.expert_position_ai_maturity) != ''
+                        </otherwise>
+                    </choose>
+                </when>
+            </choose>
+        </if>
+    </sql>
+
     <!-- AI School学分数据明细结果映射 -->
     <resultMap id="SchoolCreditDetailResultMap" type="com.huawei.aitransform.entity.SchoolCreditDetailVO">
         <id column="id" property="id"/>
@@ -48,12 +131,19 @@
             pc.fifthdept AS department_level5,
             pc.sixthdept AS department_level6,
             SUBSTRING_INDEX(pc.lowest_dept, '/', 1) AS min_department,
-            NULL AS is_cadre,
+            CASE
+                WHEN pc.cadre_position_ai_maturity IS NOT NULL AND TRIM(pc.cadre_position_ai_maturity) != '' THEN 1
+                ELSE 0 END AS is_cadre,
             NULL AS cadre_type,
-            NULL AS is_expert,
+            CASE
+                WHEN pc.expert_position_ai_maturity IS NOT NULL AND TRIM(pc.expert_position_ai_maturity) != '' THEN 1
+                ELSE 0 END AS is_expert,
             NULL AS is_frontline_manager,
             NULL AS organization_maturity,
-            NULL AS position_maturity,
+            COALESCE(
+                NULLIF(TRIM(pc.cadre_position_ai_maturity), ''),
+                NULLIF(TRIM(pc.expert_position_ai_maturity), '')
+            ) AS position_maturity,
             pc.current_credit AS current_credits,
             pc.personal_credit_completion_rate AS completion_rate,
             pc.dept_benchmark_completion_rate AS benchmark_rate,
@@ -75,51 +165,7 @@
                 ELSE 'danger'
                 END AS status_type
         FROM t_personal_credit pc
-        WHERE 1=1
-        <!-- 部门条件 -->
-        <choose>
-            <when test="request.deptLevel == 0 or request.deptCode == null or '0'.equals(request.deptCode)">
-            </when>
-            <when test="request.deptLevel == 1">
-                AND pc.firstdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 2">
-                AND pc.seconddeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 3">
-                AND pc.thirddeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 4">
-                AND pc.fourthdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 5">
-                AND pc.fifthdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 6">
-                AND pc.sixthdeptcode = #{request.deptCode}
-            </when>
-            <otherwise>
-                AND (pc.firstdeptcode = #{request.deptCode}
-                OR pc.seconddeptcode = #{request.deptCode}
-                OR pc.thirddeptcode = #{request.deptCode}
-                OR pc.fourthdeptcode = #{request.deptCode}
-                OR pc.fifthdeptcode = #{request.deptCode}
-                OR pc.sixthdeptcode = #{request.deptCode}
-                OR pc.lowest_dept_number = #{request.deptCode})
-            </otherwise>
-        </choose>
-        <!-- 职位族条件 -->
-        <if test="request.jobFamily != null and request.jobFamily != ''">
-            AND pc.job_family = #{request.jobFamily}
-        </if>
-        <!-- 职位类条件 -->
-        <if test="request.jobCategory != null and request.jobCategory != ''">
-            AND pc.job_category = #{request.jobCategory}
-        </if>
-        <!-- 职位子类条件 -->
-        <if test="request.jobSubCategory != null and request.jobSubCategory != ''">
-            AND pc.job_subcategory = #{request.jobSubCategory}
-        </if>
+        <include refid="schoolCreditDetailWhere"/>
         ORDER BY pc.employee_number
         LIMIT #{request.pageSize} OFFSET #{offset}
     </select>
@@ -128,51 +174,7 @@
     <select id="getCreditDetailCount" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_personal_credit pc
-        WHERE 1=1
-        <!-- 部门条件 -->
-        <choose>
-            <when test="request.deptLevel == 0 or request.deptCode == null or '0'.equals(request.deptCode)">
-            </when>
-            <when test="request.deptLevel == 1">
-                AND pc.firstdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 2">
-                AND pc.seconddeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 3">
-                AND pc.thirddeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 4">
-                AND pc.fourthdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 5">
-                AND pc.fifthdeptcode = #{request.deptCode}
-            </when>
-            <when test="request.deptLevel == 6">
-                AND pc.sixthdeptcode = #{request.deptCode}
-            </when>
-            <otherwise>
-                AND (pc.firstdeptcode = #{request.deptCode}
-                OR pc.seconddeptcode = #{request.deptCode}
-                OR pc.thirddeptcode = #{request.deptCode}
-                OR pc.fourthdeptcode = #{request.deptCode}
-                OR pc.fifthdeptcode = #{request.deptCode}
-                OR pc.sixthdeptcode = #{request.deptCode}
-                OR pc.lowest_dept_number = #{request.deptCode})
-            </otherwise>
-        </choose>
-        <!-- 职位族条件 -->
-        <if test="request.jobFamily != null and request.jobFamily != ''">
-            AND pc.job_family = #{request.jobFamily}
-        </if>
-        <!-- 职位类条件 -->
-        <if test="request.jobCategory != null and request.jobCategory != ''">
-            AND pc.job_category = #{request.jobCategory}
-        </if>
-        <!-- 职位子类条件 -->
-        <if test="request.jobSubCategory != null and request.jobSubCategory != ''">
-            AND pc.job_subcategory = #{request.jobSubCategory}
-        </if>
+        <include refid="schoolCreditDetailWhere"/>
     </select>
 
 </mapper>
