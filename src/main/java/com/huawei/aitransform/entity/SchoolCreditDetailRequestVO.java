@@ -21,7 +21,7 @@ public class SchoolCreditDetailRequestVO implements Serializable {
 
     /**
      * 人员/角色类型（0-全员不过滤；1-干部：cadre_position_ai_maturity 非空；2-专家：expert_position_ai_maturity 非空）。
-     * 与 {@link #positionMaturity} 联用：干部按 cadre 等值过滤；专家在非 L1 时按 expert 等值过滤；专家且 L1 时按 cadre_position_ai_maturity 等值过滤（业务约定）。
+     * 与 {@link #positionMaturity} 联用：干部按 cadre_position_ai_maturity 等值过滤；专家按 expert_position_ai_maturity 等值过滤。
      * 3-基层主管（若需扩展可单独立项，本表明细查询当前未实现）。
      */
     private Integer roleType;

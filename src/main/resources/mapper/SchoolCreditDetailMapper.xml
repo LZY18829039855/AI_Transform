@@ -63,13 +63,6 @@
                 </when>
                 <when test="request.roleType == 2">
                     <choose>
-                        <!-- 专家 + 岗位成熟度 L1：按 t_personal_credit.cadre_position_ai_maturity 为 L1 过滤（且仍为专家行） -->
-                        <when test="request.positionMaturity != null and request.positionMaturity != '' and 'L1'.equalsIgnoreCase(request.positionMaturity)">
-                            AND pc.expert_position_ai_maturity IS NOT NULL
-                            AND TRIM(pc.expert_position_ai_maturity) != ''
-                            AND pc.cadre_position_ai_maturity IS NOT NULL
-                            AND UPPER(TRIM(pc.cadre_position_ai_maturity)) = UPPER(TRIM(#{request.positionMaturity}))
-                        </when>
                         <when test="request.positionMaturity != null and request.positionMaturity != ''">
                             AND pc.expert_position_ai_maturity IS NOT NULL
                             AND TRIM(pc.expert_position_ai_maturity) != ''
