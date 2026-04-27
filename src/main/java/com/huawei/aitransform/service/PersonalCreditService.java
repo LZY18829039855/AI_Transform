@@ -101,7 +101,6 @@ public class PersonalCreditService {
                 .collect(Collectors.toList());
 
         Map<Integer, BigDecimal> courseCreditMap = new HashMap<>();
-        Map<String, BigDecimal> courseNumberCreditMap = new HashMap<>(); // Number -> Credit
         Map<Integer, CoursePlanningInfoVO> courseById = new HashMap<>();
 
         for (CoursePlanningInfoVO course : allCourses) {
@@ -116,9 +115,6 @@ public class PersonalCreditService {
             if (course.getId() != null) {
                 courseCreditMap.put(course.getId(), credit);
                 courseById.put(course.getId(), course);
-            }
-            if (course.getCourseNumber() != null) {
-                courseNumberCreditMap.put(course.getCourseNumber(), credit);
             }
         }
 
@@ -183,7 +179,6 @@ public class PersonalCreditService {
             PersonalCredit credit = calculateEmployeeCredit(
                     employee,
                     courseCreditMap,
-                    courseNumberCreditMap,
                     deptSelectionMap,
                     allCourses,
                     courseById,
@@ -268,7 +263,6 @@ public class PersonalCreditService {
                 .collect(Collectors.toList());
 
         Map<Integer, BigDecimal> courseCreditMap = new HashMap<>();
-        Map<String, BigDecimal> courseNumberCreditMap = new HashMap<>();
         Map<Integer, CoursePlanningInfoVO> courseById = new HashMap<>();
         for (CoursePlanningInfoVO course : allCourses) {
             BigDecimal credit = BigDecimal.ZERO;
@@ -282,9 +276,6 @@ public class PersonalCreditService {
             if (course.getId() != null) {
                 courseCreditMap.put(course.getId(), credit);
                 courseById.put(course.getId(), course);
-            }
-            if (course.getCourseNumber() != null) {
-                courseNumberCreditMap.put(course.getCourseNumber(), credit);
             }
         }
 
@@ -335,7 +326,6 @@ public class PersonalCreditService {
             PersonalCredit credit = calculateEmployeeCredit(
                     employee,
                     courseCreditMap,
-                    courseNumberCreditMap,
                     deptSelectionMap,
                     allCourses,
                     courseById,
@@ -362,7 +352,6 @@ public class PersonalCreditService {
 
     private PersonalCredit calculateEmployeeCredit(EmployeeSyncDataVO employee,
                                                    Map<Integer, BigDecimal> courseCreditMap,
-                                                   Map<String, BigDecimal> courseNumberCreditMap,
                                                    Map<String, DeptCourseSelection> deptSelectionMap,
                                                    List<CoursePlanningInfoVO> allCourses,
                                                    Map<Integer, CoursePlanningInfoVO> courseById,
@@ -387,14 +376,20 @@ public class PersonalCreditService {
 
         // 计算目标学分（包含实战课程）
         BigDecimal targetCredit = BigDecimal.ZERO;
-        List<String> targetCourseNumbers = new ArrayList<>(); // 仅基础/进阶用于 micro/mooc 完课判断
+        // 基础/进阶目标课程（按课程表主键ID锁定唯一课程，即唯一 (bigType, number)）
+        List<CoursePlanningInfoVO> targetBasicAdvancedCourses = new ArrayList<>();
+        // 仅用于查询完课（完课表只认 number，不区分 bigType）
+        Set<String> targetCourseNumberSet = new LinkedHashSet<>();
 
         if (useAllCourses) {
             for (CoursePlanningInfoVO course : allCourses) {
                 BigDecimal credit = courseCreditMap.getOrDefault(course.getId(), BigDecimal.ZERO);
                 targetCredit = targetCredit.add(credit);
                 if ("基础".equals(course.getCourseLevel()) || "进阶".equals(course.getCourseLevel())) {
-                    targetCourseNumbers.add(course.getCourseNumber());
+                    targetBasicAdvancedCourses.add(course);
+                    if (course.getCourseNumber() != null && !course.getCourseNumber().trim().isEmpty()) {
+                        targetCourseNumberSet.add(course.getCourseNumber().trim());
+                    }
                 }
             }
         } else {
@@ -406,8 +401,9 @@ public class PersonalCreditService {
                 BigDecimal credit = courseCreditMap.getOrDefault(courseId, BigDecimal.ZERO);
                 targetCredit = targetCredit.add(credit);
                 if ("基础".equals(c.getCourseLevel()) || "进阶".equals(c.getCourseLevel())) {
+                    targetBasicAdvancedCourses.add(c);
                     if (c.getCourseNumber() != null && !c.getCourseNumber().trim().isEmpty()) {
-                        targetCourseNumbers.add(c.getCourseNumber());
+                        targetCourseNumberSet.add(c.getCourseNumber().trim());
                     }
                 }
             }
@@ -417,11 +413,30 @@ public class PersonalCreditService {
         BigDecimal courseCompletedCredit = BigDecimal.ZERO;
 
         // 1) 基础/进阶完课（micro/mooc）
-        if (!targetCourseNumbers.isEmpty()) {
+        if (!targetCourseNumberSet.isEmpty() && !targetBasicAdvancedCourses.isEmpty()) {
+            List<String> targetCourseNumbers = new ArrayList<>(targetCourseNumberSet);
             List<String> completedCourseNumbers = personalCourseCompletionMapper.getCompletedCourseNumbers(empNum, targetCourseNumbers);
-            for (String courseNum : completedCourseNumbers) {
-                BigDecimal credit = courseNumberCreditMap.getOrDefault(courseNum, BigDecimal.ZERO);
-                courseCompletedCredit = courseCompletedCredit.add(credit);
+            Set<String> completedSet = completedCourseNumbers == null ? Collections.emptySet()
+                    : completedCourseNumbers.stream()
+                    .filter(Objects::nonNull)
+                    .map(String::trim)
+                    .filter(s -> !s.isEmpty())
+                    .collect(Collectors.toSet());
+
+            // 注意：完课表按 number 认定完课；若某 number 完课，则该 number 对应的所有目标课程（不同 bigType）均视为完课
+            for (CoursePlanningInfoVO course : targetBasicAdvancedCourses) {
+                if (course == null || course.getId() == null || course.getCourseNumber() == null) {
+                    continue;
+                }
+                String num = course.getCourseNumber().trim();
+                if (num.isEmpty()) {
+                    continue;
+                }
+                if (completedSet.contains(num)) {
+                    courseCompletedCredit = courseCompletedCredit.add(
+                            courseCreditMap.getOrDefault(course.getId(), BigDecimal.ZERO)
+                    );
+                }
             }
         }
 
