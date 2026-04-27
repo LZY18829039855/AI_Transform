@@ -11,9 +11,12 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -38,6 +41,9 @@ public class HandsOnCourseService {
 
     @Autowired
     private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
+
+    @Autowired
+    private PersonalCreditService personalCreditService;
 
     /**
      * 同步实战课程个人完课情况
@@ -117,6 +123,7 @@ public class HandsOnCourseService {
             // 5. 当 task_status 为 finished 时，同步更新 t_employee_training_info 的实战完课列表
             if (TASK_STATUS_FINISHED.equalsIgnoreCase(request.getTaskStatus().trim())) {
                 syncPracticalCourseToTrainingInfo(request.getAccount().trim(), request.getTaskType().trim(), result);
+                schedulePersonalCreditRefreshAfterCommit(request.getAccount().trim(), result);
             }
 
             // 6. 构建返回结果
@@ -134,6 +141,43 @@ public class HandsOnCourseService {
             result.put("message", "系统异常：" + e.getMessage());
             throw e;
         }
+    }
+
+    /**
+     * 在「实战完课同步」事务提交后，增量刷新该员工的个人学分汇总（t_personal_credit）。
+     * <p>
+     * 关键点：刷新学分失败不应回滚 hands_on_courses 的写入，因此放到 afterCommit 执行。
+     */
+    private void schedulePersonalCreditRefreshAfterCommit(String account, Map<String, Object> result) {
+        if (account == null || account.trim().isEmpty()) {
+            return;
+        }
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            // 理论上在 @Transactional 内应为 true；兜底：直接尝试刷新但吞掉异常
+            try {
+                personalCreditService.syncPersonalCreditsForEmployees(Collections.singleton(account.trim()));
+                result.put("personalCreditRefreshed", true);
+            } catch (Exception e) {
+                logger.warn("实战完课已写入，但个人学分刷新失败（非阻断）：account={}", account, e);
+                result.put("personalCreditRefreshed", false);
+                result.put("personalCreditRefreshError", e.getMessage());
+            }
+            return;
+        }
+
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    personalCreditService.syncPersonalCreditsForEmployees(Collections.singleton(account.trim()));
+                    result.put("personalCreditRefreshed", true);
+                } catch (Exception e) {
+                    logger.warn("实战完课已提交，但个人学分刷新失败（非阻断）：account={}", account, e);
+                    result.put("personalCreditRefreshed", false);
+                    result.put("personalCreditRefreshError", e.getMessage());
+                }
+            }
+        });
     }
 
     /**
