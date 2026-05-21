@@ -707,8 +707,12 @@ public class PersonalCreditService {
         } else if (deptInfo != null && deptInfo.getDeptLevel() != null) {
             try {
                 int currentLevel = Integer.parseInt(deptInfo.getDeptLevel());
-                // 查询下一级
-                level = getDeptLevelColumnName(currentLevel + 1);
+                // 最底层（6 级）部门无下级可展：按本层级聚合成一行，避免按 lowest_dept 分组导致明细为空仅剩总计
+                if (currentLevel >= 6) {
+                    level = getDeptLevelColumnName(currentLevel);
+                } else {
+                    level = getDeptLevelColumnName(currentLevel + 1);
+                }
             } catch (NumberFormatException e) {
                 logger.warn("Invalid dept level format: {}", deptInfo.getDeptLevel());
             }
@@ -790,6 +794,40 @@ public class PersonalCreditService {
         } else if ("031562".equals(deptCode)) {
             deptName = "云核心网产品线";
         }
+
+        // 选中具体部门但分组结果为空时（如最小部门字段未填），补一行当前部门汇总，与总计区分展示
+        if (!useDefaultStrategy && (finalList == null || finalList.isEmpty())) {
+            CreditOverviewVO totalRow = calculateTotalStatistics(list, deptCode, role);
+            if (totalRow != null && totalRow.getBaselineHeadcount() != null && totalRow.getBaselineHeadcount() > 0) {
+                CreditOverviewVO selfRow = new CreditOverviewVO();
+                selfRow.setCategoryName(deptName);
+                selfRow.setCategoryCode(deptCode);
+                Integer selfLevel = null;
+                if (deptInfo != null && deptInfo.getDeptLevel() != null) {
+                    try {
+                        selfLevel = Integer.parseInt(deptInfo.getDeptLevel());
+                    } catch (NumberFormatException ignored) {
+                        // ignore
+                    }
+                }
+                if (selfLevel == null) {
+                    selfLevel = inferDeptLevelFromCredit(deptCode);
+                }
+                if (selfLevel == null) {
+                    selfLevel = -1;
+                }
+                selfRow.setCategoryLevel(selfLevel);
+                selfRow.setBaselineHeadcount(totalRow.getBaselineHeadcount());
+                selfRow.setMaxScore(totalRow.getMaxScore());
+                selfRow.setMinScore(totalRow.getMinScore());
+                selfRow.setAverageCurrentCredit(totalRow.getAverageCurrentCredit());
+                selfRow.setAverageTargetCredit(totalRow.getAverageTargetCredit());
+                selfRow.setAchievementRate(totalRow.getAchievementRate());
+                calculateTimeProgressAndWarning(Collections.singletonList(selfRow));
+                finalList = Collections.singletonList(selfRow);
+            }
+        }
+
         response.setDeptName(deptName);
         response.setStatistics(finalList);
 
