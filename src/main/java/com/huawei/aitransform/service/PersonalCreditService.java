@@ -731,6 +731,8 @@ public class PersonalCreditService {
 
         List<CreditOverviewVO> list = personalCreditMapper.getDepartmentStatistics(level, levelCode, deptCode, role);
         calculateTimeProgressAndWarning(list);
+        Integer categoryLevel = resolveCategoryLevelFromLevelCode(levelCode);
+        enrichCategoryLevel(list, categoryLevel);
 
         // 只展示指定顺序的部门，但总计仍然基于数据库全量数据
         // 指定顺序：
@@ -806,6 +808,36 @@ public class PersonalCreditService {
             case 5: return "fifthdept";
             case 6: return "sixthdept";
             default: return "lowest_dept";
+        }
+    }
+
+    /**
+     * 将统计分组所用的编码列映射为详情查询 deptLevel（与 SchoolCreditDetailMapper 约定一致）
+     */
+    private Integer resolveCategoryLevelFromLevelCode(String levelCode) {
+        if (levelCode == null) {
+            return -1;
+        }
+        switch (levelCode) {
+            case "firstdeptcode": return 1;
+            case "seconddeptcode": return 2;
+            case "thirddeptcode": return 3;
+            case "fourthdeptcode": return 4;
+            case "fifthdeptcode": return 5;
+            case "sixthdeptcode": return 6;
+            case "lowest_dept_number": return -1;
+            default: return -1;
+        }
+    }
+
+    private void enrichCategoryLevel(List<CreditOverviewVO> list, Integer categoryLevel) {
+        if (list == null || categoryLevel == null) {
+            return;
+        }
+        for (CreditOverviewVO vo : list) {
+            if (vo != null) {
+                vo.setCategoryLevel(categoryLevel);
+            }
         }
     }
 

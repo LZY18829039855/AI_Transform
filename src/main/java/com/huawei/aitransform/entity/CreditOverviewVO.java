@@ -20,6 +20,11 @@ public class CreditOverviewVO implements Serializable {
     private String categoryCode;
 
     /**
+     * 分组维度对应的部门层级（1-6 对应 first~sixth 部门编码列；-1 表示按最小部门编号 lowest_dept_number 分组）
+     */
+    private Integer categoryLevel;
+
+    /**
      * 基线人数
      */
     private Integer baselineHeadcount;
@@ -73,6 +78,14 @@ public class CreditOverviewVO implements Serializable {
 
     public void setCategoryCode(String categoryCode) {
         this.categoryCode = categoryCode;
+    }
+
+    public Integer getCategoryLevel() {
+        return categoryLevel;
+    }
+
+    public void setCategoryLevel(Integer categoryLevel) {
+        this.categoryLevel = categoryLevel;
     }
 
     public Integer getBaselineHeadcount() {
