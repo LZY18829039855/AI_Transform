@@ -3,11 +3,13 @@ package com.huawei.aitransform.controller;
 import com.huawei.aitransform.common.PageResult;
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.DepartmentCourseCompletionRateVO;
+import com.huawei.aitransform.entity.DepartmentEmployeeCourseCompletionDetailVO;
 import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
 import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.service.DepartmentCourseCompletionRateService;
+import com.huawei.aitransform.service.DepartmentEmployeeCourseCompletionDetailService;
 import com.huawei.aitransform.service.DepartmentEmployeeTrainingOverviewService;
 import com.huawei.aitransform.service.ManualEnterCreditService;
 import com.huawei.aitransform.service.PersonalCourseCompletionService;
@@ -46,6 +48,9 @@ public class PersonalCourseCompletionController {
 
     @Autowired
     private DepartmentEmployeeTrainingOverviewService departmentEmployeeTrainingOverviewService;
+
+    @Autowired
+    private DepartmentEmployeeCourseCompletionDetailService departmentEmployeeCourseCompletionDetailService;
 
     @Autowired
     private ManualEnterCreditService manualEnterCreditService;
@@ -181,6 +186,42 @@ public class PersonalCourseCompletionController {
             }
             List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt, maturityFilter);
             return ResponseEntity.ok(Result.success("查询成功", list));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 部门全员目标课程完课矩阵（导出用）：列仅为各部门选课目标课程并集，行含每人完课标记
+     */
+    @GetMapping("/department-employee-course-completion-detail")
+    public ResponseEntity<Result<DepartmentEmployeeCourseCompletionDetailVO>> getDepartmentEmployeeCourseCompletionDetail(
+            @RequestParam(value = "deptId", required = true) String deptId,
+            @RequestParam(value = "personType", required = false) Integer personType,
+            @RequestParam(value = "ai_maturity", required = false) String aiMaturity) {
+        try {
+            if (deptId == null || deptId.trim().isEmpty()) {
+                return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
+            }
+            Integer pt = (personType != null) ? personType : 0;
+            if (pt != 0 && pt != 1 && pt != 2) {
+                return ResponseEntity.ok(Result.error(400, "不支持的人员类型，目前仅支持全员（personType=0）、干部（personType=1）、专家（personType=2）"));
+            }
+            String maturityFilter = null;
+            if (aiMaturity != null && !aiMaturity.trim().isEmpty()) {
+                String normalized = aiMaturity.trim().toUpperCase();
+                if (!AI_MATURITY_VALUES.contains(normalized)) {
+                    return ResponseEntity.ok(Result.error(400, "ai_maturity 仅支持 L1、L2、L3"));
+                }
+                if (pt != 1 && pt != 2) {
+                    return ResponseEntity.ok(Result.error(400, "岗位成熟度筛选仅在使用干部（personType=1）或专家（personType=2）时可用"));
+                }
+                maturityFilter = normalized;
+            }
+            DepartmentEmployeeCourseCompletionDetailVO data =
+                    departmentEmployeeCourseCompletionDetailService.getDepartmentEmployeeCourseCompletionDetail(
+                            deptId.trim(), pt, maturityFilter);
+            return ResponseEntity.ok(Result.success("查询成功", data));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
