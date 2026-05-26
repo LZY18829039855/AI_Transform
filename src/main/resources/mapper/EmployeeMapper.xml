@@ -787,6 +787,9 @@
                 'AI软件工程与工具（ICT）',
                 'AI系统测试（ICT）'
             )
+            AND q_detail.competence_from IS NOT NULL
+            AND q_detail.competence_to IS NOT NULL
+            AND CURDATE() BETWEEN q_detail.competence_from AND q_detail.competence_to
             AND q_detail.competence_from = (
                 SELECT q2.competence_from
                 FROM t_qualifications q2
@@ -797,6 +800,9 @@
                     'AI软件工程与工具（ICT）',
                     'AI系统测试（ICT）'
                 )
+                AND q2.competence_from IS NOT NULL
+                AND q2.competence_to IS NOT NULL
+                AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                 ORDER BY 
                     CASE 
                         WHEN q2.competence_rating_cn = '8级' THEN 1
@@ -902,6 +908,9 @@
                 'AI软件工程与工具（ICT）',
                 'AI系统测试（ICT）'
             )
+            AND q_detail.competence_from IS NOT NULL
+            AND q_detail.competence_to IS NOT NULL
+            AND CURDATE() BETWEEN q_detail.competence_from AND q_detail.competence_to
             AND q_detail.competence_from = (
                 SELECT q2.competence_from
                 FROM t_qualifications q2
@@ -912,6 +921,9 @@
                     'AI软件工程与工具（ICT）',
                     'AI系统测试（ICT）'
                 )
+                AND q2.competence_from IS NOT NULL
+                AND q2.competence_to IS NOT NULL
+                AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                 ORDER BY 
                     CASE 
                         WHEN q2.competence_rating_cn = '8级' THEN 1

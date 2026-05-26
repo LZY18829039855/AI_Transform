@@ -372,8 +372,9 @@
             )
             AND q1.competence_from IS NOT NULL
             AND q1.competence_to IS NOT NULL
+            AND CURDATE() BETWEEN q1.competence_from AND q1.competence_to
             AND q1.competence_from = (
-                -- 子查询：找到每个员工最高级别的AI任职记录的competence_from
+                -- 子查询：找到每个员工有效期内最高级别的AI任职记录的competence_from
                 SELECT q2.competence_from
                 FROM t_qualifications q2
                 WHERE q2.employee_number = q1.employee_number
@@ -387,6 +388,7 @@
                 )
                 AND q2.competence_from IS NOT NULL
                 AND q2.competence_to IS NOT NULL
+                AND CURDATE() BETWEEN q2.competence_from AND q2.competence_to
                 ORDER BY 
                     CASE 
                         -- 8级最高，依次到1级，初级最低
