@@ -2,6 +2,7 @@ package com.huawei.aitransform.controller;
 
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
+import com.huawei.aitransform.entity.UserPermissionStatusVO;
 import com.huawei.aitransform.service.UserConfigService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
@@ -45,10 +46,10 @@ public class UserConfigController {
      * 验证用户是否为有效用户（工号取自 request 中的 account cookie；若首字符为英文字母，校验前会去掉该首字符）
      * @param request HTTP请求对象，用于获取cookie
      * @param accountCookie 从cookie中获取的工号（可选，如果cookie名称为account）
-     * @return true表示是有效用户，false表示不是有效用户或不存在
+     * @return member 表示是否在白名单，asAdmin 表示是否为管理员
      */
     @GetMapping("/permissions")
-    public ResponseEntity<Result<Boolean>> getUserPermissions(
+    public ResponseEntity<Result<UserPermissionStatusVO>> getUserPermissions(
             HttpServletRequest request,
             @CookieValue(value = "account", required = false) String accountCookie) {
         try {
@@ -69,13 +70,12 @@ public class UserConfigController {
                 }
             }
 
-            // 如果未获取到工号，返回false
+            // 如果未获取到工号，返回无权限状态
             if (account == null || account.trim().isEmpty()) {
-                return ResponseEntity.ok(Result.success("查询成功", false));
+                return ResponseEntity.ok(Result.success("查询成功", new UserPermissionStatusVO(false, false)));
             }
-            // 查询数据库中是否存在该有效用户
-            boolean isValid = userConfigService.isValidUser(account);
-            return ResponseEntity.ok(Result.success("查询成功", isValid));
+            UserPermissionStatusVO status = userConfigService.getUserPermissionStatus(account);
+            return ResponseEntity.ok(Result.success("查询成功", status));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }

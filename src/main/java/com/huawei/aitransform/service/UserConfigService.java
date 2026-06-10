@@ -3,6 +3,7 @@ package com.huawei.aitransform.service;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.entity.UserConfigPermissionResponseVO;
 import com.huawei.aitransform.entity.UserConfigVO;
+import com.huawei.aitransform.entity.UserPermissionStatusVO;
 import com.huawei.aitransform.mapper.UserConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -38,10 +39,7 @@ public class UserConfigService {
                 continue;
             }
 
-            // 判断是否为管理员（is_admin为"1"、"Y"、"true"等视为管理员）
-            String isAdmin = user.getIsAdmin();
-            if (isAdmin != null && (isAdmin.equals("1") || isAdmin.equalsIgnoreCase("Y") 
-                    || isAdmin.equalsIgnoreCase("true") || isAdmin.equalsIgnoreCase("yes"))) {
+            if (parseIsAdmin(user.getIsAdmin())) {
                 adminAccounts.add(user.getAccount());
             } else {
                 nonAdminAccounts.add(user.getAccount());
@@ -75,16 +73,40 @@ public class UserConfigService {
      * @return true表示是有效用户，false表示不是有效用户或不存在
      */
     public boolean isValidUser(String account) {
+        return getUserPermissionStatus(account).isMember();
+    }
+
+    /**
+     * 查询指定工号的权限状态（白名单成员 + 是否管理员）
+     * @param account 工号（若首字符为英文字母会先去掉再查询）
+     */
+    public UserPermissionStatusVO getUserPermissionStatus(String account) {
         if (account == null || account.trim().isEmpty()) {
-            return false;
+            return new UserPermissionStatusVO(false, false);
         }
         String normalized = normalizeAccountForLookup(account);
         if (normalized.isEmpty()) {
-            return false;
+            return new UserPermissionStatusVO(false, false);
         }
 
         UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
-        return user != null;
+        if (user == null) {
+            return new UserPermissionStatusVO(false, false);
+        }
+        return new UserPermissionStatusVO(true, parseIsAdmin(user.getIsAdmin()));
+    }
+
+    /**
+     * 判断 is_admin 字段是否表示管理员
+     */
+    private boolean parseIsAdmin(String isAdmin) {
+        if (isAdmin == null) {
+            return false;
+        }
+        return isAdmin.equals("1")
+                || isAdmin.equalsIgnoreCase("Y")
+                || isAdmin.equalsIgnoreCase("true")
+                || isAdmin.equalsIgnoreCase("yes");
     }
 
     /**
