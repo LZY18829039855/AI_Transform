@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.CookieValue;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import javax.servlet.http.HttpServletRequest;
@@ -45,24 +46,29 @@ public class PersonalCreditController {
     /**
      * 获取个人学分概览
      * @param request HTTP请求
+     * @param account 工号入参（可选），不为空时优先使用；为空时从 cookie 获取
      * @param accountCookie Cookie中的账号
      * @return 个人学分概览数据
      */
     @GetMapping("/overview")
     public ResponseEntity<Result<PersonalCredit>> getPersonalCreditOverview(
             HttpServletRequest request,
+            @RequestParam(value = "account", required = false) String account,
             @CookieValue(value = "account", required = false) String accountCookie) {
         try {
-            // 从cookie中获取用户工号信息
-            UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
-
-            // 如果未获取到用户信息，返回错误提示
-            if (accountInfo == null || accountInfo.getEmpNum() == null || accountInfo.getEmpNum().trim().isEmpty()) {
-                return ResponseEntity.ok(Result.error(401, "未获取到用户信息，请先登录"));
+            String empNum = null;
+            if (account != null && !account.trim().isEmpty()) {
+                empNum = account.trim();
+            } else {
+                UserAccountResponseVO accountInfo = userConfigService.getUserAccountFromCookie(request, accountCookie);
+                if (accountInfo != null && accountInfo.getEmpNum() != null && !accountInfo.getEmpNum().trim().isEmpty()) {
+                    empNum = accountInfo.getEmpNum().trim();
+                }
             }
 
-            // 获取不带首字母的工号
-            String empNum = accountInfo.getEmpNum().trim();
+            if (empNum == null || empNum.isEmpty()) {
+                return ResponseEntity.ok(Result.error(401, "未获取到用户信息，请先登录"));
+            }
             
             // 查询数据
             PersonalCredit credit = personalCreditService.getPersonalCreditOverview(empNum);
