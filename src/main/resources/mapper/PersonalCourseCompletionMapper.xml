@@ -57,7 +57,7 @@
     <!-- 根据员工工号查询四级部门ID -->
     <select id="getFourthDeptCodeByEmployeeNumber" resultType="java.lang.String">
         SELECT fourthdeptcode
-        FROM t_employee_sync
+        FROM t_employee
         WHERE employee_number = #{employeeNumber}
             LIMIT 1
     </select>
