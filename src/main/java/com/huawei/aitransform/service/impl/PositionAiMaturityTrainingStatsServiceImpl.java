@@ -62,13 +62,22 @@ public class PositionAiMaturityTrainingStatsServiceImpl implements PositionAiMat
         }
 
         List<PositionAiMaturityCourseCompletionRateVO> out = new ArrayList<>();
+        List<EmployeeTrainingInfoPO> allWithMaturity = new ArrayList<>();
         for (Map.Entry<String, List<EmployeeTrainingInfoPO>> e : byMaturity.entrySet()) {
+            allWithMaturity.addAll(e.getValue());
             PositionAiMaturityCourseCompletionRateVO vo = buildGroup(e.getKey(), personType, e.getValue());
             if (vo != null) {
                 out.add(vo);
             }
         }
         out.sort(this::compareMaturityVo);
+        // 总计：对已纳入成熟度分组的人员整体重算（与各档人数之和一致）
+        if (!allWithMaturity.isEmpty()) {
+            PositionAiMaturityCourseCompletionRateVO total = buildGroup("总计", personType, allWithMaturity);
+            if (total != null) {
+                out.add(total);
+            }
+        }
         return out;
     }
 

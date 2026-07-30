@@ -61,7 +61,32 @@ public class DepartmentCourseCompletionRateServiceImpl implements DepartmentCour
                 result.add(vo);
             }
         }
+        // 总计基于筛选部门全量口径重算（与学分总览一致），不简单累加子部门行
+        DepartmentCourseCompletionRateVO total = buildTotalStatistics(deptId.trim(), personType);
+        if (total != null) {
+            result.add(total);
+        }
         return result;
+    }
+
+    /**
+     * 构建总计行：按入参部门（0 / 云核心网二级 → 云核心网）全员口径统计，避免子部门课程目标不一致时累加失真。
+     */
+    private DepartmentCourseCompletionRateVO buildTotalStatistics(String deptId, Integer personType) {
+        String resolvedDeptId = "0".equals(deptId)
+                ? DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE
+                : deptId;
+        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(resolvedDeptId);
+        if (dept == null) {
+            return null;
+        }
+        DepartmentCourseCompletionRateVO vo = buildOneDeptStats(dept, null, personType);
+        if (vo == null) {
+            return null;
+        }
+        vo.setDeptId(resolvedDeptId);
+        vo.setDeptName("总计");
+        return vo;
     }
 
     /**
