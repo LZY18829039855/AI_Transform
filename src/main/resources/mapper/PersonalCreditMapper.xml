@@ -387,7 +387,13 @@
         current_credit                   AS currentCredits,
         personal_credit_completion_rate  AS completionRate,
         dept_benchmark_completion_rate   AS benchmarkRate,
-        DATE_FORMAT(credit_completion_date, '%Y-%m-%d') AS completionDate
+        DATE_FORMAT(credit_completion_date, '%Y-%m-%d') AS completionDate,
+        ROUND(
+            DATEDIFF(CURDATE(), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
+            / DATEDIFF(DATE(CONCAT(YEAR(CURDATE()), '-12-31')), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
+            * target_credit,
+            1
+        ) AS scheduleTarget
         FROM t_personal_credit
         <include refid="creditDetailWhere"/>
         ORDER BY personal_credit_completion_rate ASC

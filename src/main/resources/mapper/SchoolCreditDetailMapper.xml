@@ -115,58 +115,86 @@
     </resultMap>
 
     <!-- 查询AI School学分数据明细列表（仅基于 t_personal_credit 表，缺失字段返回空值） -->
+    <!-- 学分状态预警：当前学分 >= 时间进度学分目标 → 正常；>= 目标*80% → 轻度预警；否则滞后预警 -->
     <select id="getCreditDetailList" resultMap="SchoolCreditDetailResultMap">
         SELECT
-            pc.id,
-            pc.last_name AS name,
-            pc.employee_number AS employee_id,
-            pc.job_family,
-            pc.job_category,
-            pc.job_subcategory,
-            pc.firstdept AS department_level1,
-            pc.seconddept AS department_level2,
-            pc.thirddept AS department_level3,
-            pc.fourthdept AS department_level4,
-            pc.fifthdept AS department_level5,
-            pc.sixthdept AS department_level6,
-            SUBSTRING_INDEX(pc.lowest_dept, '/', 1) AS min_department,
+            base.id,
+            base.name,
+            base.employee_id,
+            base.job_family,
+            base.job_category,
+            base.job_subcategory,
+            base.department_level1,
+            base.department_level2,
+            base.department_level3,
+            base.department_level4,
+            base.department_level5,
+            base.department_level6,
+            base.min_department,
+            base.is_cadre,
+            base.cadre_type,
+            base.is_expert,
+            base.is_frontline_manager,
+            base.organization_maturity,
+            base.position_maturity,
+            base.current_credits,
+            base.completion_rate,
+            base.benchmark_rate,
+            base.completion_date,
+            base.schedule_target,
             CASE
-                WHEN pc.cadre_position_ai_maturity IS NOT NULL AND TRIM(pc.cadre_position_ai_maturity) != '' THEN 1
-                ELSE 0 END AS is_cadre,
-            NULL AS cadre_type,
-            CASE
-                WHEN pc.expert_position_ai_maturity IS NOT NULL AND TRIM(pc.expert_position_ai_maturity) != '' THEN 1
-                ELSE 0 END AS is_expert,
-            NULL AS is_frontline_manager,
-            NULL AS organization_maturity,
-            COALESCE(
-                NULLIF(TRIM(pc.cadre_position_ai_maturity), ''),
-                NULLIF(TRIM(pc.expert_position_ai_maturity), '')
-            ) AS position_maturity,
-            pc.current_credit AS current_credits,
-            pc.personal_credit_completion_rate AS completion_rate,
-            pc.dept_benchmark_completion_rate AS benchmark_rate,
-            DATE_FORMAT(pc.credit_completion_date, '%Y-%m-%d') AS completion_date,
-            ROUND(
-                DATEDIFF(CURDATE(), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
-                / DATEDIFF(DATE(CONCAT(YEAR(CURDATE()), '-12-31')), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
-                * pc.target_credit,
-                1
-            ) AS schedule_target,
-            CASE
-                WHEN pc.personal_credit_completion_rate >= 100 THEN '正常'
-                WHEN pc.personal_credit_completion_rate >= 80 THEN '轻度预警'
+                WHEN COALESCE(base.current_credits, 0) &gt;= base.schedule_target THEN '正常'
+                WHEN COALESCE(base.current_credits, 0) &gt;= base.schedule_target * 0.8 THEN '轻度预警'
                 ELSE '滞后预警'
                 END AS status,
             CASE
-                WHEN pc.personal_credit_completion_rate >= 100 THEN 'success'
-                WHEN pc.personal_credit_completion_rate >= 80 THEN 'warning'
+                WHEN COALESCE(base.current_credits, 0) &gt;= base.schedule_target THEN 'success'
+                WHEN COALESCE(base.current_credits, 0) &gt;= base.schedule_target * 0.8 THEN 'warning'
                 ELSE 'danger'
                 END AS status_type
-        FROM t_personal_credit pc
-        <include refid="schoolCreditDetailWhere"/>
-        ORDER BY pc.current_credit DESC, pc.employee_number ASC
-        LIMIT #{request.pageSize} OFFSET #{offset}
+        FROM (
+            SELECT
+                pc.id,
+                pc.last_name AS name,
+                pc.employee_number AS employee_id,
+                pc.job_family,
+                pc.job_category,
+                pc.job_subcategory,
+                pc.firstdept AS department_level1,
+                pc.seconddept AS department_level2,
+                pc.thirddept AS department_level3,
+                pc.fourthdept AS department_level4,
+                pc.fifthdept AS department_level5,
+                pc.sixthdept AS department_level6,
+                SUBSTRING_INDEX(pc.lowest_dept, '/', 1) AS min_department,
+                CASE
+                    WHEN pc.cadre_position_ai_maturity IS NOT NULL AND TRIM(pc.cadre_position_ai_maturity) != '' THEN 1
+                    ELSE 0 END AS is_cadre,
+                NULL AS cadre_type,
+                CASE
+                    WHEN pc.expert_position_ai_maturity IS NOT NULL AND TRIM(pc.expert_position_ai_maturity) != '' THEN 1
+                    ELSE 0 END AS is_expert,
+                NULL AS is_frontline_manager,
+                NULL AS organization_maturity,
+                COALESCE(
+                    NULLIF(TRIM(pc.cadre_position_ai_maturity), ''),
+                    NULLIF(TRIM(pc.expert_position_ai_maturity), '')
+                ) AS position_maturity,
+                pc.current_credit AS current_credits,
+                pc.personal_credit_completion_rate AS completion_rate,
+                pc.dept_benchmark_completion_rate AS benchmark_rate,
+                DATE_FORMAT(pc.credit_completion_date, '%Y-%m-%d') AS completion_date,
+                ROUND(
+                    DATEDIFF(CURDATE(), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
+                    / DATEDIFF(DATE(CONCAT(YEAR(CURDATE()), '-12-31')), DATE(CONCAT(YEAR(CURDATE()), '-01-01')))
+                    * pc.target_credit,
+                    1
+                ) AS schedule_target
+            FROM t_personal_credit pc
+            <include refid="schoolCreditDetailWhere"/>
+            ORDER BY pc.current_credit DESC, pc.employee_number ASC
+            LIMIT #{request.pageSize} OFFSET #{offset}
+        ) base
     </select>
 
     <!-- 查询AI School学分数据明细总数 -->

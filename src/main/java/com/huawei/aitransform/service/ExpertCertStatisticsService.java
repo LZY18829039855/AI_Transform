@@ -877,6 +877,16 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 最高有效AI任职达到5级及以上（5、6、7、8级）时免认证。
+     */
+    private boolean isCertificationExemptByQualification(String highestQualificationLevel) {
+        return "5级".equals(highestQualificationLevel)
+                || "6级".equals(highestQualificationLevel)
+                || "7级".equals(highestQualificationLevel)
+                || "8级".equals(highestQualificationLevel);
+    }
+
+    /**
      * 从职位族字符串中提取职位类
      * 格式：职位族-职位类-职位子类，需要提取中间的职位类
      * @param jobCategory 职位族字符串
@@ -2781,6 +2791,7 @@ public class ExpertCertStatisticsService {
      * 如果满足要求，将干部表中的is_qualifications_standard字段更新为1
      * 
      * 认证要求：
+     * - 最高有效AI任职为5级、6级、7级或8级时免认证，直接达标
      * - 软件类的L2L3干部需要有专业级证书，才算达标，刷新表is_cert_standard字段为1
      * - L2L3的非软件类，需要通过工作级科目二或者专业级科目二，即t_exam_record表中存在exam_code为
      *   （EXCN022303075ZA20，EXCN022303075ZA2E，EXCN022303075ZA2A）且is_pass为1的数据，
@@ -2880,47 +2891,34 @@ public class ExpertCertStatisticsService {
                     qualifiedCadres.add(cadre);
                 }
                 
-                // 判断认证是否达标
-                boolean isCertQualified = false;
+                // 判断认证是否达标：5级及以上有效AI任职免认证
+                boolean isCertQualified = isCertificationExemptByQualification(highestQualificationLevel);
                 boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
                 
-                if (isSoftwareCategory) {
+                if (!isCertQualified && isSoftwareCategory) {
                     // 软件类的L2L3干部需要有专业级证书，才算达标
                     if (hasProfessionalCert != null && hasProfessionalCert == 1) {
                         isCertQualified = true;
-                        if ("L2".equals(aiMaturity)) {
-                            l2CertQualifiedCount++;
-                        } else if ("L3".equals(aiMaturity)) {
-                            l3CertQualifiedCount++;
-                        }
-                    } else {
-                        if ("L2".equals(aiMaturity)) {
-                            l2CertUnqualifiedCount++;
-                        } else if ("L3".equals(aiMaturity)) {
-                            l3CertUnqualifiedCount++;
-                        }
                     }
-                } else {
+                } else if (!isCertQualified) {
                     // L2L3的非软件类，需要通过工作级科目二或者专业级科目二
                     // 即t_exam_record表中存在exam_code为（EXCN022303075ZA20，EXCN022303075ZA2E，EXCN022303075ZA2A）且is_pass为1的数据
                     if (hasPassedSubject2 != null && hasPassedSubject2 == 1) {
                         isCertQualified = true;
-                        if ("L2".equals(aiMaturity)) {
-                            l2CertQualifiedCount++;
-                        } else if ("L3".equals(aiMaturity)) {
-                            l3CertQualifiedCount++;
-                        }
-                    } else {
-                        if ("L2".equals(aiMaturity)) {
-                            l2CertUnqualifiedCount++;
-                        } else if ("L3".equals(aiMaturity)) {
-                            l3CertUnqualifiedCount++;
-                        }
                     }
                 }
                 
                 if (isCertQualified) {
                     certQualifiedCadres.add(cadre);
+                    if ("L2".equals(aiMaturity)) {
+                        l2CertQualifiedCount++;
+                    } else if ("L3".equals(aiMaturity)) {
+                        l3CertQualifiedCount++;
+                    }
+                } else if ("L2".equals(aiMaturity)) {
+                    l2CertUnqualifiedCount++;
+                } else if ("L3".equals(aiMaturity)) {
+                    l3CertUnqualifiedCount++;
                 }
             }
             
@@ -2980,6 +2978,7 @@ public class ExpertCertStatisticsService {
      * 更新L2、L3干部的AI认证达标情况
      * 
      * 认证达标规则：
+     * - 最高有效AI任职为5级、6级、7级或8级时免认证，直接达标
      * - 所有干部（软件类和非软件类）如果持有AI专业级证书，视为认证达标
      * - 非软件类干部如果通过了专业级科目二考试（exam_code为'EXCN022303075ZA20'、'EXCN022303075ZA2E'或'EXCN022303075ZA2A'之一），视为认证达标
      * 如果满足任一条件，将干部表中的is_cert_standard字段更新为1
@@ -2990,7 +2989,7 @@ public class ExpertCertStatisticsService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // 1. 查询所有L2、L3干部及其专业级证书和专业级科目二通过情况
+            // 1. 查询所有L2、L3干部及其最高有效AI任职、专业级证书和专业级科目二通过情况
             List<CadreQualificationVO> cadreList = cadreMapper.getL2L3CadreWithCertInfo();
             
             if (cadreList == null || cadreList.isEmpty()) {
@@ -3022,6 +3021,7 @@ public class ExpertCertStatisticsService {
                 String employeeNumber = cadre.getEmployeeNumber();
                 String aiMaturity = cadre.getAiMaturity();
                 String jobCategory = cadre.getJobCategory();
+                String highestQualificationLevel = cadre.getHighestQualificationLevel();
                 Integer hasProfessionalCert = cadre.getHasProfessionalCert();
                 Integer hasPassedProfessionalSubject2 = cadre.getHasPassedProfessionalSubject2();
                 
@@ -3036,15 +3036,15 @@ public class ExpertCertStatisticsService {
                 
                 allL2L3Cadres.add(cadre);
                 
-                // 判断认证是否达标
-                boolean isCertQualified = false;
+                // 规则1：5级及以上有效AI任职免认证，直接达标
+                boolean isCertQualified = isCertificationExemptByQualification(highestQualificationLevel);
                 
-                // 规则1：所有干部持有AI专业级证书，视为达标
-                if (hasProfessionalCert != null && hasProfessionalCert == 1) {
+                // 规则2：所有干部持有AI专业级证书，视为达标
+                if (!isCertQualified && hasProfessionalCert != null && hasProfessionalCert == 1) {
                     isCertQualified = true;
                 }
                 
-                // 规则2：非软件类干部通过专业级科目二考试，视为达标
+                // 规则3：非软件类干部通过专业级科目二考试，视为达标
                 if (!isCertQualified) {
                     boolean isSoftwareCategory = jobCategory != null && jobCategory.equals("软件类");
                     if (!isSoftwareCategory && hasPassedProfessionalSubject2 != null && hasPassedProfessionalSubject2 == 1) {
@@ -3285,6 +3285,7 @@ public class ExpertCertStatisticsService {
      * 更新L2、L3专家的认证达标情况
      * 
      * 认证达标规则：
+     * - 最高有效AI任职为5级、6级、7级或8级时免认证，直接达标
      * - 所有L2、L3专家（所有职位类）：如果持有专业级证书即为达标，否则视为不达标
      * 如果满足条件，将专家表中的is_cert_standard字段更新为1，不达标为0
      * 
@@ -3294,7 +3295,7 @@ public class ExpertCertStatisticsService {
         Map<String, Object> result = new HashMap<>();
         
         try {
-            // 1. 查询所有L2、L3专家及其专业级证书情况
+            // 1. 查询所有L2、L3专家及其最高有效AI任职、专业级证书情况
             List<ExpertQualificationVO> expertList = expertMapper.getL2L3ExpertWithCertInfo();
             
             if (expertList == null || expertList.isEmpty()) {
@@ -3325,6 +3326,7 @@ public class ExpertCertStatisticsService {
             for (ExpertQualificationVO expert : expertList) {
                 String employeeNumber = expert.getEmployeeNumber();
                 String aiMaturity = expert.getAiMaturity();
+                String highestQualificationLevel = expert.getHighestQualificationLevel();
                 Integer hasProfessionalCert = expert.getHasProfessionalCert();
                 
                 if (employeeNumber == null || employeeNumber.trim().isEmpty()) {
@@ -3338,9 +3340,9 @@ public class ExpertCertStatisticsService {
                 
                 allL2L3EmployeeNumbers.add(employeeNumber);
                 
-                // 判断认证是否达标：所有专家持有专业级证书即为达标
-                boolean isCertQualified = false;
-                if (hasProfessionalCert != null && hasProfessionalCert == 1) {
+                // 5级及以上有效AI任职免认证；否则持有专业级证书才达标
+                boolean isCertQualified = isCertificationExemptByQualification(highestQualificationLevel);
+                if (!isCertQualified && hasProfessionalCert != null && hasProfessionalCert == 1) {
                     isCertQualified = true;
                 }
                 

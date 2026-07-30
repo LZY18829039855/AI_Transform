@@ -134,6 +134,8 @@ public class SchoolCreditDetailVO implements Serializable {
 
     /**
      * 学分状态预警（正常、轻度预警、滞后预警）
+     * 规则：当前学分 >= 时间进度学分目标 → 正常；
+     * 当前学分 >= 时间进度学分目标×80% → 轻度预警；否则滞后预警
      */
     private String status;
 

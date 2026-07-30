@@ -1042,29 +1042,33 @@ public class PersonalCreditService {
 
         for (SchoolRoleSummaryVO row : rows) {
             double target = row.getTargetCredits() == null ? 0.0 : row.getTargetCredits();
-            row.setScheduleTarget(Math.round(target * progress * 10.0) / 10.0);
+            double scheduleTarget = Math.round(target * progress * 10.0) / 10.0;
+            row.setScheduleTarget(scheduleTarget);
 
-            double rate = row.getCompletionRate() == null ? 0.0 : row.getCompletionRate();
-            if (rate >= 100.0) {
+            double current = row.getAverageCredits() == null ? 0.0 : row.getAverageCredits();
+            if (current >= scheduleTarget) {
                 row.setStatus("正常");  row.setStatusType("success");
-            } else if (rate >= 60.0) {
-                row.setStatus("预警");  row.setStatusType("warning");
+            } else if (current >= scheduleTarget * 0.8) {
+                row.setStatus("轻度预警");  row.setStatusType("warning");
             } else {
-                row.setStatus("滞后");  row.setStatusType("danger");
+                row.setStatus("滞后预警");  row.setStatusType("danger");
             }
         }
     }
 
     private void fillDetailStatus(List<SchoolCreditDetailVO> records) {
         for (SchoolCreditDetailVO row : records) {
-            double rate = row.getCompletionRate() == null ? 0.0
-                    : row.getCompletionRate().doubleValue();
-            if (rate >= 100.0) {
+            double current = row.getCurrentCredits() == null ? 0.0
+                    : row.getCurrentCredits().doubleValue();
+            double scheduleTarget = row.getScheduleTarget() == null ? 0.0
+                    : row.getScheduleTarget().doubleValue();
+
+            if (current >= scheduleTarget) {
                 row.setStatus("正常");  row.setStatusType("success");
-            } else if (rate >= 60.0) {
-                row.setStatus("预警");  row.setStatusType("warning");
+            } else if (current >= scheduleTarget * 0.8) {
+                row.setStatus("轻度预警");  row.setStatusType("warning");
             } else {
-                row.setStatus("滞后");  row.setStatusType("danger");
+                row.setStatus("滞后预警");  row.setStatusType("danger");
             }
         }
     }

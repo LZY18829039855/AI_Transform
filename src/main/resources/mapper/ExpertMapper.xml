@@ -147,12 +147,40 @@
         </foreach>
     </update>
 
-    <!-- 查询所有L2、L3专家及其专业级证书和科目二通过情况 -->
+    <!-- 查询所有L2、L3专家及其最高有效AI任职、专业级证书和科目二通过情况 -->
     <select id="getL2L3ExpertWithCertInfo" resultType="com.huawei.aitransform.entity.ExpertQualificationVO">
         SELECT 
             exp.account AS employeeNumber,
             COALESCE(exp.position_ai_maturity, '未知') AS aiMaturity,
             COALESCE(e.job_category, '未知') AS jobCategory,
+            (
+                SELECT q.competence_rating_cn
+                FROM t_qualifications q
+                WHERE q.employee_number = exp.account
+                AND q.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                AND q.competence_from IS NOT NULL
+                AND q.competence_to IS NOT NULL
+                AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+                ORDER BY CASE
+                    WHEN q.competence_rating_cn = '8级' THEN 1
+                    WHEN q.competence_rating_cn = '7级' THEN 2
+                    WHEN q.competence_rating_cn = '6级' THEN 3
+                    WHEN q.competence_rating_cn = '5级' THEN 4
+                    WHEN q.competence_rating_cn = '4级' THEN 5
+                    WHEN q.competence_rating_cn = '3级' THEN 6
+                    WHEN q.competence_rating_cn = '2级' THEN 7
+                    WHEN q.competence_rating_cn = '1级' THEN 8
+                    WHEN q.competence_rating_cn = '初级' THEN 9
+                    ELSE 10
+                END,
+                q.competence_from DESC
+                LIMIT 1
+            ) AS highestQualificationLevel,
             CASE 
                 WHEN cert.employee_number IS NOT NULL THEN 1 
                 ELSE 0 
