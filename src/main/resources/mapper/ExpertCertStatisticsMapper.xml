@@ -104,11 +104,14 @@
         </foreach>
         AND q.employee_number IS NOT NULL
         AND q.employee_number != ''
-        AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
+        AND (
+            q.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            OR q.competence_subcategory_cn = 'AI算法及应用'
         )
         AND q.competence_from IS NOT NULL
         AND q.competence_to IS NOT NULL
@@ -291,11 +294,14 @@
             e.employee_number = q.employee_number
             AND q.employee_number IS NOT NULL
             AND q.employee_number != ''
-            AND q.direction_cn_name IN (
-                '数据科学与AI工程（ICT）',
-                'AI算法及应用（ICT）',
-                'AI软件工程与工具（ICT）',
-                'AI系统测试（ICT）'
+            AND (
+                q.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                OR q.competence_subcategory_cn = 'AI算法及应用'
             )
             AND q.competence_from IS NOT NULL
             AND q.competence_to IS NOT NULL
@@ -307,11 +313,14 @@
                 WHERE q2.employee_number = e.employee_number
                 AND q2.employee_number IS NOT NULL
                 AND q2.employee_number != ''
-                AND q2.direction_cn_name IN (
-                    '数据科学与AI工程（ICT）',
-                    'AI算法及应用（ICT）',
-                    'AI软件工程与工具（ICT）',
-                    'AI系统测试（ICT）'
+                AND (
+                    q2.direction_cn_name IN (
+                        '数据科学与AI工程（ICT）',
+                        'AI算法及应用（ICT）',
+                        'AI软件工程与工具（ICT）',
+                        'AI系统测试（ICT）'
+                    )
+                    OR q2.competence_subcategory_cn = 'AI算法及应用'
                 )
                 AND q2.competence_from IS NOT NULL
                 AND q2.competence_to IS NOT NULL

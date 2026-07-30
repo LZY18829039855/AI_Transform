@@ -75,11 +75,14 @@
             FROM t_qualifications q1
             WHERE q1.employee_number IS NOT NULL
             AND q1.employee_number != ''
-            AND q1.direction_cn_name IN (
-                '数据科学与AI工程（ICT）',
-                'AI算法及应用（ICT）',
-                'AI软件工程与工具（ICT）',
-                'AI系统测试（ICT）'
+            AND (
+                q1.direction_cn_name IN (
+                    '数据科学与AI工程（ICT）',
+                    'AI算法及应用（ICT）',
+                    'AI软件工程与工具（ICT）',
+                    'AI系统测试（ICT）'
+                )
+                OR q1.competence_subcategory_cn = 'AI算法及应用'
             )
             AND q1.competence_from IS NOT NULL
             AND q1.competence_to IS NOT NULL
@@ -91,11 +94,14 @@
                 WHERE q2.employee_number = q1.employee_number
                 AND q2.employee_number IS NOT NULL
                 AND q2.employee_number != ''
-                AND q2.direction_cn_name IN (
-                    '数据科学与AI工程（ICT）',
-                    'AI算法及应用（ICT）',
-                    'AI软件工程与工具（ICT）',
-                    'AI系统测试（ICT）'
+                AND (
+                    q2.direction_cn_name IN (
+                        '数据科学与AI工程（ICT）',
+                        'AI算法及应用（ICT）',
+                        'AI软件工程与工具（ICT）',
+                        'AI系统测试（ICT）'
+                    )
+                    OR q2.competence_subcategory_cn = 'AI算法及应用'
                 )
                 AND q2.competence_from IS NOT NULL
                 AND q2.competence_to IS NOT NULL
@@ -157,11 +163,14 @@
                 SELECT q.competence_rating_cn
                 FROM t_qualifications q
                 WHERE q.employee_number = exp.account
-                AND q.direction_cn_name IN (
-                    '数据科学与AI工程（ICT）',
-                    'AI算法及应用（ICT）',
-                    'AI软件工程与工具（ICT）',
-                    'AI系统测试（ICT）'
+                AND (
+                    q.direction_cn_name IN (
+                        '数据科学与AI工程（ICT）',
+                        'AI算法及应用（ICT）',
+                        'AI软件工程与工具（ICT）',
+                        'AI系统测试（ICT）'
+                    )
+                    OR q.competence_subcategory_cn = 'AI算法及应用'
                 )
                 AND q.competence_from IS NOT NULL
                 AND q.competence_to IS NOT NULL

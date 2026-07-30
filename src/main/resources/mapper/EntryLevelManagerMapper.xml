@@ -315,11 +315,14 @@
         </foreach>
         AND q.employee_number IS NOT NULL
         AND q.employee_number != ''
-        AND q.direction_cn_name IN (
-            '数据科学与AI工程（ICT）',
-            'AI算法及应用（ICT）',
-            'AI软件工程与工具（ICT）',
-            'AI系统测试（ICT）'
+        AND (
+            q.direction_cn_name IN (
+                '数据科学与AI工程（ICT）',
+                'AI算法及应用（ICT）',
+                'AI软件工程与工具（ICT）',
+                'AI系统测试（ICT）'
+            )
+            OR q.competence_subcategory_cn = 'AI算法及应用'
         )
         AND q.competence_rating_cn IN ('3级', '4级', '5级', '6级', '7级', '8级')
         AND q.competence_from IS NOT NULL
