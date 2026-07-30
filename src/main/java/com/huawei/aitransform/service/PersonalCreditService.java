@@ -22,6 +22,7 @@ import com.huawei.aitransform.entity.SchoolRoleSummaryVO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -56,6 +57,9 @@ public class PersonalCreditService {
 
     @Autowired
     private DepartmentInfoService departmentService;
+
+    @Value("${credit.global-target}")
+    private BigDecimal globalTargetCredit;
 
     private static final Set<String> TARGET_COURSE_LEVELS =
             new HashSet<>(Arrays.asList("基础", "进阶", "实战"));
@@ -374,8 +378,8 @@ public class PersonalCreditService {
 
         boolean useAllCourses = selectedCourseIds.isEmpty();
 
-        // 计算目标学分（包含实战课程）
-        BigDecimal targetCredit = BigDecimal.ZERO;
+        // 目标学分由配置统一指定；部门选课仍仅用于确定完课学分统计范围
+        BigDecimal targetCredit = globalTargetCredit;
         // 基础/进阶目标课程（按课程表主键ID锁定唯一课程，即唯一 (bigType, number)）
         List<CoursePlanningInfoVO> targetBasicAdvancedCourses = new ArrayList<>();
         // 仅用于查询完课（完课表只认 number，不区分 bigType）
@@ -383,8 +387,6 @@ public class PersonalCreditService {
 
         if (useAllCourses) {
             for (CoursePlanningInfoVO course : allCourses) {
-                BigDecimal credit = courseCreditMap.getOrDefault(course.getId(), BigDecimal.ZERO);
-                targetCredit = targetCredit.add(credit);
                 if ("基础".equals(course.getCourseLevel()) || "进阶".equals(course.getCourseLevel())) {
                     targetBasicAdvancedCourses.add(course);
                     if (course.getCourseNumber() != null && !course.getCourseNumber().trim().isEmpty()) {
@@ -398,8 +400,6 @@ public class PersonalCreditService {
                 if (c == null || c.getCourseLevel() == null || !TARGET_COURSE_LEVELS.contains(c.getCourseLevel())) {
                     continue;
                 }
-                BigDecimal credit = courseCreditMap.getOrDefault(courseId, BigDecimal.ZERO);
-                targetCredit = targetCredit.add(credit);
                 if ("基础".equals(c.getCourseLevel()) || "进阶".equals(c.getCourseLevel())) {
                     targetBasicAdvancedCourses.add(c);
                     if (c.getCourseNumber() != null && !c.getCourseNumber().trim().isEmpty()) {

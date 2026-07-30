@@ -128,7 +128,7 @@ AI School 看板是 AI 转型作战看板体系中的「学分经营」子看板
 |------|----------|----------|----------|
 | 能力来源分散 | 课程、认证、任职、线下学分分散在多套系统 | 高 | 统一折算为个人学分，集中沉淀至 `t_personal_credit` |
 | 缺乏过程牵引 | 仅看「是否达标」无法牵引过程 | 高 | 引入学分达成率 + 时间进度预警 + 部门标杆 |
-| 口径不一致 | 各部门选课不同，目标学分难统一 | 中 | 基于四级部门选课确定目标课程，无选课时取全量课程 |
+| 口径不一致 | 各部门选课不同，目标学分难统一 | 中 | 目标学分统一读取 `credit.global-target`，部门选课仅确定完课学分统计范围 |
 | 重算成本高 | 全量重算耗时影响时效 | 中 | 提供按工号增量同步与局部标杆刷新 |
 
 ### 2.2 功能分析
@@ -186,7 +186,7 @@ AI School 看板是 AI 转型作战看板体系中的「学分经营」子看板
 
 - 功能描述：以 `t_employee_sync` 最新周期（`period_id = MAX`）员工为基线，逐人计算学分并落库。
 - 计算口径：
-  1. **目标学分**：取员工四级部门在 `dept_course_selections` 的选课（基础/进阶/实战），按 `ai_course_planning_info` 课程学分求和；**该四级部门无选课时取全量目标课程**（`course_level ∈ {基础, 进阶, 实战}`）。
+  1. **目标学分**：全员统一读取 `application.yml` 的 `credit.global-target` 配置，当前值为 **100**，不再按部门或角色差异化计算。员工四级部门在 `dept_course_selections` 的选课仍用于确定完课学分统计范围；该四级部门无选课时，完课统计范围仍取全量目标课程（`course_level ∈ {基础, 进阶, 实战}`）。
   2. **当前学分** = 基础/进阶完课学分 + 实战完课学分 + 手工录入学分（按工号汇总）+ AI 认证学分（专业级 15 / 工作级 10，同人取 MAX，自然上限 15）+ AI 任职学分（4 级及以上 25 / 3 级 10 / 2 级 5，同人取 MAX，自然上限 25，仅当前有效）。
      - 基础/进阶完课：以目标课程 `course_number` 查询 `t_micro_study_info_sync` ∪ `t_mooc_study_info_sync`（`is_pass='1'`）判定完课，命中即累加课程学分。
      - 实战完课：以 `hands_on_courses` 关联 `ai_course_planning_info`（`course_level='实战'`）得到已完成实战课程，有选课时仅累计目标范围内课程。
@@ -203,8 +203,9 @@ AI School 看板是 AI 转型作战看板体系中的「学分经营」子看板
 #### 2.2.4 功能依赖关系
 
 ```
+全局配置(credit.global-target) → 统一目标学分
 课程规划(ai_course_planning_info) + 部门选课(dept_course_selections)
-        ↓ （确定目标课程/目标学分）
+        ↓ （确定完课学分统计范围）
 完课数据(micro/mooc/hands_on) + 认证/任职学分 + 手工录入学分
         ↓ （学分同步计算）
 个人学分(t_personal_credit) → 部门标杆刷新
@@ -547,7 +548,7 @@ deactivate Controller
 #### 3.4.2 个人学分批量同步流程
 
 ##### 3.4.2.1 业务描述
-以 `t_employee_sync` 最新周期员工为基线，预加载课程/选课信息，逐人计算目标学分与当前学分，批量落库，删除过期记录，并刷新部门标杆。全过程事务化。
+以 `t_employee_sync` 最新周期员工为基线，读取全局目标学分配置并预加载课程/选课信息，逐人计算当前学分，批量落库，删除过期记录，并刷新部门标杆。全过程事务化。
 
 ##### 3.4.2.2 时序图
 
@@ -581,7 +582,7 @@ Service -> PC: getAiCertCreditsByEmployeeNumbers / getAiQualificationCreditsByEm
 PC --> Service: 认证学分 / 任职学分
 
 loop 遍历每名员工
-    Service -> Service: calculateEmployeeCredit(...)\n目标学分=选课课程学分(无选课取全量)\n当前学分=完课+实战+手工+认证+任职\n达成率、达成日期
+    Service -> Service: calculateEmployeeCredit(...)\n目标学分=credit.global-target(当前100)\n当前学分=完课+实战+手工+认证+任职\n达成率、达成日期
     Service -> HO: selectCompletedPracticalCourseIdsByAccount(empNum)
     HO --> Service: 已完成实战课程
     Service -> PCC: getCompletedCourseNumbers(empNum, 目标课程号)

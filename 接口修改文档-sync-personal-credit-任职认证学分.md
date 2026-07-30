@@ -19,9 +19,9 @@
 
 最终 `current_credit = 完课学分 + 手工学分 + AI 认证学分 + AI 任职学分`。
 
-**不改动项**：
+**当前相关口径**：
 
-- `target_credit`（目标学分）保持原有计算口径不变。
+- `target_credit`（目标学分）统一读取 `application.yml` 的 `credit.global-target`，当前为 100。
 - `personal_credit_completion_rate = current_credit / target_credit × 100`，公式不变，因分子变大，达成率会随之抬升。
 - `credit_completion_date`：当 `current_credit >= target_credit` 且原先为空则置为当前时间，逻辑不变。
 - 表结构：**不新增字段**，全部体现在 `current_credit`。
@@ -284,16 +284,16 @@ private static BigDecimal safeGet(Map<String, BigDecimal> m, String k) {
 
 | 员工 | 完课学分 | 手工学分 | 认证情况               | 任职情况          | 认证 | 任职 | current | target | 达成率   |
 | ---- | -------- | -------- | ---------------------- | ----------------- | ---- | ---- | ------- | ------ | -------- |
-| A    | 30       | 10       | 专业级 AI 算法技术     | 4 级 AI 系统测试  | 15   | 25   | 80      | 80     | 100.00%  |
-| B    | 20       | 0        | 工作级 AI 决策推理     | 3 级 AI 算法应用 | 10   | 10   | 40      | 80     | 50.00%   |
-| C    | 60       | 0        | 专业级 + 工作级 均有 | 无有效任职        | 15   | 0    | 75      | 80     | 93.75%   |
-| D    | 0        | 0        | 无                     | 2 级              | 0    | 0    | 0       | 80     | 0%       |
+| A    | 30       | 10       | 专业级 AI 算法技术     | 4 级 AI 系统测试  | 15   | 25   | 80      | 100    | 80.00%   |
+| B    | 20       | 0        | 工作级 AI 决策推理     | 3 级 AI 算法应用 | 10   | 10   | 40      | 100    | 40.00%   |
+| C    | 60       | 0        | 专业级 + 工作级 均有 | 无有效任职        | 15   | 0    | 75      | 100    | 75.00%   |
+| D    | 0        | 0        | 无                     | 2 级              | 0    | 5    | 5       | 100    | 5.00%    |
 
 说明：认证、任职学分各自独立上限，彼此不共享上限。
 
 ## 六、不变量与边界
 
-- `target_credit` 维持原计算（按部门选课汇总或全量课程汇总），本次不修改。
+- `target_credit` 全员统一读取 `credit.global-target`（当前为 100）；部门选课仍用于确定完课学分统计范围。
 - `personal_credit_completion_rate`：若 `target_credit=0` 仍然记 0，不做除零；已达标时按现有逻辑置 `credit_completion_date`。
 - `updateDeptBenchmarks` / `updateDeptBenchmarksForDeptNumbers`：逻辑不变，部门标杆会随新学分抬高，是期望行为。
 - 认证表 `employee_number` 为空只有 `w3_account` 的行：通过 `COALESCE + OR` 两路匹配保证不丢。

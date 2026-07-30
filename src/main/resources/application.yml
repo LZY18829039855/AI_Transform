@@ -3,6 +3,10 @@ server:
   servlet:
     context-path: /ai_transform_webapi
 
+# AI School 全员统一目标学分
+credit:
+  global-target: 100
+
 spring:
   application:
     name: ai-transform
