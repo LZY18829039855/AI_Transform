@@ -127,8 +127,8 @@
                 ) cert ON (e.employee_number = cert.employee_number)
             </when>
             <otherwise>
-                <!-- queryType=1: 使用 INNER JOIN，只返回有AI专业级证书的人员 -->
-                INNER JOIN (
+                <!-- queryType=1: 有AI专业级证书，或有效AI任职5级及以上免认证 -->
+                LEFT JOIN (
                     SELECT DISTINCT
                         employee_number, 
                         cer_title,
@@ -157,6 +157,31 @@
         ) exam ON (e.employee_number = exam.emp_num)
         LEFT JOIN department_info_hrms dept ON (c.mini_departname_id = dept.dept_code AND DATE(dept.update_time) = '2025-11-18')
         WHERE e.period_id = 20251126
+        <if test="queryType == null or queryType == 1">
+            AND (
+                cert.employee_number IS NOT NULL
+                OR EXISTS (
+                    SELECT 1
+                    FROM t_qualifications q
+                    WHERE q.employee_number = e.employee_number
+                    AND q.employee_number IS NOT NULL
+                    AND q.employee_number != ''
+                    AND (
+                        q.direction_cn_name IN (
+                            '数据科学与AI工程（ICT）',
+                            'AI算法及应用（ICT）',
+                            'AI软件工程与工具（ICT）',
+                            'AI系统测试（ICT）'
+                        )
+                        OR q.competence_subcategory_cn = 'AI算法及应用'
+                    )
+                    AND q.competence_rating_cn IN ('5级', '6级', '7级', '8级')
+                    AND q.competence_from IS NOT NULL
+                    AND q.competence_to IS NOT NULL
+                    AND CURDATE() BETWEEN q.competence_from AND q.competence_to
+                )
+            )
+        </if>
         <if test="deptCodes != null and deptCodes.size() &gt; 0">
             AND c.mini_departname_id IN
             <foreach collection="deptCodes" item="deptCode" open="(" separator="," close=")">

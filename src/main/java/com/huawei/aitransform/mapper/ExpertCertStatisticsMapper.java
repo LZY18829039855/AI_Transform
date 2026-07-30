@@ -43,6 +43,13 @@ public interface ExpertCertStatisticsMapper {
     List<String> getQualifiedEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 
     /**
+     * 查询有效AI任职达到5级及以上（5、6、7、8级）的员工工号列表
+     * @param employeeNumbers 员工工号列表
+     * @return 有效AI任职5级及以上的员工工号列表
+     */
+    List<String> getLevel5PlusQualifiedEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
      * 查询已通过科目二考试的员工工号列表
      * @param employeeNumbers 员工工号列表
      * @return 已通过科目二的工号列表

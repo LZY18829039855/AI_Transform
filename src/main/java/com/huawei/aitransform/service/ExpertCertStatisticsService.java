@@ -256,6 +256,18 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 根据工号列表查询有效AI任职达到5级及以上（5、6、7、8级）的员工工号
+     * @param employeeNumbers 员工工号列表
+     * @return 有效AI任职5级及以上的员工工号列表
+     */
+    public List<String> getLevel5PlusQualifiedEmployeeNumbers(List<String> employeeNumbers) {
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return new ArrayList<>();
+        }
+        return expertCertStatisticsMapper.getLevel5PlusQualifiedEmployeeNumbers(employeeNumbers);
+    }
+
+    /**
      * 根据工号列表查询已通过科目二考试的员工工号
      * @param employeeNumbers 员工工号列表
      * @return 已通过科目二的员工工号列表
@@ -1879,21 +1891,26 @@ public class ExpertCertStatisticsService {
                 if (employeeNumbers.isEmpty()) {
                     employeeDetails = new ArrayList<>();
                 } else {
-                    // 如果queryType=1，只返回已认证的专家
+                    // 如果queryType=1，只返回已认证或5+任职免认证的专家
                     if (queryType == 1) {
                         List<String> certifiedNumbers = getCertifiedEmployeeNumbers(employeeNumbers);
                         Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+                        List<String> level5PlusNumbers = getLevel5PlusQualifiedEmployeeNumbers(employeeNumbers);
+                        if (level5PlusNumbers != null) {
+                            certifiedSet.addAll(level5PlusNumbers);
+                        }
                         employeeNumbers = employeeNumbers.stream()
                                 .filter(certifiedSet::contains)
                                 .collect(Collectors.toList());
                     }
                     
                     // 4. 查询专家的详细信息和证书信息
+                    // 人员已按认证口径过滤，使用 LEFT JOIN（queryType=2）以保留5+免认证但无证书的人员
                     if (employeeNumbers.isEmpty()) {
                         employeeDetails = new ArrayList<>();
                     } else {
                         employeeDetails = expertCertStatisticsMapper.getExpertCertDetailsByEmployeeNumbers(
-                                employeeNumbers, aiMaturity, jobCategory, queryType);
+                                employeeNumbers, aiMaturity, jobCategory, 2);
                     }
                 }
             }
@@ -2209,8 +2226,13 @@ public class ExpertCertStatisticsService {
                 .collect(Collectors.toList());
 
         // 5.1 查询已通过认证的干部工号列表
+        // 有效AI任职5级及以上（5、6、7、8级）免认证，同样计入持证人数
         List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
         Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+        List<String> level5PlusNumbers = getLevel5PlusQualifiedEmployeeNumbers(allEmployeeNumbers);
+        if (level5PlusNumbers != null) {
+            certifiedSet.addAll(level5PlusNumbers);
+        }
 
         // 5.2 查询已通过科目二的干部工号列表
         List<String> subject2PassedNumbers = getSubject2PassedEmployeeNumbers(allEmployeeNumbers);
@@ -3453,8 +3475,13 @@ public class ExpertCertStatisticsService {
                 .collect(Collectors.toList());
         
         // 查询已通过认证的专家工号列表
+        // 有效AI任职5级及以上（5、6、7、8级）免认证，同样计入持证人数
         List<String> certifiedNumbers = getCertifiedEmployeeNumbers(allEmployeeNumbers);
         Set<String> certifiedSet = new HashSet<>(certifiedNumbers != null ? certifiedNumbers : new ArrayList<>());
+        List<String> level5PlusNumbers = getLevel5PlusQualifiedEmployeeNumbers(allEmployeeNumbers);
+        if (level5PlusNumbers != null) {
+            certifiedSet.addAll(level5PlusNumbers);
+        }
         
         // 5. 按成熟度和职位类分组统计
         // 结构：成熟度 -> 职位类 -> 统计信息
