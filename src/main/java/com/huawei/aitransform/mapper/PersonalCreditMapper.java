@@ -123,7 +123,7 @@ public interface PersonalCreditMapper {
 
     /**
      * 批量查询 AI 任职学分（工号 -> 任职学分）。
-     * 4 级及以上 25、3 级 10，同一人 MAX 取最高，自然上限 25。
+     * 4 级及以上 25、3 级 10、2 级 5，同一人 MAX 取最高，自然上限 25。
      * 来源表：t_qualifications；
      * 范围过滤：direction_cn_name 属于指定 AI 方向 或 competence_subcategory_cn='AI算法及应用'；
      * 有效性：competence_from/competence_to 非空，且 CURDATE() 位于区间内。

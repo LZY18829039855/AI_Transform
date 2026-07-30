@@ -15,6 +15,7 @@
 | **AI 认证** | 工作级     | 10   | 15       |
 | **AI 任职** | 4 级及以上 | 25   | 25       |
 | **AI 任职** | 3 级       | 10   | 25       |
+| **AI 任职** | 2 级       | 5    | 25       |
 
 最终 `current_credit = 完课学分 + 手工学分 + AI 认证学分 + AI 任职学分`。
 
@@ -73,7 +74,8 @@
 - **等级映射**：
   - `competence_rating_cn IN ('4级','5级','6级','7级','8级')` → 25
   - `competence_rating_cn = '3级'` → 10
-  - 其他（`2级/1级/初级/NULL/其他`） → 0
+  - `competence_rating_cn = '2级'` → 5
+  - 其他（`1级/初级/NULL/其他`） → 0
 - **取值规则**：同一员工取 `MAX`，自然满足 25 分上限。
 
 ## 四、方案设计
@@ -110,7 +112,7 @@ List<EmployeeCreditRow> getAiCertCreditsByEmployeeNumbers(@Param("employeeNumber
 
 /**
  * 批量查询 AI 任职学分（工号 -> 任职学分）。
- * 4 级及以上 25、3 级 10，同一人 MAX 取最高，上限 25，仅当前有效任职。
+ * 4 级及以上 25、3 级 10、2 级 5，同一人 MAX 取最高，上限 25，仅当前有效任职。
  */
 List<EmployeeCreditRow> getAiQualificationCreditsByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 ```
@@ -174,6 +176,7 @@ public class EmployeeCreditRow {
         MAX(CASE
               WHEN q.competence_rating_cn IN ('4级','5级','6级','7级','8级') THEN 25
               WHEN q.competence_rating_cn = '3级' THEN 10
+              WHEN q.competence_rating_cn = '2级' THEN 5
               ELSE 0
             END) AS credit
     FROM t_qualifications q

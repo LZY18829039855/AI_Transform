@@ -52,6 +52,16 @@ public class SchoolCreditDetailRequestVO implements Serializable {
     private String positionMaturity;
 
     /**
+     * 姓名（模糊匹配 last_name）
+     */
+    private String name;
+
+    /**
+     * 工号（模糊匹配 employee_number）
+     */
+    private String employeeId;
+
+    /**
      * 查询类型（baseline-基线人数，其他可扩展）
      */
     private String queryType;
@@ -131,6 +141,22 @@ public class SchoolCreditDetailRequestVO implements Serializable {
 
     public void setPositionMaturity(String positionMaturity) {
         this.positionMaturity = positionMaturity;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getEmployeeId() {
+        return employeeId;
+    }
+
+    public void setEmployeeId(String employeeId) {
+        this.employeeId = employeeId;
     }
 
     public String getQueryType() {

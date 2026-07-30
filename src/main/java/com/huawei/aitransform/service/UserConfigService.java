@@ -39,7 +39,7 @@ public class UserConfigService {
                 continue;
             }
 
-            if (parseIsAdmin(user.getIsAdmin())) {
+            if (parsePermissionFlag(user.getIsAdmin())) {
                 adminAccounts.add(user.getAccount());
             } else {
                 nonAdminAccounts.add(user.getAccount());
@@ -93,20 +93,22 @@ public class UserConfigService {
         if (user == null) {
             return new UserPermissionStatusVO(false, false);
         }
-        return new UserPermissionStatusVO(true, parseIsAdmin(user.getIsAdmin()));
+        boolean asAdmin = parsePermissionFlag(user.getIsAdmin());
+        boolean canEditCredit = asAdmin && parsePermissionFlag(user.getCanEditCredit());
+        return new UserPermissionStatusVO(true, asAdmin, canEditCredit);
     }
 
     /**
-     * 判断 is_admin 字段是否表示管理员
+     * 判断权限字段是否表示已授权
      */
-    private boolean parseIsAdmin(String isAdmin) {
-        if (isAdmin == null) {
+    private boolean parsePermissionFlag(String value) {
+        if (value == null) {
             return false;
         }
-        return isAdmin.equals("1")
-                || isAdmin.equalsIgnoreCase("Y")
-                || isAdmin.equalsIgnoreCase("true")
-                || isAdmin.equalsIgnoreCase("yes");
+        return value.equals("1")
+                || value.equalsIgnoreCase("Y")
+                || value.equalsIgnoreCase("true")
+                || value.equalsIgnoreCase("yes");
     }
 
     /**

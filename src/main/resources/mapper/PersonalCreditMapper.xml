@@ -497,13 +497,14 @@
         HAVING credit > 0
     </select>
 
-    <!-- 批量查询 AI 任职学分：4 级及以上 25 / 3 级 10，同一人 MAX 取最高，自然上限 25，仅当前有效任职 -->
+    <!-- 批量查询 AI 任职学分：4 级及以上 25 / 3 级 10 / 2 级 5，同一人 MAX 取最高，自然上限 25，仅当前有效任职 -->
     <select id="getAiQualificationCreditsByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeCreditRow">
         SELECT
             q.employee_number AS employeeNumber,
             MAX(CASE
                   WHEN q.competence_rating_cn IN ('4级','5级','6级','7级','8级') THEN 25
                   WHEN q.competence_rating_cn = '3级' THEN 10
+                  WHEN q.competence_rating_cn = '2级' THEN 5
                   ELSE 0
                 END) AS credit
         FROM t_qualifications q

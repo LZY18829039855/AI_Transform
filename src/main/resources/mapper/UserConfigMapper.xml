@@ -9,6 +9,7 @@
             id,
             account,
             is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
             is_deleted AS isDeleted
         FROM user_config
         WHERE (is_deleted IS NULL OR is_deleted = '' OR is_deleted = '0' OR is_deleted = 'N' OR is_deleted = 'false')
@@ -21,6 +22,7 @@
             id,
             account,
             is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
             is_deleted AS isDeleted
         FROM user_config
         WHERE account = #{account}

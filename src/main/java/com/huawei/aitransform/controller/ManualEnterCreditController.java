@@ -6,6 +6,7 @@ import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.ManualEnterCreditBatchImportRequest;
 import com.huawei.aitransform.entity.ManualEnterCreditBatchImportResult;
 import com.huawei.aitransform.service.ManualEnterCreditService;
+import com.huawei.aitransform.service.UserConfigService;
 import com.huawei.aitransform.util.AccountModifierResolver;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -37,6 +38,14 @@ public class ManualEnterCreditController {
 
     @Autowired
     private AccountModifierResolver accountModifierResolver;
+
+    @Autowired
+    private UserConfigService userConfigService;
+
+    private boolean canEditCredit(String account) {
+        return StringUtils.hasText(account)
+                && userConfigService.getUserPermissionStatus(account).isCanEditCredit();
+    }
 
     /**
      * 分页查询
@@ -85,6 +94,10 @@ public class ManualEnterCreditController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Result.error(401, "未登录或无法从 Cookie 解析 account，无法记录操作人"));
         }
+        if (!canEditCredit(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无多元化学分更新权限"));
+        }
         try {
             ManualEnterCredit saved = manualEnterCreditService.create(body, modifier);
             return ResponseEntity.ok(Result.success("新增成功", saved));
@@ -108,6 +121,10 @@ public class ManualEnterCreditController {
         if (!StringUtils.hasText(modifier)) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Result.error(401, "未登录或无法从 Cookie 解析 account，无法记录操作人"));
+        }
+        if (!canEditCredit(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无多元化学分更新权限"));
         }
         try {
             ManualEnterCredit updated = manualEnterCreditService.update(id, body, modifier);
@@ -135,6 +152,10 @@ public class ManualEnterCreditController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                     .body(Result.error(401, "未登录或无法从 Cookie 解析 account，无法记录操作人"));
         }
+        if (!canEditCredit(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无多元化学分更新权限"));
+        }
         try {
             ManualEnterCreditBatchImportResult result =
                     manualEnterCreditService.batchImport(body == null ? null : body.getRows(), modifier);
@@ -150,7 +171,19 @@ public class ManualEnterCreditController {
      * 删除
      */
     @DeleteMapping("/{id:\\d+}")
-    public ResponseEntity<Result<Boolean>> delete(@PathVariable("id") Integer id) {
+    public ResponseEntity<Result<Boolean>> delete(
+            HttpServletRequest request,
+            @CookieValue(value = "account", required = false) String accountCookie,
+            @PathVariable("id") Integer id) {
+        String modifier = accountModifierResolver.resolveModifierNumber(request, accountCookie);
+        if (!StringUtils.hasText(modifier)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Result.error(401, "未登录或无法从 Cookie 解析 account"));
+        }
+        if (!canEditCredit(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无多元化学分更新权限"));
+        }
         try {
             boolean ok = manualEnterCreditService.delete(id);
             if (!ok) {

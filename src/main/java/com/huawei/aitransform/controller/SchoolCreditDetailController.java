@@ -58,6 +58,8 @@ public class SchoolCreditDetailController {
      * @param jobCategory 职位类（可选）
      * @param jobSubCategory 职位子类（可选）
      * @param positionMaturity 岗位成熟度（可选）
+     * @param name 姓名（可选，模糊匹配）
+     * @param employeeId 工号（可选，模糊匹配）
      * @param pageNum 页码（可选，默认1）
      * @param pageSize 每页大小（可选，默认50）
      * @return 学分数据明细列表
@@ -71,6 +73,8 @@ public class SchoolCreditDetailController {
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
             @RequestParam(value = "jobSubCategory", required = false) String jobSubCategory,
             @RequestParam(value = "positionMaturity", required = false) String positionMaturity,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "employeeId", required = false) String employeeId,
             @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
@@ -87,6 +91,8 @@ public class SchoolCreditDetailController {
             request.setJobCategory(jobCategory);
             request.setJobSubCategory(jobSubCategory);
             request.setPositionMaturity(positionMaturity);
+            request.setName(name);
+            request.setEmployeeId(employeeId);
             request.setPageNum(pageNum);
             request.setPageSize(pageSize);
 

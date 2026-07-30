@@ -25,6 +25,11 @@ public class UserConfigVO implements Serializable {
     private String isAdmin;
 
     /**
+     * 是否可新增、编辑、删除、导入多元化学分
+     */
+    private String canEditCredit;
+
+    /**
      * 是否删除
      */
     private String isDeleted;
@@ -54,6 +59,14 @@ public class UserConfigVO implements Serializable {
 
     public void setIsAdmin(String isAdmin) {
         this.isAdmin = isAdmin;
+    }
+
+    public String getCanEditCredit() {
+        return canEditCredit;
+    }
+
+    public void setCanEditCredit(String canEditCredit) {
+        this.canEditCredit = canEditCredit;
     }
 
     public String getIsDeleted() {

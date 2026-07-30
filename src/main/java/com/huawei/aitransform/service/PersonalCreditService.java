@@ -459,7 +459,7 @@ public class PersonalCreditService {
         BigDecimal manualCredit = safeGet(manualCreditSumMap, empNum);
         // 叠加 AI 认证学分（专业级 15 / 工作级 10，同人 MAX，自然上限 15）
         BigDecimal certCredit = safeGet(certCreditMap, empNum);
-        // 叠加 AI 任职学分（4 级及以上 25 / 3 级 10，同人 MAX，自然上限 25，仅当前有效）
+        // 叠加 AI 任职学分（4 级及以上 25 / 3 级 10 / 2 级 5，同人 MAX，自然上限 25，仅当前有效）
         BigDecimal qualCredit = safeGet(qualCreditMap, empNum);
         BigDecimal totalCurrentCredit = courseCompletedCredit
                 .add(manualCredit)
