@@ -54,7 +54,7 @@ public class PersonalCreditStatisticsController {
     }
 
     /**
-     * AI School 看板 - 基线人数下钻明细
+     * AI学分看板 - 基线人数下钻明细
      * GET /api/credit/statistics/detail
      */
     @GetMapping("/detail")
@@ -83,7 +83,7 @@ public class PersonalCreditStatisticsController {
 
 
     /**
-     * AI School 看板 - 专家 & 干部学分总览
+     * AI学分看板 - 专家 & 干部学分总览
      * GET /api/credit/statistics/role-summary
      */
     @GetMapping("/role-summary")

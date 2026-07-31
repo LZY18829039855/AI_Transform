@@ -8,13 +8,13 @@ import org.apache.ibatis.annotations.Param;
 import java.util.List;
 
 /**
- * AI School学分数据明细查询Mapper接口
+ * AI学分数据明细查询Mapper接口
  */
 @Mapper
 public interface SchoolCreditDetailMapper {
 
     /**
-     * 查询AI School学分数据明细列表
+     * 查询AI学分数据明细列表
      *
      * @param request 查询条件
      * @param offset  分页偏移量
@@ -24,7 +24,7 @@ public interface SchoolCreditDetailMapper {
                                                     @Param("offset") int offset);
 
     /**
-     * 查询AI School学分数据明细总数
+     * 查询AI学分数据明细总数
      *
      * @param request 查询条件
      * @return 总记录数

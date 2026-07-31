@@ -3,7 +3,7 @@ package com.huawei.aitransform.entity;
 import java.io.Serializable;
 
 /**
- * AI School学分数据明细查询请求VO
+ * AI学分数据明细查询请求VO
  */
 public class SchoolCreditDetailRequestVO implements Serializable {
 

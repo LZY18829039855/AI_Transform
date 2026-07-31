@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 
 /**
- * AI School学分数据明细VO
+ * AI学分数据明细VO
  * 用于展示员工学分详情的下钻数据
  */
 public class SchoolCreditDetailVO implements Serializable {

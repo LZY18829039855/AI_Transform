@@ -14,7 +14,7 @@ import java.util.List;
 import java.util.Set;
 
 /**
- * AI School学分数据明细查询Service实现类
+ * AI学分数据明细查询Service实现类
  */
 @Service
 public class SchoolCreditDetailServiceImpl implements SchoolCreditDetailService {

@@ -84,7 +84,7 @@
         </if>
     </sql>
 
-    <!-- AI School学分数据明细结果映射 -->
+    <!-- AI学分数据明细结果映射 -->
     <resultMap id="SchoolCreditDetailResultMap" type="com.huawei.aitransform.entity.SchoolCreditDetailVO">
         <id column="id" property="id"/>
         <result column="name" property="name"/>
@@ -114,7 +114,7 @@
         <result column="status_type" property="statusType"/>
     </resultMap>
 
-    <!-- 查询AI School学分数据明细列表（仅基于 t_personal_credit 表，缺失字段返回空值） -->
+    <!-- 查询AI学分数据明细列表（仅基于 t_personal_credit 表，缺失字段返回空值） -->
     <!-- 学分状态预警：当前学分 >= 时间进度学分目标 → 正常；>= 目标*80% → 轻度预警；否则滞后预警 -->
     <select id="getCreditDetailList" resultMap="SchoolCreditDetailResultMap">
         SELECT
@@ -197,7 +197,7 @@
         ) base
     </select>
 
-    <!-- 查询AI School学分数据明细总数 -->
+    <!-- 查询AI学分数据明细总数 -->
     <select id="getCreditDetailCount" resultType="java.lang.Long">
         SELECT COUNT(*)
         FROM t_personal_credit pc

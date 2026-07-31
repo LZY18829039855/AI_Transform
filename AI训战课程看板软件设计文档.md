@@ -1,11 +1,11 @@
-# AI 训战看板 - 软件设计文档
+# AI训战课程看板 - 软件设计文档
 
 ## 文档信息
 
 | 项目 | 内容 |
 |------|------|
-| 文档名称 | AI 训战看板软件设计文档 |
-| 版本号 | V1.0 |
+| 文档名称 | AI训战课程看板软件设计文档 |
+| 版本号 | V1.1 |
 | 编写日期 | 2026年 |
 | 编写人 | 系统架构师 |
 | 审核人 | - |
@@ -24,7 +24,7 @@
 
 ## 1. 业务背景
 
-AI 训战看板是 AI 转型作战看板体系中的「训战赋能」子看板。系统围绕 AI 转型训战课程体系（**基础 / 进阶 / 实战** 三类目标课程），统计员工的目标课程数与完课情况，并从**部门维度**与**岗位 AI 成熟度维度**（L1/L2/L3）汇总各部门、各群体的平均完课人数与平均完课率，同时支持下钻到员工级训战明细与完课矩阵，为各级管理者掌握训战推进进度、识别落后组织提供数据支撑。
+AI训战课程看板是 AI 转型作战看板体系中的「训战赋能」子看板。系统围绕 AI 转型训战课程体系（**基础 / 进阶 / 实战** 三类目标课程），统计员工的目标课程数与完课情况，并从**部门维度**与**岗位 AI 成熟度维度**（L1/L2/L3）汇总各部门、各群体的平均完课人数与平均完课率，同时支持下钻到员工级训战明细与完课矩阵，为各级管理者掌握训战推进进度、识别落后组织提供数据支撑。
 
 训战数据统一沉淀在全员训战课程表 `t_employee_training_info`，其中基础/进阶完课来自微学习/MOOC，实战完课通过 `hands_on_courses` 同步回填，目标课程数来源于部门选课或每人配置字段。
 
@@ -231,6 +231,121 @@ AI 训战看板是 AI 转型作战看板体系中的「训战赋能」子看板�
 ---
 
 ## 3. 整体方案
+
+### 3.0 技术栈与运行环境
+
+本节基于当前代码仓库实际依赖与配置文件整理，供开发、部署与联调参考。
+
+#### 3.0.1 后端技术栈
+
+| 类别 | 技术/组件 | 版本/说明 |
+|------|-----------|-----------|
+| 项目路径 | `AI_Transform` | Maven 单体后端工程 |
+| 构建工具 | Maven | `pom.xml` |
+| 编程语言 | Java | 1.8 |
+| 核心框架 | Spring Boot | 2.7.18 |
+| Web 框架 | spring-boot-starter-web | RESTful API |
+| 持久层框架 | MyBatis Spring Boot Starter | 2.3.1 |
+| 数据库驱动 | mysql-connector-j | 8.0.33 |
+| 连接池 | HikariCP | Spring Boot 默认集成，支持自定义池参数 |
+| 工具库 | Lombok | 简化实体与样板代码 |
+| 测试框架 | spring-boot-starter-test | 单元/集成测试 |
+| 主启动类 | `com.huawei.aitransform.Application` | `@SpringBootApplication` + `@MapperScan` |
+| 分层架构 | Controller → Service → Mapper | 经典三层架构 |
+| 统一响应 | `Result<T>` / `PageResult` | 接口统一返回封装 |
+| 全局异常 | `GlobalExceptionHandler` | 统一异常处理与错误码 |
+| 数据源配置 | `DataSourceConfig` | 支持 `ENC(...)` 格式自动解密用户名/密码 |
+
+**服务运行参数**
+
+| 配置项 | 值 |
+|--------|-----|
+| 应用名称 | `ai-transform` |
+| 服务端口 | `8080` |
+| 接口上下文路径 | `/ai_transform_webapi` |
+| 环境切换 | `DOCKER_ENV`：`local`（默认）/ `test` / `prod` |
+| 配置文件 | `application.yml`、`application-test.yml`、`application-prod.yml` |
+
+#### 3.0.2 数据库信息
+
+| 类别 | 配置/说明 |
+|------|-----------|
+| 数据库类型 | MySQL |
+| 数据库名称 | `ai_transform` |
+| 字符集 | `utf8mb4` |
+| 排序规则 | `utf8mb4_unicode_ci` |
+| JDBC 驱动 | `com.mysql.cj.jdbc.Driver` |
+| 连接 URL 模板 | `jdbc:mysql://{host}:{port}/ai_transform?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai` |
+| 本地默认地址 | `localhost:3306`（以 `application.yml` 为准） |
+| 凭据管理 | 支持明文或 `ENC(加密串)`；加密工具 `PasswordEncryptor` / `CryptoUtil` |
+| ORM 映射 | MyBatis XML Mapper，路径 `classpath:mapper/*.xml` |
+| 实体包别名 | `com.huawei.aitransform.entity` |
+| 命名映射 | 下划线转驼峰（`map-underscore-to-camel-case: true`） |
+| 缓存策略 | 禁用二级缓存；一级缓存作用域为 `statement` |
+
+**HikariCP 连接池参数**
+
+| 参数 | 值 |
+|------|-----|
+| minimum-idle | 5 |
+| maximum-pool-size | 20 |
+| connection-timeout | 30000 ms |
+| idle-timeout | 600000 ms |
+| max-lifetime | 1800000 ms |
+
+**训战课程看板核心数据表**（详见附录 A）
+
+| 表名 | 用途 |
+|------|------|
+| `t_employee_training_info` | 全员训战课程主表 |
+| `ai_course_planning_info` | 课程规划（基础/进阶/实战） |
+| `dept_course_selections` | 部门选课 |
+| `hands_on_courses` | 实战完课记录 |
+| `practical_course_info` | 实战课程信息 |
+| `department_info_hrms` | 部门层级信息 |
+| `t_employee_sync` | 员工同步来源表 |
+
+#### 3.0.3 前端技术栈
+
+| 类别 | 技术/组件 | 版本/说明 |
+|------|-----------|-----------|
+| 项目路径 | `AI_Transform_Web/ai-dashboard` | Vue 3 单页应用 |
+| 构建工具 | Vite | 5.4.10 |
+| 编程语言 | TypeScript | ~5.9.3 |
+| 核心框架 | Vue | 3.5.22 |
+| 路由 | Vue Router | 4.4.5（`createWebHistory`） |
+| 状态管理 | Pinia | 2.2.6 |
+| UI 组件库 | Element Plus | 2.8.8 |
+| 图标库 | @element-plus/icons-vue | 2.3.1 |
+| 图表库 | ECharts | 5.5.1 |
+| 组合式工具 | @vueuse/core | 10.11.1 |
+| 日期处理 | dayjs | 1.11.13 |
+| Excel 导出 | xlsx / xlsx-js-style | 前端表格导出 |
+| 样式预处理 | Sass (scss) | 全局变量注入 |
+| 代码规范 | ESLint + Prettier | TypeScript / Vue 规则 |
+| HTTP 请求 | 原生 `fetch` 封装 | `src/utils/request.ts` |
+| 认证方式 | Bearer Token | 从 `localStorage.token` 读取 |
+
+**前端运行与部署参数**
+
+| 配置项 | 值 |
+|--------|-----|
+| 部署 Base Path | `/ai_transform/` |
+| API 请求前缀 | `/ai_transform_webapi` |
+| 开发代理 | Vite Dev Server 将 `/ai_transform_webapi` 代理至 `http://localhost:8080` |
+| 训战课程看板路由 | `/dashboard/training`（总览）、`/dashboard/training/detail/:id`（明细）、`/dashboard/training/personal-detail`（个人下钻）、`/dashboard/training/planning`（规划） |
+
+#### 3.0.4 前后端协作关系
+
+```
+浏览器 (Vue 3 SPA)
+    ↓ fetch /ai_transform_webapi/*
+Vite Dev Proxy（开发环境） / Nginx（生产环境）
+    ↓
+Spring Boot (8080, context-path=/ai_transform_webapi)
+    ↓ MyBatis Mapper
+MySQL (ai_transform)
+```
 
 ### 3.1 架构设计
 
@@ -686,7 +801,7 @@ actor "部门负责人" as Mgr
 actor "训战运营" as Ops
 actor "定时任务平台" as Sched
 
-rectangle "AI 训战看板" {
+rectangle "AI训战课程看板" {
     usecase "查看部门课程完成率" as UC1
     usecase "按成熟度查看干部/专家训战" as UC2
     usecase "部门全员训战总览下钻" as UC3
@@ -736,7 +851,7 @@ UC4 ..> UC3 : <<include>>
 └──────────────────────────────────────────────────────────────┘
 ```
 
-#### 3.7.2 岗位 AI 成熟度训战看板
+#### 3.7.2 岗位 AI 成熟度训战课程看板
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
@@ -814,7 +929,7 @@ UC4 ..> UC3 : <<include>>
 
 ### 3.9 产品架构演进
 
-AI 训战看板按三阶段演进，保持对外接口契约稳定（URL 与 `Result<T>` 不变），逐步从单体三层走向能力服务化。
+AI训战课程看板按三阶段演进，保持对外接口契约稳定（URL 与 `Result<T>` 不变），逐步从单体三层走向能力服务化。
 
 ```plantuml
 @startuml
@@ -1118,7 +1233,8 @@ public abstract class AbstractTrainingSyncTemplate {
 
 | 版本 | 日期 | 作者 | 说明 |
 |------|------|------|------|
-| V1.0 | 2026年 | 系统架构师 | 初版，AI 训战看板完整设计 |
+| V1.0 | 2026年 | 系统架构师 | 初版，AI训战课程看板完整设计 |
+| V1.1 | 2026年7月 | 系统架构师 | 补充前后端技术栈、数据库与运行环境说明（3.0 节） |
 
 ---
 

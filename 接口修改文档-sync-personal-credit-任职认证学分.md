@@ -307,7 +307,7 @@ private static BigDecimal safeGet(Map<String, BigDecimal> m, String k) {
 | `POST /api/personal-credit/sync`                   | 是         | `current_credit` 数值变大；协议不变                               |
 | `GET /api/personal-credit/overview`                | 间接       | 读取 `t_personal_credit`，数据随下次 sync 后自然更新              |
 | `PersonalCreditStatisticsController` 相关统计接口 | 间接       | 达成率、max/min/avg、部门标杆会重新平衡；无需改动代码             |
-| AI School 看板（`getRoleSummary`、`getSchoolCreditDetailList`） | 间接 | 读同一张表，无需改动                                             |
+| AI学分看板（`getRoleSummary`、`getSchoolCreditDetailList`） | 间接 | 读同一张表，无需改动                                             |
 | 手工录入学分接口                                   | 否         | 独立链路，保留加总                                                |
 
 ## 八、测试要点

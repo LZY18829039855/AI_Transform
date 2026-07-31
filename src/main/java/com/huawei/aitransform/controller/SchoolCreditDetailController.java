@@ -10,8 +10,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 /**
- * AI School学分数据明细查询Controller
- * 用于处理AI School看板基线人数点击下钻的学分数据明细查询
+ * AI学分数据明细查询Controller
+ * 用于处理AI学分看板基线人数点击下钻的学分数据明细查询
  */
 @RestController
 @RequestMapping("/api/school-credit-detail")
@@ -21,7 +21,7 @@ public class SchoolCreditDetailController {
     private SchoolCreditDetailService schoolCreditDetailService;
 
     /**
-     * 查询AI School学分数据明细
+     * 查询AI学分数据明细
      * 用于基线人数点击下钻场景
      *
      * @param request 查询请求参数

@@ -4,7 +4,7 @@ import java.io.Serializable;
 import java.util.List;
 
 /**
- * AI School学分数据明细查询响应VO
+ * AI学分数据明细查询响应VO
  */
 public class SchoolCreditDetailResponseVO implements Serializable {
 

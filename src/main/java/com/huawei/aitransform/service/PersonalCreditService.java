@@ -989,7 +989,7 @@ public class PersonalCreditService {
     }
 
     /**
-     * 获取 AI School 看板 - 专家 & 干部学分总览
+     * 获取 AI学分看板 - 专家 & 干部学分总览
      * @param deptCode 部门编码，null / "" / "0" 时查全量
      */
     public SchoolRoleSummaryResponseVO getRoleSummary(String deptCode) {
@@ -1009,7 +1009,7 @@ public class PersonalCreditService {
     }
 
     /**
-     * 获取 AI School 看板 - 基线人数下钻明细（分页）
+     * 获取 AI学分看板 - 基线人数下钻明细（分页）
      */
     public SchoolCreditDetailResponseVO getSchoolCreditDetailList(SchoolCreditDetailRequestVO request) {
         int pageNum  = (request.getPageNum()  == null || request.getPageNum()  < 1) ? 1  : request.getPageNum();
