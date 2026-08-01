@@ -43,11 +43,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -57,9 +55,6 @@ import java.util.stream.Collectors;
  */
 @Service
 public class ExpertCertStatisticsService {
-
-    private static final int DEFAULT_DRILL_PAGE_NUM = 1;
-    private static final int DEFAULT_DRILL_PAGE_SIZE = 50;
 
     @Autowired
     private ExpertCertStatisticsMapper expertCertStatisticsMapper;
@@ -1737,15 +1732,10 @@ public class ExpertCertStatisticsService {
      * @param jobCategory 职位类
      * @param personType 人员类型（0-全员，1-干部，2-专家）
      * @param queryType 查询类型（1-认证人数，2-基线人数）
-     * @param name 姓名模糊（可选）
-     * @param employeeNumber 工号模糊（可选）
-     * @param pageNum 页码，从 1 开始
-     * @param pageSize 每页条数
-     * @return 员工详细信息分页结果
+     * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getPersonCertDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType,
-            String name, String employeeNumber, Integer pageNum, Integer pageSize) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
@@ -1926,8 +1916,11 @@ public class ExpertCertStatisticsService {
             }
         }
 
-        // 4. 姓名/工号过滤后分页返回
-        return buildPagedEmployeeDrillDownResponse(employeeDetails, name, employeeNumber, pageNum, pageSize);
+        // 4. 构建返回结果
+        EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
+        response.setEmployeeDetails(employeeDetails);
+
+        return response;
     }
 
     /**
@@ -1936,15 +1929,10 @@ public class ExpertCertStatisticsService {
      * @param aiMaturity 岗位AI成熟度
      * @param jobCategory 职位类
      * @param personType 人员类型（1-干部，当前只处理干部类型）
-     * @param name 姓名模糊（可选）
-     * @param employeeNumber 工号模糊（可选）
-     * @param pageNum 页码，从 1 开始
-     * @param pageSize 每页条数
-     * @return 员工详细信息分页结果
+     * @return 员工详细信息列表
      */
     public EmployeeDrillDownResponseVO getCadreQualifiedDetailsByConditions(
-            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType,
-            String name, String employeeNumber, Integer pageNum, Integer pageSize) {
+            String deptCode, String aiMaturity, String jobCategory, Integer personType, Integer queryType) {
         // 1. 参数校验
         if (deptCode == null || deptCode.trim().isEmpty()) {
             throw new IllegalArgumentException("部门ID不能为空");
@@ -2159,69 +2147,11 @@ public class ExpertCertStatisticsService {
             }
         }
 
-        // 5. 姓名/工号过滤后分页返回
-        return buildPagedEmployeeDrillDownResponse(employeeDetails, name, employeeNumber, pageNum, pageSize);
-    }
-
-    /**
-     * 对下钻明细做姓名/工号模糊过滤并分页（对齐学分、训战明细）
-     */
-    private EmployeeDrillDownResponseVO buildPagedEmployeeDrillDownResponse(
-            List<EmployeeDetailVO> source,
-            String name,
-            String employeeNumber,
-            Integer pageNum,
-            Integer pageSize) {
-        int pn = (pageNum == null || pageNum < 1) ? DEFAULT_DRILL_PAGE_NUM : pageNum;
-        int ps = (pageSize == null || pageSize < 1) ? DEFAULT_DRILL_PAGE_SIZE : pageSize;
-
-        List<EmployeeDetailVO> filtered = source == null ? Collections.emptyList() : source;
-        String nameFilter = trimToNull(name);
-        String empFilter = trimToNull(employeeNumber);
-        if (nameFilter != null || empFilter != null) {
-            String nameKw = nameFilter == null ? null : nameFilter.toLowerCase(Locale.ROOT);
-            String empKw = empFilter == null ? null : empFilter.toLowerCase(Locale.ROOT);
-            filtered = filtered.stream().filter(item -> {
-                if (nameKw != null) {
-                    String itemName = item.getName();
-                    if (itemName == null || !itemName.toLowerCase(Locale.ROOT).contains(nameKw)) {
-                        return false;
-                    }
-                }
-                if (empKw != null) {
-                    String itemEmp = item.getEmployeeNumber();
-                    if (itemEmp == null || !itemEmp.toLowerCase(Locale.ROOT).contains(empKw)) {
-                        return false;
-                    }
-                }
-                return true;
-            }).collect(Collectors.toList());
-        }
-
-        long total = filtered.size();
+        // 5. 构建返回结果
         EmployeeDrillDownResponseVO response = new EmployeeDrillDownResponseVO();
-        response.setPageNum(pn);
-        response.setPageSize(ps);
-        response.setTotal(total);
-        response.setPages(ps > 0 ? (int) Math.ceil((double) total / ps) : 0);
+        response.setEmployeeDetails(employeeDetails);
 
-        if (total <= 0) {
-            response.setEmployeeDetails(Collections.emptyList());
-            return response;
-        }
-
-        int fromIndex = Math.min((pn - 1) * ps, filtered.size());
-        int toIndex = Math.min(fromIndex + ps, filtered.size());
-        response.setEmployeeDetails(filtered.subList(fromIndex, toIndex));
         return response;
-    }
-
-    private static String trimToNull(String value) {
-        if (value == null) {
-            return null;
-        }
-        String trimmed = value.trim();
-        return trimmed.isEmpty() ? null : trimmed;
     }
 
     /**
