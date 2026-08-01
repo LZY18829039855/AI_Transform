@@ -4,7 +4,7 @@ import com.huawei.aitransform.common.PageResult;
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.DepartmentCourseCompletionRateVO;
 import com.huawei.aitransform.entity.DepartmentEmployeeCourseCompletionDetailVO;
-import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
+import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewResponseVO;
 import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.PersonalCourseCompletionResponseVO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
@@ -155,16 +155,25 @@ public class PersonalCourseCompletionController {
 
     /**
      * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
-     * @param deptId    部门ID（部门编码）；传 0 时在服务层解析为云核心网二级部门编码
-     * @param personType 人员类型：0 全员；1 干部；2 专家
-     * @param aiMaturity 岗位 AI 成熟度（可选）：L1、L2、L3；与 personType 配合——干部按 cadre_position_ai_maturity 过滤，专家按 expert_position_ai_maturity 过滤
-     * @return 该部门下每名员工的训战总览列表
+     * 支持分页（pageNum/pageSize，默认 1/50）及姓名、工号模糊筛选，响应结构对齐学分明细
+     *
+     * @param deptId         部门ID（部门编码）；传 0 时在服务层解析为云核心网二级部门编码
+     * @param personType     人员类型：0 全员；1 干部；2 专家
+     * @param aiMaturity     岗位 AI 成熟度（可选）：L1、L2、L3
+     * @param name           姓名模糊（可选）
+     * @param employeeNumber 工号模糊（可选）
+     * @param pageNum        页码，默认 1
+     * @param pageSize       每页条数，默认 50
      */
     @GetMapping("/department-employee-training-overview")
-    public ResponseEntity<Result<List<DepartmentEmployeeTrainingOverviewVO>>> getDepartmentEmployeeTrainingOverview(
+    public ResponseEntity<Result<DepartmentEmployeeTrainingOverviewResponseVO>> getDepartmentEmployeeTrainingOverview(
             @RequestParam(value = "deptId", required = true) String deptId,
             @RequestParam(value = "personType", required = false) Integer personType,
-            @RequestParam(value = "ai_maturity", required = false) String aiMaturity) {
+            @RequestParam(value = "ai_maturity", required = false) String aiMaturity,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "employeeNumber", required = false) String employeeNumber,
+            @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
             if (deptId == null || deptId.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
@@ -184,8 +193,10 @@ public class PersonalCourseCompletionController {
                 }
                 maturityFilter = normalized;
             }
-            List<DepartmentEmployeeTrainingOverviewVO> list = departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverview(deptId.trim(), pt, maturityFilter);
-            return ResponseEntity.ok(Result.success("查询成功", list));
+            DepartmentEmployeeTrainingOverviewResponseVO data =
+                    departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverviewPage(
+                            deptId.trim(), pt, maturityFilter, name, employeeNumber, pageNum, pageSize);
+            return ResponseEntity.ok(Result.success("查询成功", data));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }

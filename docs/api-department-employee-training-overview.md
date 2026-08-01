@@ -14,31 +14,44 @@
 | 实现类       | **PersonalCourseCompletionController**（与部门课程完成率等接口同控制器，统一前缀 `/personal-course`） |
 | 请求路径     | `GET /personal-course/department-employee-training-overview` |
 | 请求方式     | GET |
-| 请求参数     | 部门ID（deptId）、人员类型（personType） |
-| 是否需要认证 | 视现有接口策略而定 |
+| 请求参数     | 部门ID（deptId）、人员类型（personType）、可选分页与筛选参数 |
 
 ---
 
 ## 3. 请求参数
 
-| 参数名     | 类型   | 参数位置 | 是否必填 | 说明 |
-|------------|--------|----------|----------|------|
-| deptId     | String | Query    | 是       | 部门ID（部门编码，与 t_employee_training_info 中对应层级部门编码字段一致）。用于确定统计范围：在该部门下查询**本部门全员**（按部门层级在 t_employee_training_info 中过滤，见 5.2）。 |
-| personType | Integer| Query    | 否       | 人员类型；当前**仅处理 0**，其他值可由实现忽略或按 0 处理 |
+| 参数名         | 类型    | 参数位置 | 是否必填 | 说明 |
+|----------------|---------|----------|----------|------|
+| deptId         | String  | Query    | 是       | 部门ID（部门编码）。传 `0` 时服务端解析为云核心网二级部门编码。 |
+| personType     | Integer | Query    | 否       | 人员类型：0 全员（默认）；1 干部；2 专家 |
+| ai_maturity    | String  | Query    | 否       | 岗位 AI 成熟度：L1/L2/L3；仅 personType=1 或 2 时可用 |
+| name           | String  | Query    | 否       | 姓名模糊筛选 |
+| employeeNumber | String  | Query    | 否       | 工号模糊筛选 |
+| pageNum        | Integer | Query    | 否       | 页码，从 1 开始，默认 1 |
+| pageSize       | Integer | Query    | 否       | 每页条数，默认 50 |
 
 **请求示例：**
 
 ```http
-GET /personal-course/department-employee-training-overview?deptId=030681&personType=0 HTTP/1.1
+GET /personal-course/department-employee-training-overview?deptId=030681&personType=0&pageNum=1&pageSize=50 HTTP/1.1
 Host: example.com
 ```
 
 ---
 
-## 4. 响应参数（data 为列表）
+## 4. 响应参数（data 为分页对象）
 
-- **data**：数组。每个元素对应该部门下**一名员工**的训战总览；若该部门下无人员，则为空数组 `[]`。
-- 每个元素（单人员）结构如下：
+- **data**：分页对象，字段如下：
+
+| 参数名   | 类型    | 说明 |
+|----------|---------|------|
+| records  | Array   | 当前页人员训战总览列表；无数据时为 `[]` |
+| total    | Long    | 符合条件的总人数 |
+| pageNum  | Integer | 当前页码 |
+| pageSize | Integer | 每页条数 |
+| pages    | Integer | 总页数 |
+
+- **records** 中每个元素（单人员）结构如下：
 
 | 参数名                         | 类型    | 说明 |
 |--------------------------------|---------|------|
@@ -62,68 +75,49 @@ Host: example.com
 | totalCompletedCount            | Integer | 目标课程完课数（基础完课数 + 进阶完课数；若含实战则加上实战完课数，见 5.5） |
 | totalCompletionRate            | Double  | 目标课程完课占比（百分比，见 5.4） |
 
-**响应示例（成功，部门下有两名员工）：**
+**响应示例（成功）：**
 
 ```json
 {
   "code": 200,
   "message": "查询成功",
-  "data": [
-    {
-      "name": "张三",
-      "employeeNumber": "12345678",
-      "jobCategory": "软件类",
-      "jobSubcategory": "开发",
-      "firstDept": "一级部门A",
-      "secondDept": "二级部门A",
-      "thirdDept": "三级部门A",
-      "fourthDept": "四级部门A",
-      "fifthDept": "五级部门A",
-      "lowestDept": "最小部门A",
-      "basicTargetCourseCount": 10,
-      "basicCompletedCount": 6,
-      "basicCompletionRate": 60.00,
-      "advancedTargetCourseCount": 5,
-      "advancedCompletedCount": 2,
-      "advancedCompletionRate": 40.00,
-      "totalTargetCourseCount": 15,
-      "totalCompletedCount": 8,
-      "totalCompletionRate": 53.33
-    },
-    {
-      "name": "李四",
-      "employeeNumber": "87654321",
-      "jobCategory": "软件类",
-      "jobSubcategory": "测试",
-      "firstDept": "一级部门A",
-      "secondDept": "二级部门A",
-      "thirdDept": "三级部门A",
-      "fourthDept": "四级部门A",
-      "fifthDept": "",
-      "lowestDept": "四级部门A",
-      "basicTargetCourseCount": 10,
-      "basicCompletedCount": 8,
-      "basicCompletionRate": 80.00,
-      "advancedTargetCourseCount": 5,
-      "advancedCompletedCount": 3,
-      "advancedCompletionRate": 60.00,
-      "totalTargetCourseCount": 15,
-      "totalCompletedCount": 11,
-      "totalCompletionRate": 73.33
-    }
-  ]
+  "data": {
+    "records": [
+      {
+        "name": "张三",
+        "employeeNumber": "12345678",
+        "jobCategory": "软件类",
+        "jobSubcategory": "开发",
+        "firstDept": "一级部门A",
+        "secondDept": "二级部门A",
+        "thirdDept": "三级部门A",
+        "fourthDept": "四级部门A",
+        "fifthDept": "五级部门A",
+        "lowestDept": "最小部门A",
+        "basicTargetCourseCount": 10,
+        "basicCompletedCount": 6,
+        "basicCompletionRate": 60.00,
+        "advancedTargetCourseCount": 5,
+        "advancedCompletedCount": 2,
+        "advancedCompletionRate": 40.00,
+        "totalTargetCourseCount": 15,
+        "totalCompletedCount": 8,
+        "totalCompletionRate": 53.33
+      }
+    ],
+    "total": 128,
+    "pageNum": 1,
+    "pageSize": 50,
+    "pages": 3
+  }
 }
 ```
 
-**响应示例（成功，部门下无人员）：**
+---
 
-```json
-{
-  "code": 200,
-  "message": "查询成功",
-  "data": []
-}
-```
+## 4.1 历史响应说明
+
+此前接口 `data` 直接返回数组；现已改为与 AI 学分明细一致的分页对象。调用方需改为读取 `data.records` / `data.total`。
 
 ---
 

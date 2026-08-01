@@ -46,6 +46,29 @@ public interface EmployeeTrainingInfoMapper {
                                                       @Param("aiMaturity") String aiMaturity);
 
     /**
+     * 部门训战总览下钻：统计符合条件的人数（支持姓名/工号模糊）
+     */
+    Long countOverviewByDeptLevelAndCode(@Param("deptLevel") String deptLevel,
+                                         @Param("deptCode") String deptCode,
+                                         @Param("personType") Integer personType,
+                                         @Param("aiMaturity") String aiMaturity,
+                                         @Param("name") String name,
+                                         @Param("employeeNumber") String employeeNumber);
+
+    /**
+     * 部门训战总览下钻：分页查询本部门人员（支持姓名/工号模糊）
+     */
+    List<EmployeeTrainingInfoPO> listOverviewByDeptLevelAndCodePaged(
+            @Param("deptLevel") String deptLevel,
+            @Param("deptCode") String deptCode,
+            @Param("personType") Integer personType,
+            @Param("aiMaturity") String aiMaturity,
+            @Param("name") String name,
+            @Param("employeeNumber") String employeeNumber,
+            @Param("offset") int offset,
+            @Param("pageSize") int pageSize);
+
+    /**
      * 按工号查询一条训战信息（含 practical_courses）
      *
      * @param employeeNumber 工号

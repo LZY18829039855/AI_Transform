@@ -194,17 +194,8 @@
         WHERE employee_number = #{employeeNumber}
     </update>
 
-    <!-- 按部门层级与部门编码查询本部门人员（不含下级） -->
-    <select id="listByDeptLevelAndCode" resultMap="BaseResultMap">
-        SELECT employee_number, last_name,
-               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
-               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
-               job_type, job_category, job_subcategory,
-               period_id, updated_time,
-               basic_courses, advanced_courses, practical_courses,
-               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
-               cadre_position_ai_maturity, expert_position_ai_maturity
-        FROM t_employee_training_info
+    <!-- 部门/人员类型/成熟度公共过滤（无姓名工号，供原 listByDeptLevelAndCode 使用） -->
+    <sql id="DeptPersonTypeFilter">
         <where>
             <choose>
                 <when test="deptLevel == 1">firstdeptcode = #{deptCode}</when>
@@ -235,5 +226,80 @@
                 </choose>
             </if>
         </where>
+    </sql>
+
+    <!-- 部门训战总览下钻过滤（含姓名/工号模糊） -->
+    <sql id="OverviewDeptFilter">
+        <where>
+            <choose>
+                <when test="deptLevel == 1">firstdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 2">seconddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 3">thirddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 4">fourthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 5">fifthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 6">sixthdeptcode = #{deptCode}</when>
+            </choose>
+            <if test="personType != null and personType == 1">
+                <choose>
+                    <when test="aiMaturity != null and aiMaturity != ''">
+                        AND cadre_position_ai_maturity = #{aiMaturity}
+                    </when>
+                    <otherwise>
+                        AND cadre_position_ai_maturity IS NOT NULL AND TRIM(cadre_position_ai_maturity) != ''
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="personType != null and personType == 2">
+                <choose>
+                    <when test="aiMaturity != null and aiMaturity != ''">
+                        AND expert_position_ai_maturity = #{aiMaturity}
+                    </when>
+                    <otherwise>
+                        AND expert_position_ai_maturity IS NOT NULL AND TRIM(expert_position_ai_maturity) != ''
+                    </otherwise>
+                </choose>
+            </if>
+            <if test="name != null and name != ''">
+                AND last_name LIKE CONCAT('%', #{name}, '%')
+            </if>
+            <if test="employeeNumber != null and employeeNumber != ''">
+                AND employee_number LIKE CONCAT('%', #{employeeNumber}, '%')
+            </if>
+        </where>
+    </sql>
+
+    <!-- 按部门层级与部门编码查询本部门人员（不含下级） -->
+    <select id="listByDeptLevelAndCode" resultMap="BaseResultMap">
+        SELECT employee_number, last_name,
+               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+               job_type, job_category, job_subcategory,
+               period_id, updated_time,
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
+               cadre_position_ai_maturity, expert_position_ai_maturity
+        FROM t_employee_training_info
+        <include refid="DeptPersonTypeFilter"/>
+    </select>
+
+    <select id="countOverviewByDeptLevelAndCode" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_employee_training_info
+        <include refid="OverviewDeptFilter"/>
+    </select>
+
+    <select id="listOverviewByDeptLevelAndCodePaged" resultMap="BaseResultMap">
+        SELECT employee_number, last_name,
+               firstdeptcode, seconddeptcode, thirddeptcode, fourthdeptcode, fifthdeptcode, sixthdeptcode,
+               lowestdeptid, firstdept, seconddept, thirddept, fourthdept, fifthdept, sixthdept, lowestdept,
+               job_type, job_category, job_subcategory,
+               period_id, updated_time,
+               basic_courses, advanced_courses, practical_courses,
+               basic_target_courses_num, advanced_target_courses_num, practical_target_courses_num,
+               cadre_position_ai_maturity, expert_position_ai_maturity
+        FROM t_employee_training_info
+        <include refid="OverviewDeptFilter"/>
+        ORDER BY employee_number ASC
+        LIMIT #{pageSize} OFFSET #{offset}
     </select>
 </mapper>

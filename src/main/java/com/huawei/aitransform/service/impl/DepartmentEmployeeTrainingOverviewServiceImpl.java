@@ -1,6 +1,7 @@
 package com.huawei.aitransform.service.impl;
 
 import com.huawei.aitransform.constant.DepartmentConstants;
+import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewResponseVO;
 import com.huawei.aitransform.entity.DepartmentEmployeeTrainingOverviewVO;
 import com.huawei.aitransform.entity.DepartmentInfoVO;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
@@ -22,6 +23,9 @@ import java.util.List;
 @Service
 public class DepartmentEmployeeTrainingOverviewServiceImpl implements DepartmentEmployeeTrainingOverviewService {
 
+    private static final int DEFAULT_PAGE_NUM = 1;
+    private static final int DEFAULT_PAGE_SIZE = 50;
+
     @Autowired
     private DepartmentInfoMapper departmentInfoMapper;
 
@@ -29,9 +33,71 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
     private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
 
     @Override
-    public List<DepartmentEmployeeTrainingOverviewVO> getDepartmentEmployeeTrainingOverview(String deptId, Integer personType, String aiMaturity) {
-        if (deptId == null || deptId.trim().isEmpty()) {
+    public List<DepartmentEmployeeTrainingOverviewVO> getDepartmentEmployeeTrainingOverview(
+            String deptId, Integer personType, String aiMaturity) {
+        DepartmentInfoVO dept = resolveDepartment(deptId);
+        if (dept == null) {
             return Collections.emptyList();
+        }
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(
+                dept.getDeptLevel(), dept.getDeptCode(), personType, aiMaturity);
+        return mapToVoList(list);
+    }
+
+    @Override
+    public DepartmentEmployeeTrainingOverviewResponseVO getDepartmentEmployeeTrainingOverviewPage(
+            String deptId,
+            Integer personType,
+            String aiMaturity,
+            String name,
+            String employeeNumber,
+            Integer pageNum,
+            Integer pageSize) {
+        int pn = (pageNum == null || pageNum < 1) ? DEFAULT_PAGE_NUM : pageNum;
+        int ps = (pageSize == null || pageSize < 1) ? DEFAULT_PAGE_SIZE : pageSize;
+
+        DepartmentEmployeeTrainingOverviewResponseVO response = new DepartmentEmployeeTrainingOverviewResponseVO();
+        response.setPageNum(pn);
+        response.setPageSize(ps);
+
+        DepartmentInfoVO dept = resolveDepartment(deptId);
+        if (dept == null) {
+            response.setRecords(Collections.emptyList());
+            response.setTotal(0L);
+            response.setPages(0);
+            return response;
+        }
+
+        String nameFilter = trimToNull(name);
+        String empFilter = trimToNull(employeeNumber);
+        Long total = employeeTrainingInfoMapper.countOverviewByDeptLevelAndCode(
+                dept.getDeptLevel(), dept.getDeptCode(), personType, aiMaturity, nameFilter, empFilter);
+        long totalCount = total == null ? 0L : total;
+        response.setTotal(totalCount);
+        response.setPages(ps > 0 ? (int) Math.ceil((double) totalCount / ps) : 0);
+
+        if (totalCount <= 0) {
+            response.setRecords(Collections.emptyList());
+            return response;
+        }
+
+        int offset = (pn - 1) * ps;
+        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listOverviewByDeptLevelAndCodePaged(
+                dept.getDeptLevel(),
+                dept.getDeptCode(),
+                personType,
+                aiMaturity,
+                nameFilter,
+                empFilter,
+                offset,
+                ps);
+        response.setRecords(mapToVoList(list));
+        return response;
+    }
+
+    private DepartmentInfoVO resolveDepartment(String deptId) {
+        if (deptId == null || deptId.trim().isEmpty()) {
+            return null;
         }
         String resolvedDeptId = deptId.trim();
         if ("0".equals(resolvedDeptId)) {
@@ -39,15 +105,19 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
         }
         DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(resolvedDeptId);
         if (dept == null) {
+            return null;
+        }
+        if (dept.getDeptLevel() == null || dept.getDeptCode() == null) {
+            return null;
+        }
+        return dept;
+    }
+
+    private List<DepartmentEmployeeTrainingOverviewVO> mapToVoList(List<EmployeeTrainingInfoPO> list) {
+        if (list == null || list.isEmpty()) {
             return Collections.emptyList();
         }
-        String deptLevel = dept.getDeptLevel();
-        String deptCode = dept.getDeptCode();
-        if (deptLevel == null || deptCode == null) {
-            return Collections.emptyList();
-        }
-        List<EmployeeTrainingInfoPO> list = employeeTrainingInfoMapper.listByDeptLevelAndCode(deptLevel, deptCode, personType, aiMaturity);
-        List<DepartmentEmployeeTrainingOverviewVO> result = new ArrayList<>();
+        List<DepartmentEmployeeTrainingOverviewVO> result = new ArrayList<>(list.size());
         for (EmployeeTrainingInfoPO po : list) {
             DepartmentEmployeeTrainingOverviewVO vo = buildOneEmployeeVO(po);
             if (vo != null) {
@@ -55,6 +125,14 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
             }
         }
         return result;
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private DepartmentEmployeeTrainingOverviewVO buildOneEmployeeVO(EmployeeTrainingInfoPO po) {
