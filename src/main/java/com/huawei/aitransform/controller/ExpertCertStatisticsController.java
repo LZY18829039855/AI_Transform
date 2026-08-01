@@ -347,7 +347,11 @@ public class ExpertCertStatisticsController {
      * @param jobCategory 职位类
      * @param personType 人员类型（0-全员，1-干部，2-专家）
      * @param queryType 查询类型（1-认证人数，2-基线人数），默认为1（认证人数）
-     * @return 员工详细信息列表
+     * @param name 姓名模糊（可选）
+     * @param employeeNumber 工号模糊（可选）
+     * @param pageNum 页码，默认1
+     * @param pageSize 每页条数，默认50
+     * @return 员工详细信息分页结果
      */
     @GetMapping("/person-cert-details")
     public ResponseEntity<Result<EmployeeDrillDownResponseVO>> getPersonCertDetailsByConditions(
@@ -355,7 +359,11 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
             @RequestParam(value = "personType", required = true) Integer personType,
-            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
+            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "employeeNumber", required = false) String employeeNumber,
+            @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
             // 当deptCode为"0"、空字符串或未提供时，使用默认值云核心网产品线部门ID
             if (deptCode == null || deptCode.trim().isEmpty() || "0".equals(deptCode.trim())) {
@@ -382,7 +390,8 @@ public class ExpertCertStatisticsController {
             }
 
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getPersonCertDetailsByConditions(
-                    deptCode, aiMaturity, jobCategory, personType, queryType);
+                    deptCode, aiMaturity, jobCategory, personType, queryType,
+                    name, employeeNumber, pageNum, pageSize);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));
@@ -398,7 +407,11 @@ public class ExpertCertStatisticsController {
      * @param jobCategory 职位类
      * @param personType 人员类型（0-全员，1-干部，2-专家）
      * @param queryType 查询类型（1-任职人数，2-基线人数），默认为1（任职人数）
-     * @return 员工详细信息列表
+     * @param name 姓名模糊（可选）
+     * @param employeeNumber 工号模糊（可选）
+     * @param pageNum 页码，默认1
+     * @param pageSize 每页条数，默认50
+     * @return 员工详细信息分页结果
      */
     @GetMapping("/cadre-qualified-details")
     public ResponseEntity<Result<EmployeeDrillDownResponseVO>> getCadreQualifiedDetailsByConditions(
@@ -406,7 +419,11 @@ public class ExpertCertStatisticsController {
             @RequestParam(value = "aiMaturity", required = false) String aiMaturity,
             @RequestParam(value = "jobCategory", required = false) String jobCategory,
             @RequestParam(value = "personType", required = true) Integer personType,
-            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType) {
+            @RequestParam(value = "queryType", required = false, defaultValue = "1") Integer queryType,
+            @RequestParam(value = "name", required = false) String name,
+            @RequestParam(value = "employeeNumber", required = false) String employeeNumber,
+            @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
+            @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
             if (deptCode == null || deptCode.trim().isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "部门ID不能为空"));
@@ -434,7 +451,8 @@ public class ExpertCertStatisticsController {
             }
 
             EmployeeDrillDownResponseVO result = expertCertStatisticsService.getCadreQualifiedDetailsByConditions(
-                    deptCode, aiMaturity, jobCategory, personType, queryType);
+                    deptCode, aiMaturity, jobCategory, personType, queryType,
+                    name, employeeNumber, pageNum, pageSize);
             return ResponseEntity.ok(Result.success("查询成功", result));
         } catch (IllegalArgumentException e) {
             return ResponseEntity.ok(Result.error(400, e.getMessage()));
