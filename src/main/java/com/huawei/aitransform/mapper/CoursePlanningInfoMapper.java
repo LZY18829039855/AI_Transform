@@ -56,6 +56,21 @@ public interface CoursePlanningInfoMapper {
      * @return 部门选课信息，如果未找到返回null
      */
     DeptCourseSelection getDeptSelectionByDeptCode(@Param("deptCode") String deptCode);
+
+    /**
+     * 新增部门选课
+     */
+    int insertDeptSelection(DeptCourseSelection record);
+
+    /**
+     * 按部门编码更新选课
+     */
+    int updateDeptSelectionByDeptCode(DeptCourseSelection record);
+
+    /**
+     * 按部门编码删除选课
+     */
+    int deleteDeptSelectionByDeptCode(@Param("deptCode") String deptCode);
 }
 
 

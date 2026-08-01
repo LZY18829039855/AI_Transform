@@ -132,4 +132,41 @@
         LIMIT 1
     </select>
 
+    <insert id="insertDeptSelection" parameterType="com.huawei.aitransform.entity.DeptCourseSelection">
+        INSERT INTO dept_course_selections (
+            dept_code,
+            dept_name,
+            course_selections,
+            practical_selections,
+            basic_target_courses_num,
+            advanced_target_courses_num,
+            practical_target_courses_num
+        ) VALUES (
+            #{deptCode},
+            #{deptName},
+            #{courseSelections},
+            #{practicalSelections},
+            #{basicTargetCoursesNum},
+            #{advancedTargetCoursesNum},
+            #{practicalTargetCoursesNum}
+        )
+    </insert>
+
+    <update id="updateDeptSelectionByDeptCode" parameterType="com.huawei.aitransform.entity.DeptCourseSelection">
+        UPDATE dept_course_selections
+        SET
+            dept_name = #{deptName},
+            course_selections = #{courseSelections},
+            practical_selections = #{practicalSelections},
+            basic_target_courses_num = #{basicTargetCoursesNum},
+            advanced_target_courses_num = #{advancedTargetCoursesNum},
+            practical_target_courses_num = #{practicalTargetCoursesNum}
+        WHERE dept_code = #{deptCode}
+    </update>
+
+    <delete id="deleteDeptSelectionByDeptCode">
+        DELETE FROM dept_course_selections
+        WHERE dept_code = #{deptCode}
+    </delete>
+
 </mapper>
