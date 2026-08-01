@@ -20,6 +20,31 @@ public interface CoursePlanningInfoMapper {
     List<CoursePlanningInfoVO> getAllCoursePlanningInfo();
 
     /**
+     * 管理端：查询全部课程主数据（不含部门选课聚合）
+     */
+    List<CoursePlanningInfoVO> getAllCoursesForManage();
+
+    /**
+     * 按主键查询课程
+     */
+    CoursePlanningInfoVO getById(@Param("id") Integer id);
+
+    /**
+     * 新增课程
+     */
+    int insert(CoursePlanningInfoVO record);
+
+    /**
+     * 按主键更新课程
+     */
+    int updateById(CoursePlanningInfoVO record);
+
+    /**
+     * 按主键删除课程
+     */
+    int deleteById(@Param("id") Integer id);
+
+    /**
      * 查询所有部门选课信息
      * @return 部门选课列表
      */

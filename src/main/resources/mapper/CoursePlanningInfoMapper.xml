@@ -3,25 +3,106 @@
         "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.huawei.aitransform.mapper.CoursePlanningInfoMapper">
 
+    <sql id="CoursePlanningColumns">
+        id,
+        big_type AS bigType,
+        syb_type AS sybType,
+        course_name AS courseName,
+        course_link AS courseLink,
+        credit,
+        course_status AS courseStatus,
+        knowledge_point AS knowledgePoint,
+        course_explain AS courseExplain,
+        study_duration AS studyDuration,
+        course_level AS courseLevel,
+        in_class_test AS inClassTest,
+        course_number AS courseNumber
+    </sql>
+
     <!-- 查询所有课程规划明细数据 -->
     <select id="getAllCoursePlanningInfo" resultType="com.huawei.aitransform.entity.CoursePlanningInfoVO">
-        SELECT 
-            id,
-            big_type AS bigType,
-            syb_type AS sybType,
-            course_name AS courseName,
-            course_link AS courseLink,
-            credit,
-            course_status AS courseStatus,
-            knowledge_point AS knowledgePoint,
-            course_explain AS courseExplain,
-            study_duration AS studyDuration,
-            course_level AS courseLevel,
-            in_class_test AS inClassTest,
-            course_number AS courseNumber
+        SELECT
+            <include refid="CoursePlanningColumns"/>
         FROM ai_course_planning_info
         ORDER BY id
     </select>
+
+    <!-- 管理端：全部课程主数据 -->
+    <select id="getAllCoursesForManage" resultType="com.huawei.aitransform.entity.CoursePlanningInfoVO">
+        SELECT
+            <include refid="CoursePlanningColumns"/>
+        FROM ai_course_planning_info
+        ORDER BY big_type,
+            CASE course_level
+                WHEN '基础' THEN 1
+                WHEN '进阶' THEN 2
+                WHEN '实战' THEN 3
+                ELSE 9
+            END,
+            id
+    </select>
+
+    <select id="getById" resultType="com.huawei.aitransform.entity.CoursePlanningInfoVO">
+        SELECT
+            <include refid="CoursePlanningColumns"/>
+        FROM ai_course_planning_info
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <insert id="insert" parameterType="com.huawei.aitransform.entity.CoursePlanningInfoVO"
+            useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO ai_course_planning_info (
+            big_type,
+            syb_type,
+            course_name,
+            course_link,
+            credit,
+            course_status,
+            knowledge_point,
+            course_explain,
+            study_duration,
+            course_level,
+            in_class_test,
+            course_number
+        ) VALUES (
+            #{bigType},
+            #{sybType},
+            #{courseName},
+            #{courseLink},
+            #{credit},
+            #{courseStatus},
+            #{knowledgePoint},
+            #{courseExplain},
+            #{studyDuration},
+            #{courseLevel},
+            #{inClassTest},
+            #{courseNumber}
+        )
+    </insert>
+
+    <update id="updateById" parameterType="com.huawei.aitransform.entity.CoursePlanningInfoVO">
+        UPDATE ai_course_planning_info
+        SET
+            big_type = #{bigType},
+            syb_type = #{sybType},
+            course_name = #{courseName},
+            course_link = #{courseLink},
+            credit = #{credit},
+            course_status = #{courseStatus},
+            knowledge_point = #{knowledgePoint},
+            course_explain = #{courseExplain},
+            study_duration = #{studyDuration},
+            course_level = #{courseLevel},
+            in_class_test = #{inClassTest},
+            course_number = #{courseNumber}
+        WHERE id = #{id}
+    </update>
+
+    <delete id="deleteById">
+        DELETE FROM ai_course_planning_info
+        WHERE id = #{id}
+    </delete>
 
     <!-- 查询所有部门选课信息 -->
     <select id="getAllDeptSelections" resultType="com.huawei.aitransform.entity.DeptCourseSelection">
@@ -52,5 +133,3 @@
     </select>
 
 </mapper>
-
-
