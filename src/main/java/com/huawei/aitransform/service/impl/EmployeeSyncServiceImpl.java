@@ -1,5 +1,6 @@
 package com.huawei.aitransform.service.impl;
 
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.EmployeePO;
 import com.huawei.aitransform.entity.EmployeeSyncDataVO;
 import com.huawei.aitransform.mapper.CadreMapper;
@@ -33,8 +34,9 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
             throw new IllegalArgumentException("Period ID cannot be empty");
         }
 
-        // 1. 获取研发族数据 (t_employee_sync + 达标计算)
-        List<EmployeeSyncDataVO> rndList = employeeMapper.getEmployeeSyncData(periodId);
+        // 1. 获取研发族数据 (t_employee_sync + 达标计算，仅云核心网产品线)
+        String secondDeptCode = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+        List<EmployeeSyncDataVO> rndList = employeeMapper.getEmployeeSyncData(periodId, secondDeptCode);
         
         // 2. 获取干部数据
         // 2.1 查询所有干部的工号
@@ -50,7 +52,7 @@ public class EmployeeSyncServiceImpl implements EmployeeSyncService {
         List<EmployeeSyncDataVO> cadreList = new ArrayList<>();
         if (cadreEmployeeNumbers != null && !cadreEmployeeNumbers.isEmpty()) {
             try {
-                cadreList = employeeMapper.getEmployeeSyncDataByEmployeeNumbers(periodId, cadreEmployeeNumbers);
+                cadreList = employeeMapper.getEmployeeSyncDataByEmployeeNumbers(periodId, secondDeptCode, cadreEmployeeNumbers);
             } catch (Exception e) {
                 // 如果查询干部数据失败，记录日志但不影响研发族数据同步
                 System.err.println("Failed to query cadre data: " + e.getMessage());

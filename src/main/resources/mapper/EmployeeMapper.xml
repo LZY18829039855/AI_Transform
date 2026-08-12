@@ -842,6 +842,7 @@
             )
         )
         WHERE e.period_id = #{periodId}
+        AND e.seconddeptcode = #{secondDeptCode}
         AND SUBSTRING_INDEX(e.job_category, '-', 1) = '研发族'
         GROUP BY e.employee_number
     </select>
@@ -972,6 +973,7 @@
             )
         )
         WHERE e.period_id = #{periodId}
+        AND e.seconddeptcode = #{secondDeptCode}
         AND e.employee_number IN
         <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
             #{empNo}

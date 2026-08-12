@@ -25,11 +25,13 @@ public interface EmployeeMapper {
     List<EmployeeSyncDataVO> getEmployeeSyncBasicInfoByPeriodId(@Param("periodId") String periodId);
 
     /**
-     * 获取全员同步数据
+     * 获取全员同步数据（仅二级部门为云核心网产品线）
      * @param periodId 期号
+     * @param secondDeptCode 二级部门编码
      * @return 员工同步数据列表
      */
-    List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId);
+    List<EmployeeSyncDataVO> getEmployeeSyncData(@Param("periodId") String periodId,
+                                                 @Param("secondDeptCode") String secondDeptCode);
 
     /**
      * 根据工号列表从 t_employee 表查询员工基本信息
@@ -46,12 +48,14 @@ public interface EmployeeMapper {
     EmployeePO getEmployeeByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     /**
-     * 根据工号列表和期号查询员工同步数据（不过滤职位族）
+     * 根据工号列表和期号查询员工同步数据（不过滤职位族，仅二级部门为云核心网产品线）
      * @param periodId 期号
+     * @param secondDeptCode 二级部门编码
      * @param employeeNumbers 工号列表
      * @return 员工同步数据列表
      */
-    List<EmployeeSyncDataVO> getEmployeeSyncDataByEmployeeNumbers(@Param("periodId") String periodId, 
+    List<EmployeeSyncDataVO> getEmployeeSyncDataByEmployeeNumbers(@Param("periodId") String periodId,
+                                                                    @Param("secondDeptCode") String secondDeptCode,
                                                                     @Param("employeeNumbers") List<String> employeeNumbers);
 
     /**
