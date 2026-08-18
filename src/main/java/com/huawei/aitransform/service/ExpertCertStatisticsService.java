@@ -280,6 +280,42 @@ public class ExpertCertStatisticsService {
     }
 
     /**
+     * 构建科目二通过人员集合：考试通过 + 有效AI任职5级及以上（5/6/7/8级）免认证
+     */
+    private Set<String> buildSubject2PassedSet(List<String> employeeNumbers) {
+        Set<String> subject2PassedSet = new HashSet<>(
+                getSubject2PassedEmployeeNumbers(employeeNumbers));
+        List<String> level5PlusNumbers = getLevel5PlusQualifiedEmployeeNumbers(employeeNumbers);
+        if (level5PlusNumbers != null) {
+            subject2PassedSet.addAll(level5PlusNumbers);
+        }
+        return subject2PassedSet;
+    }
+
+    /**
+     * 明细数据中，有效AI任职5级及以上的人员视为已通过科目二
+     */
+    private void applyLevel5PlusSubject2Passed(List<EmployeeDetailVO> employeeDetails) {
+        if (employeeDetails == null || employeeDetails.isEmpty()) {
+            return;
+        }
+        List<String> employeeNumbers = employeeDetails.stream()
+                .map(EmployeeDetailVO::getEmployeeNumber)
+                .filter(num -> num != null && !num.trim().isEmpty())
+                .distinct()
+                .collect(Collectors.toList());
+        if (employeeNumbers.isEmpty()) {
+            return;
+        }
+        Set<String> level5PlusSet = new HashSet<>(getLevel5PlusQualifiedEmployeeNumbers(employeeNumbers));
+        for (EmployeeDetailVO detail : employeeDetails) {
+            if (detail.getEmployeeNumber() != null && level5PlusSet.contains(detail.getEmployeeNumber())) {
+                detail.setIsPassedSubject2(1);
+            }
+        }
+    }
+
+    /**
      * 查询全员任职认证信息
      * @param deptCode 部门ID（部门编码），当为"0"时查询云核心网产品线部门下的所有四级部门
      * @param personType 人员类型（0-全员，1-干部）
@@ -1811,6 +1847,7 @@ public class ExpertCertStatisticsService {
 
             // 干部认证数据（queryType参数暂时保留，但认证数据查询不使用）
             employeeDetails = cadreMapper.getCadreCertDetailsByConditions(deptCodeList, aiMaturity, jobCategory, queryType);
+            applyLevel5PlusSubject2Passed(employeeDetails);
         } else if (personType == 2) {
             // 专家处理 - 参考getExpertAiCertStatistics的逻辑
             String actualDeptCode = deptCode;
@@ -2234,9 +2271,8 @@ public class ExpertCertStatisticsService {
             certifiedSet.addAll(level5PlusNumbers);
         }
 
-        // 5.2 查询已通过科目二的干部工号列表
-        List<String> subject2PassedNumbers = getSubject2PassedEmployeeNumbers(allEmployeeNumbers);
-        Set<String> subject2PassedSet = new HashSet<>(subject2PassedNumbers != null ? subject2PassedNumbers : new ArrayList<>());
+        // 5.2 查询已通过科目二的干部工号列表（含5级及以上有效AI任职免认证）
+        Set<String> subject2PassedSet = buildSubject2PassedSet(allEmployeeNumbers);
 
         // 6. 按成熟度和职位类分组统计
         // 结构：成熟度 -> 职位类 -> 统计信息
