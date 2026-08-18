@@ -30,5 +30,105 @@
         LIMIT 1
     </select>
 
+    <sql id="Valid_Deleted_Filter">
+        (is_deleted IS NULL OR is_deleted = '' OR is_deleted = '0' OR is_deleted = 'N' OR is_deleted = 'false')
+    </sql>
+
+    <select id="countValidByAccount" resultType="long">
+        SELECT COUNT(1)
+        FROM user_config
+        <where>
+            <include refid="Valid_Deleted_Filter"/>
+            <if test="account != null and account != ''">
+                AND account LIKE CONCAT('%', #{account}, '%')
+            </if>
+        </where>
+    </select>
+
+    <select id="selectValidPage" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT
+            id,
+            account,
+            is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
+            is_deleted AS isDeleted
+        FROM user_config
+        <where>
+            <include refid="Valid_Deleted_Filter"/>
+            <if test="account != null and account != ''">
+                AND account LIKE CONCAT('%', #{account}, '%')
+            </if>
+        </where>
+        ORDER BY id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="selectById" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT
+            id,
+            account,
+            is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
+            is_deleted AS isDeleted
+        FROM user_config
+        WHERE id = #{id}
+        LIMIT 1
+    </select>
+
+    <select id="selectValidById" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT
+            id,
+            account,
+            is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
+            is_deleted AS isDeleted
+        FROM user_config
+        WHERE id = #{id}
+          AND <include refid="Valid_Deleted_Filter"/>
+        LIMIT 1
+    </select>
+
+    <select id="selectByAccount" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT
+            id,
+            account,
+            is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
+            is_deleted AS isDeleted
+        FROM user_config
+        WHERE account = #{account}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO user_config (
+            account,
+            is_admin,
+            can_edit_credit,
+            is_deleted
+        ) VALUES (
+            #{account},
+            #{isAdmin},
+            #{canEditCredit},
+            #{isDeleted}
+        )
+    </insert>
+
+    <update id="updateById">
+        UPDATE user_config
+        SET account = #{account},
+            is_admin = #{isAdmin},
+            can_edit_credit = #{canEditCredit},
+            is_deleted = #{isDeleted}
+        WHERE id = #{id}
+    </update>
+
+    <update id="softDeleteById">
+        UPDATE user_config
+        SET is_deleted = '1'
+        WHERE id = #{id}
+    </update>
+
 </mapper>
 

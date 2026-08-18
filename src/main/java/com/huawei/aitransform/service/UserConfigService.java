@@ -1,17 +1,26 @@
 package com.huawei.aitransform.service;
 
+import com.huawei.aitransform.common.PageResult;
+import com.huawei.aitransform.entity.EmployeePO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
+import com.huawei.aitransform.entity.UserConfigManageVO;
 import com.huawei.aitransform.entity.UserConfigPermissionResponseVO;
 import com.huawei.aitransform.entity.UserConfigVO;
 import com.huawei.aitransform.entity.UserPermissionStatusVO;
+import com.huawei.aitransform.mapper.EmployeeMapper;
 import com.huawei.aitransform.mapper.UserConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * 用户权限配置服务类
@@ -19,8 +28,14 @@ import java.util.List;
 @Service
 public class UserConfigService {
 
+    private static final int DEFAULT_PAGE_SIZE = 20;
+    private static final int MAX_PAGE_SIZE = 200;
+
     @Autowired
     private UserConfigMapper userConfigMapper;
+
+    @Autowired
+    private EmployeeMapper employeeMapper;
 
     /**
      * 查询所有有效用户的权限，将用户分为admin和非admin两组
@@ -155,6 +170,210 @@ public class UserConfigService {
         }
         
         return new UserAccountResponseVO(empNum, w3Account);
+    }
+
+    /**
+     * 权限管理分页列表（仅未删除记录）
+     */
+    public PageResult<UserConfigManageVO> page(String account, int pageNum, int pageSize) {
+        int pn = pageNum < 1 ? 1 : pageNum;
+        int ps = pageSize < 1 ? DEFAULT_PAGE_SIZE : pageSize;
+        if (ps > MAX_PAGE_SIZE) {
+            ps = MAX_PAGE_SIZE;
+        }
+        String accountFilter = trimToNull(account);
+        int offset = (pn - 1) * ps;
+        long total = userConfigMapper.countValidByAccount(accountFilter);
+        List<UserConfigVO> rows = userConfigMapper.selectValidPage(accountFilter, offset, ps);
+        return PageResult.of(total, toManageVOs(rows));
+    }
+
+    /**
+     * 新增权限配置；若工号曾被软删则恢复并覆盖权限
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public UserConfigManageVO create(UserConfigManageVO body) {
+        String account = requireNormalizedAccount(body == null ? null : body.getAccount());
+        boolean asAdmin = body != null && body.isAsAdmin();
+        boolean canEditCredit = asAdmin && body != null && body.isCanEditCredit();
+
+        UserConfigVO existing = userConfigMapper.selectByAccount(account);
+        if (existing != null && !isDeletedFlag(existing.getIsDeleted())) {
+            throw new IllegalArgumentException("该工号已存在权限配置");
+        }
+        if (existing != null) {
+            existing.setAccount(account);
+            existing.setIsAdmin(toFlag(asAdmin));
+            existing.setCanEditCredit(toFlag(canEditCredit));
+            existing.setIsDeleted("0");
+            userConfigMapper.updateById(existing);
+            return toManageVO(userConfigMapper.selectValidById(existing.getId()), lookupEmployeeName(account));
+        }
+
+        UserConfigVO record = new UserConfigVO();
+        record.setAccount(account);
+        record.setIsAdmin(toFlag(asAdmin));
+        record.setCanEditCredit(toFlag(canEditCredit));
+        record.setIsDeleted("0");
+        userConfigMapper.insert(record);
+        return toManageVO(userConfigMapper.selectValidById(record.getId()), lookupEmployeeName(account));
+    }
+
+    /**
+     * 更新权限配置（工号不可改为已占用工号）；不允许降低自己的权限
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public UserConfigManageVO update(Integer id, UserConfigManageVO body, String operatorAccount) {
+        if (id == null) {
+            return null;
+        }
+        UserConfigVO existing = userConfigMapper.selectValidById(id);
+        if (existing == null) {
+            return null;
+        }
+        String account = requireNormalizedAccount(body == null ? null : body.getAccount());
+        boolean asAdmin = body != null && body.isAsAdmin();
+        boolean canEditCredit = asAdmin && body != null && body.isCanEditCredit();
+
+        if (isSameAccount(existing.getAccount(), operatorAccount) && (!asAdmin || !canEditCredit)) {
+            throw new IllegalArgumentException("不能降低自己的权限");
+        }
+        if (!account.equals(existing.getAccount())) {
+            UserConfigVO duplicated = userConfigMapper.selectByAccount(account);
+            if (duplicated != null && !id.equals(duplicated.getId()) && !isDeletedFlag(duplicated.getIsDeleted())) {
+                throw new IllegalArgumentException("该工号已存在权限配置");
+            }
+        }
+
+        existing.setAccount(account);
+        existing.setIsAdmin(toFlag(asAdmin));
+        existing.setCanEditCredit(toFlag(canEditCredit));
+        existing.setIsDeleted("0");
+        userConfigMapper.updateById(existing);
+        return toManageVO(userConfigMapper.selectValidById(id), lookupEmployeeName(account));
+    }
+
+    /**
+     * 软删除；不允许删除自己的配置
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public boolean delete(Integer id, String operatorAccount) {
+        if (id == null) {
+            return false;
+        }
+        UserConfigVO existing = userConfigMapper.selectValidById(id);
+        if (existing == null) {
+            return false;
+        }
+        if (isSameAccount(existing.getAccount(), operatorAccount)) {
+            throw new IllegalArgumentException("不能删除自己的权限配置");
+        }
+        return userConfigMapper.softDeleteById(id) > 0;
+    }
+
+    private List<UserConfigManageVO> toManageVOs(List<UserConfigVO> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<String> accounts = new ArrayList<>();
+        for (UserConfigVO row : rows) {
+            if (row != null && StringUtils.hasText(row.getAccount())) {
+                accounts.add(row.getAccount().trim());
+            }
+        }
+        Map<String, String> nameMap = lookupEmployeeNames(accounts);
+        List<UserConfigManageVO> result = new ArrayList<>(rows.size());
+        for (UserConfigVO row : rows) {
+            if (row == null) {
+                continue;
+            }
+            String name = row.getAccount() == null ? null : nameMap.get(row.getAccount().trim());
+            result.add(toManageVO(row, name));
+        }
+        return result;
+    }
+
+    private UserConfigManageVO toManageVO(UserConfigVO user, String employeeName) {
+        UserConfigManageVO vo = new UserConfigManageVO();
+        if (user == null) {
+            return vo;
+        }
+        vo.setId(user.getId());
+        vo.setAccount(user.getAccount());
+        vo.setEmployeeName(employeeName);
+        boolean asAdmin = parsePermissionFlag(user.getIsAdmin());
+        vo.setAsAdmin(asAdmin);
+        vo.setCanEditCredit(asAdmin && parsePermissionFlag(user.getCanEditCredit()));
+        return vo;
+    }
+
+    private Map<String, String> lookupEmployeeNames(List<String> accounts) {
+        if (accounts == null || accounts.isEmpty()) {
+            return Collections.emptyMap();
+        }
+        try {
+            List<EmployeePO> employees = employeeMapper.getEmployeesByEmployeeNumbers(accounts);
+            if (employees == null || employees.isEmpty()) {
+                return Collections.emptyMap();
+            }
+            Map<String, String> nameMap = new HashMap<>();
+            for (EmployeePO employee : employees) {
+                if (employee == null || !StringUtils.hasText(employee.getEmployeeNumber())) {
+                    continue;
+                }
+                if (StringUtils.hasText(employee.getLastName())) {
+                    nameMap.put(employee.getEmployeeNumber().trim(), employee.getLastName().trim());
+                }
+            }
+            return nameMap;
+        } catch (Exception e) {
+            return Collections.emptyMap();
+        }
+    }
+
+    private String lookupEmployeeName(String account) {
+        if (!StringUtils.hasText(account)) {
+            return null;
+        }
+        return lookupEmployeeNames(Collections.singletonList(account)).get(account);
+    }
+
+    private String requireNormalizedAccount(String account) {
+        String normalized = normalizeAccountForLookup(account);
+        if (!StringUtils.hasText(normalized)) {
+            throw new IllegalArgumentException("工号不能为空");
+        }
+        return normalized;
+    }
+
+    private boolean isSameAccount(String left, String right) {
+        String a = normalizeAccountForLookup(left);
+        String b = normalizeAccountForLookup(right);
+        return StringUtils.hasText(a) && a.equals(b);
+    }
+
+    private boolean isDeletedFlag(String value) {
+        if (value == null) {
+            return false;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty()) {
+            return false;
+        }
+        return !(trimmed.equals("0")
+                || trimmed.equalsIgnoreCase("N")
+                || trimmed.equalsIgnoreCase("false"));
+    }
+
+    private String toFlag(boolean value) {
+        return value ? "1" : "0";
+    }
+
+    private String trimToNull(String value) {
+        if (!StringUtils.hasText(value)) {
+            return null;
+        }
+        return value.trim();
     }
 }
 
