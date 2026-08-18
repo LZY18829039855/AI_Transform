@@ -48,6 +48,12 @@ public interface EmployeeMapper {
     EmployeePO getEmployeeByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     /**
+     * 查询员工已通过的科目二考试明细（指定 exam_code + is_pass=1）
+     */
+    List<com.huawei.aitransform.entity.Subject2ExamDetailVO> getPassedSubject2ExamsByEmployeeNumber(
+            @Param("employeeNumber") String employeeNumber);
+
+    /**
      * 根据工号列表和期号查询员工同步数据（不过滤职位族，仅二级部门为云核心网产品线）
      * @param periodId 期号
      * @param secondDeptCode 二级部门编码

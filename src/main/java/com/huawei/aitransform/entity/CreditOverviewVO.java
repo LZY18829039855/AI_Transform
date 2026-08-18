@@ -55,12 +55,29 @@ public class CreditOverviewVO implements Serializable {
     private BigDecimal achievementRate;
 
     /**
-     * 时间进度
+     * 时间进度（百分比，兼容旧字段）
      */
     private BigDecimal timeProgress;
 
     /**
-     * 是否预警
+     * 时间进度学分目标（目标平均学分 × 当年已过天数/全年天数）
+     */
+    private BigDecimal scheduleTarget;
+
+    /**
+     * 学分状态预警（正常、轻度预警、滞后预警）
+     * 规则：当前平均学分 >= 时间进度学分目标 → 正常；
+     * 当前平均学分 >= 时间进度学分目标×80% → 轻度预警；否则滞后预警
+     */
+    private String status;
+
+    /**
+     * 状态类型（success、warning、danger）
+     */
+    private String statusType;
+
+    /**
+     * 是否预警（非“正常”即为 true，兼容旧字段）
      */
     private Boolean isWarning;
 
@@ -142,6 +159,30 @@ public class CreditOverviewVO implements Serializable {
 
     public void setTimeProgress(BigDecimal timeProgress) {
         this.timeProgress = timeProgress;
+    }
+
+    public BigDecimal getScheduleTarget() {
+        return scheduleTarget;
+    }
+
+    public void setScheduleTarget(BigDecimal scheduleTarget) {
+        this.scheduleTarget = scheduleTarget;
+    }
+
+    public String getStatus() {
+        return status;
+    }
+
+    public void setStatus(String status) {
+        this.status = status;
+    }
+
+    public String getStatusType() {
+        return statusType;
+    }
+
+    public void setStatusType(String statusType) {
+        this.statusType = statusType;
     }
 
     public Boolean getIsWarning() {

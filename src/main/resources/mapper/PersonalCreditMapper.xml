@@ -531,4 +531,20 @@
         GROUP BY q.employee_number
         HAVING credit > 0
     </select>
+
+    <!-- 批量查询已通过科目二考试的工号：指定 exam_code + is_pass=1 -->
+    <select id="getSubject2PassedEmployeeNumbers" resultType="java.lang.String">
+        SELECT DISTINCT emp_num
+        FROM t_exam_record
+        WHERE is_pass = 1
+          AND emp_num IS NOT NULL
+          AND emp_num != ''
+          AND exam_code IN (
+              'EXCN022303075ZA20',
+              'EXCN022303075ZA2E',
+              'EXCN022303075ZA2A'
+          )
+          AND emp_num IN
+          <foreach collection="employeeNumbers" item="e" open="(" separator="," close=")">#{e}</foreach>
+    </select>
 </mapper>

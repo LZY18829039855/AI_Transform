@@ -64,6 +64,9 @@ public class PersonalCreditService {
     private static final Set<String> TARGET_COURSE_LEVELS =
             new HashSet<>(Arrays.asList("基础", "进阶", "实战"));
 
+    /** 认证未通过且科目二通过时的补充分 */
+    private static final BigDecimal SUBJECT2_BONUS_CREDIT = new BigDecimal("5");
+
     /**
      * 根据工号获取个人学分概览
      * @param employeeNumber 工号
@@ -177,6 +180,8 @@ public class PersonalCreditService {
         // 4.3 批量查询 AI 任职学分（工号 -> 任职学分，自然上限 25）
         Map<String, BigDecimal> qualCreditMap = loadCreditMap(
                 personalCreditMapper::getAiQualificationCreditsByEmployeeNumbers, employeeNumbers);
+        // 4.4 批量查询科目二通过名单（认证未通过时可补 5 分）
+        Set<String> subject2PassedSet = loadSubject2PassedSet(employeeNumbers);
 
         List<PersonalCredit> toSaveList = new ArrayList<>();
         for (EmployeeSyncDataVO employee : employees) {
@@ -189,7 +194,8 @@ public class PersonalCreditService {
                     existingCreditMap,
                     manualCreditSumMap,
                     certCreditMap,
-                    qualCreditMap
+                    qualCreditMap,
+                    subject2PassedSet
             );
             if (credit != null) {
                 toSaveList.add(credit);
@@ -322,6 +328,8 @@ public class PersonalCreditService {
         // AI 任职学分（工号 -> 任职学分，自然上限 25）
         Map<String, BigDecimal> qualCreditMap = loadCreditMap(
                 personalCreditMapper::getAiQualificationCreditsByEmployeeNumbers, empList);
+        // 科目二通过名单（认证未通过时可补 5 分）
+        Set<String> subject2PassedSet = loadSubject2PassedSet(empList);
 
         List<PersonalCredit> toSaveList = new ArrayList<>(empNums.size());
         Set<String> affectedLowestDeptNumbers = new LinkedHashSet<>();
@@ -336,7 +344,8 @@ public class PersonalCreditService {
                     existingCreditMap,
                     manualCreditSumMap,
                     certCreditMap,
-                    qualCreditMap
+                    qualCreditMap,
+                    subject2PassedSet
             );
             if (credit != null) {
                 toSaveList.add(credit);
@@ -362,7 +371,8 @@ public class PersonalCreditService {
                                                    Map<String, PersonalCredit> existingCreditMap,
                                                    Map<String, BigDecimal> manualCreditSumMap,
                                                    Map<String, BigDecimal> certCreditMap,
-                                                   Map<String, BigDecimal> qualCreditMap) {
+                                                   Map<String, BigDecimal> qualCreditMap,
+                                                   Set<String> subject2PassedSet) {
         String empNum = employee.getEmployeeNumber();
         String fourthDeptCode = employee.getFourthdeptcode();
 
@@ -461,10 +471,18 @@ public class PersonalCreditService {
         BigDecimal certCredit = safeGet(certCreditMap, empNum);
         // 叠加 AI 任职学分（4 级及以上 25 / 3 级 10 / 2 级 5，同人 MAX，自然上限 25，仅当前有效）
         BigDecimal qualCredit = safeGet(qualCreditMap, empNum);
+        // 认证未通过（认证学分为 0）且科目二通过时补 5 分，可与任职学分叠加
+        BigDecimal subject2Bonus = BigDecimal.ZERO;
+        if (certCredit.compareTo(BigDecimal.ZERO) <= 0
+                && subject2PassedSet != null
+                && subject2PassedSet.contains(empNum)) {
+            subject2Bonus = SUBJECT2_BONUS_CREDIT;
+        }
         BigDecimal totalCurrentCredit = courseCompletedCredit
                 .add(manualCredit)
                 .add(certCredit)
-                .add(qualCredit);
+                .add(qualCredit)
+                .add(subject2Bonus);
 
         // 计算达成率
         BigDecimal completionRate = BigDecimal.ZERO;
@@ -568,6 +586,31 @@ public class PersonalCreditService {
             }
         }
         return ids;
+    }
+
+    /**
+     * 分批加载科目二通过工号集合，按 1000/批查询 t_exam_record。
+     */
+    private Set<String> loadSubject2PassedSet(List<String> employeeNumbers) {
+        Set<String> passed = new HashSet<>();
+        if (employeeNumbers == null || employeeNumbers.isEmpty()) {
+            return passed;
+        }
+        int batchSize = 1000;
+        for (int i = 0; i < employeeNumbers.size(); i += batchSize) {
+            int end = Math.min(i + batchSize, employeeNumbers.size());
+            List<String> rows = personalCreditMapper.getSubject2PassedEmployeeNumbers(
+                    employeeNumbers.subList(i, end));
+            if (rows == null || rows.isEmpty()) {
+                continue;
+            }
+            for (String emp : rows) {
+                if (emp != null && !emp.trim().isEmpty()) {
+                    passed.add(emp.trim());
+                }
+            }
+        }
+        return passed;
     }
 
     /**
@@ -907,20 +950,7 @@ public class PersonalCreditService {
             total.setAverageTargetCredit(BigDecimal.ZERO);
         }
 
-        // 总计的时间进度和预警
-        Calendar calendar = Calendar.getInstance();
-        int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-        int totalDays = calendar.getActualMaximum(Calendar.DAY_OF_YEAR);
-        BigDecimal timeProgress = new BigDecimal(dayOfYear).divide(new BigDecimal(totalDays), 4, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
-        total.setTimeProgress(timeProgress);
-
-        if (total.getAchievementRate() != null) {
-            total.setIsWarning(total.getAchievementRate().compareTo(timeProgress) < 0);
-        } else {
-            total.setIsWarning(true);
-        }
-
+        calculateTimeProgressAndWarning(Collections.singletonList(total));
         return total;
     }
 
@@ -969,21 +999,37 @@ public class PersonalCreditService {
         return validLevels.contains(level);
     }
 
+    /**
+     * 部门/职位学分总览预警：与专家、干部总览 fillRoleSummaryStatus 同一口径。
+     * 时间进度学分目标 = 目标平均学分 × (今年第几天 / 365或366)
+     * 当前平均学分 >= 目标 → 正常；>= 目标×80% → 轻度预警；否则滞后预警
+     */
     private void calculateTimeProgressAndWarning(List<CreditOverviewVO> list) {
-        // 计算时间进度：当前天数 / 365
-        Calendar calendar = Calendar.getInstance();
-        int dayOfYear = calendar.get(Calendar.DAY_OF_YEAR);
-        int totalDays = calendar.getActualMaximum(Calendar.DAY_OF_YEAR);
-        BigDecimal timeProgress = new BigDecimal(dayOfYear).divide(new BigDecimal(totalDays), 4, RoundingMode.HALF_UP)
-                .multiply(new BigDecimal("100")).setScale(2, RoundingMode.HALF_UP);
+        java.time.LocalDate today = java.time.LocalDate.now();
+        double progress = (double) today.getDayOfYear()
+                / (today.isLeapYear() ? 366 : 365);
+        BigDecimal timeProgress = BigDecimal.valueOf(progress * 100).setScale(2, RoundingMode.HALF_UP);
 
         for (CreditOverviewVO vo : list) {
             vo.setTimeProgress(timeProgress);
-            // 预警判断：达成率 < 时间进度
-            if (vo.getAchievementRate() != null) {
-                vo.setIsWarning(vo.getAchievementRate().compareTo(timeProgress) < 0);
+
+            double target = vo.getAverageTargetCredit() == null ? 0.0 : vo.getAverageTargetCredit().doubleValue();
+            double scheduleTarget = Math.round(target * progress * 10.0) / 10.0;
+            vo.setScheduleTarget(BigDecimal.valueOf(scheduleTarget).setScale(1, RoundingMode.HALF_UP));
+
+            double current = vo.getAverageCurrentCredit() == null ? 0.0 : vo.getAverageCurrentCredit().doubleValue();
+            if (current >= scheduleTarget) {
+                vo.setStatus("正常");
+                vo.setStatusType("success");
+                vo.setIsWarning(false);
+            } else if (current >= scheduleTarget * 0.8) {
+                vo.setStatus("轻度预警");
+                vo.setStatusType("warning");
+                vo.setIsWarning(true);
             } else {
-                vo.setIsWarning(true); // 无达成率视为预警
+                vo.setStatus("滞后预警");
+                vo.setStatusType("danger");
+                vo.setIsWarning(true);
             }
         }
     }

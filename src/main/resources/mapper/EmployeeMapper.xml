@@ -717,6 +717,24 @@
         LIMIT 1
     </select>
 
+    <!-- 个人科目二通过明细：指定 exam_code + is_pass=1，与学分同步口径一致 -->
+    <select id="getPassedSubject2ExamsByEmployeeNumber" resultType="com.huawei.aitransform.entity.Subject2ExamDetailVO">
+        SELECT DISTINCT
+            exam_name AS examName,
+            0 AS credit
+        FROM t_exam_record
+        WHERE emp_num = #{employeeNumber}
+          AND is_pass = 1
+          AND exam_name IS NOT NULL
+          AND exam_name != ''
+          AND exam_code IN (
+              'EXCN022303075ZA20',
+              'EXCN022303075ZA2E',
+              'EXCN022303075ZA2A'
+          )
+        ORDER BY exam_name
+    </select>
+
     <select id="getEmployeeSyncData" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
         SELECT 
             e.employee_number AS employeeNumber,

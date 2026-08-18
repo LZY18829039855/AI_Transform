@@ -129,4 +129,10 @@ public interface PersonalCreditMapper {
      * 有效性：competence_from/competence_to 非空，且 CURDATE() 位于区间内。
      */
     List<EmployeeCreditRow> getAiQualificationCreditsByEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 批量查询已通过科目二考试的工号。
+     * 来源表：t_exam_record；条件：is_pass=1，且 exam_code 属于指定科目二编码。
+     */
+    List<String> getSubject2PassedEmployeeNumbers(@Param("employeeNumbers") List<String> employeeNumbers);
 }

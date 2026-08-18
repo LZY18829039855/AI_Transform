@@ -68,5 +68,10 @@ public class EmployeePO {
      * 认证学分（根据 certTitle 计算）
      */
     private Integer certCredit;
+
+    /**
+     * 科目二通过明细（仅认证未通过时有值，用于详情页展示）
+     */
+    private java.util.List<Subject2ExamDetailVO> subject2List;
 }
 
