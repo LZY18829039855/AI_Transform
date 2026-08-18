@@ -3,9 +3,11 @@ server:
   servlet:
     context-path: /ai_transform_webapi
 
-# AI学分看板 全员统一目标学分
+# AI学分看板 全员统一目标学分；理论课/实战课计入总分上限（原始完课数据仍全量展示）
 credit:
   global-target: 100
+  theory-cap: 30
+  practical-cap: 30
 
 spring:
   application:

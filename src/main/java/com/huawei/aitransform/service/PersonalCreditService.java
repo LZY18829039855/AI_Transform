@@ -61,6 +61,14 @@ public class PersonalCreditService {
     @Value("${credit.global-target}")
     private BigDecimal globalTargetCredit;
 
+    /** 理论课（基础+进阶）计入个人总分上限 */
+    @Value("${credit.theory-cap:30}")
+    private BigDecimal theoryCreditCap;
+
+    /** 实战课计入个人总分上限 */
+    @Value("${credit.practical-cap:30}")
+    private BigDecimal practicalCreditCap;
+
     private static final Set<String> TARGET_COURSE_LEVELS =
             new HashSet<>(Arrays.asList("基础", "进阶", "实战"));
 
@@ -419,8 +427,10 @@ public class PersonalCreditService {
             }
         }
 
-        // 计算当前课程学分：基础/进阶完课 + 实战完课
-        BigDecimal courseCompletedCredit = BigDecimal.ZERO;
+        // 理论课（基础/进阶）原始完课学分；计入总分时按 theory-cap 封顶，下钻仍展示全部完课
+        BigDecimal theoryCreditRaw = BigDecimal.ZERO;
+        // 实战课原始完课学分；计入总分时按 practical-cap 封顶，下钻仍展示全部完课
+        BigDecimal practicalCreditRaw = BigDecimal.ZERO;
 
         // 1) 基础/进阶完课（micro/mooc）
         if (!targetCourseNumberSet.isEmpty() && !targetBasicAdvancedCourses.isEmpty()) {
@@ -443,7 +453,7 @@ public class PersonalCreditService {
                     continue;
                 }
                 if (completedSet.contains(num)) {
-                    courseCompletedCredit = courseCompletedCredit.add(
+                    theoryCreditRaw = theoryCreditRaw.add(
                             courseCreditMap.getOrDefault(course.getId(), BigDecimal.ZERO)
                     );
                 }
@@ -461,11 +471,14 @@ public class PersonalCreditService {
                     // 有选课时，仅统计目标范围内的完课
                     continue;
                 }
-                courseCompletedCredit = courseCompletedCredit.add(courseCreditMap.getOrDefault(cid, BigDecimal.ZERO));
+                practicalCreditRaw = practicalCreditRaw.add(courseCreditMap.getOrDefault(cid, BigDecimal.ZERO));
             }
         }
 
-        // 叠加手工录入学分（一个人可能多条，已在同步前按工号汇总）
+        BigDecimal theoryCredit = applyCreditCap(theoryCreditRaw, theoryCreditCap);
+        BigDecimal practicalCredit = applyCreditCap(practicalCreditRaw, practicalCreditCap);
+
+        // 叠加手工录入学分（一个人可能多条，已在同步前按工号汇总；不封顶）
         BigDecimal manualCredit = safeGet(manualCreditSumMap, empNum);
         // 叠加 AI 认证学分（专业级 15 / 工作级 10，同人 MAX，自然上限 15）
         BigDecimal certCredit = safeGet(certCreditMap, empNum);
@@ -478,7 +491,8 @@ public class PersonalCreditService {
                 && subject2PassedSet.contains(empNum)) {
             subject2Bonus = SUBJECT2_BONUS_CREDIT;
         }
-        BigDecimal totalCurrentCredit = courseCompletedCredit
+        BigDecimal totalCurrentCredit = theoryCredit
+                .add(practicalCredit)
                 .add(manualCredit)
                 .add(certCredit)
                 .add(qualCredit)
@@ -648,6 +662,17 @@ public class PersonalCreditService {
         }
         BigDecimal v = m.get(k);
         return v != null ? v : BigDecimal.ZERO;
+    }
+
+    /**
+     * 将原始学分按上限截断；上限为空或非正数时不截断。
+     */
+    private static BigDecimal applyCreditCap(BigDecimal raw, BigDecimal cap) {
+        BigDecimal value = raw != null ? raw : BigDecimal.ZERO;
+        if (cap == null || cap.compareTo(BigDecimal.ZERO) <= 0) {
+            return value;
+        }
+        return value.min(cap);
     }
 
     private void updateDeptBenchmarks() {
