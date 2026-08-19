@@ -64,4 +64,11 @@
           AND task_type = #{taskType}
     </update>
 
+    <!-- 按课程类型查询所有已存在的工号列表 -->
+    <select id="selectAccountsByTaskType" resultType="java.lang.String">
+        SELECT account
+        FROM hands_on_courses
+        WHERE task_type = #{taskType}
+    </select>
+
 </mapper>

@@ -307,6 +307,25 @@ public class ExternalApiController {
     }
 
     /**
+     * Agent 实战课程数据同步接口
+     *
+     * 调用外部排行榜接口获取 Agent 实战通过人员，过滤有效员工（user_id 首字母+0开头），
+     * 筛选 score >= 阈值（yaml 配置）的通过人员，与 hands_on_courses 已有记录增量对比后，
+     * 新增人员写入完课表并联动刷新训战表与个人学分。支持多次调用，每次仅处理新增通过人员。
+     *
+     * @return 同步结果统计（含新增/已存在/失败数量及明细）
+     */
+    @PostMapping("/syncAgentPracticalCourses")
+    public ResponseEntity<Result<Object>> syncAgentPracticalCourses() {
+        try {
+            java.util.Map<String, Object> result = handsOnCourseService.syncAgentPracticalCourses();
+            return ResponseEntity.ok(Result.success("同步成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
      * 触发个人学分数据同步（供外部定时任务平台调）
      * @return 同步结果
      */

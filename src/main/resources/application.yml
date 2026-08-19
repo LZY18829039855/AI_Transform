@@ -9,6 +9,12 @@ credit:
   theory-cap: 30
   practical-cap: 30
 
+# Agent 实战课程同步配置
+agent:
+  rank-api-url: http://7.225.29.223:8080/api/rank
+  task-type: AI Agent
+  pass-score-threshold: 800
+
 spring:
   application:
     name: ai-transform

@@ -42,4 +42,11 @@ public interface HandsOnCourseMapper {
      * @return 影响行数
      */
     int updateByAccountAndTaskType(HandsOnCourse handsOnCourse);
+
+    /**
+     * 按课程类型查询所有已存在的工号列表（用于增量对比）
+     * @param taskType 课程类型
+     * @return 工号列表
+     */
+    List<String> selectAccountsByTaskType(@Param("taskType") String taskType);
 }

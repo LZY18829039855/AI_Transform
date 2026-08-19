@@ -1,5 +1,7 @@
 package com.huawei.aitransform.service;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.entity.HandsOnCourse;
 import com.huawei.aitransform.entity.HandsOnCoursesSyncRequestVO;
@@ -9,17 +11,23 @@ import com.huawei.aitransform.mapper.PracticalCourseInfoMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.springframework.web.client.RestTemplate;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
@@ -32,6 +40,18 @@ public class HandsOnCourseService {
 
     /** 触发同步到训战表的状态值（忽略大小写） */
     private static final String TASK_STATUS_FINISHED = "finished";
+
+    /** 有效员工 user_id 格式：首字母 + 0 开头 + 后续数字 */
+    private static final Pattern VALID_USER_ID_PATTERN = Pattern.compile("^[a-zA-Z]0\\d+$");
+
+    @Value("${agent.rank-api-url:http://7.225.29.223:8080/api/rank}")
+    private String agentRankApiUrl;
+
+    @Value("${agent.task-type:AI Agent}")
+    private String agentTaskType;
+
+    @Value("${agent.pass-score-threshold:800}")
+    private int agentPassScoreThreshold;
 
     @Autowired
     private HandsOnCourseMapper handsOnCourseMapper;
@@ -178,6 +198,122 @@ public class HandsOnCourseService {
                 }
             }
         });
+    }
+
+    /**
+     * Agent 实战课程数据同步：调用外部排行榜接口，筛选通过人员，增量写入完课表并刷新学分。
+     * <p>
+     * 流程：
+     * 1. GET 请求外部排行榜接口
+     * 2. 过滤有效员工（user_id 匹配「首字母 + 0 开头」格式）
+     * 3. 筛选 score >= 阈值的通过人员
+     * 4. 与 hands_on_courses 已有记录对比，仅对新增通过人员调用 syncHandsOnCourse
+     *
+     * @return 同步结果统计
+     */
+    public Map<String, Object> syncAgentPracticalCourses() {
+        logger.info("开始 Agent 实战课程数据同步，排行榜接口：{}，阈值：{}", agentRankApiUrl, agentPassScoreThreshold);
+
+        // 1. 调用外部接口
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = restTemplate.getForEntity(agentRankApiUrl, String.class);
+        String body = response.getBody();
+        if (body == null || body.trim().isEmpty()) {
+            throw new RuntimeException("排行榜接口返回为空");
+        }
+
+        ObjectMapper objectMapper = new ObjectMapper();
+        JsonNode root;
+        try {
+            root = objectMapper.readTree(body);
+        } catch (Exception e) {
+            throw new RuntimeException("排行榜接口返回 JSON 解析失败：" + e.getMessage(), e);
+        }
+
+        JsonNode dataNode = root.get("data");
+        if (dataNode == null || !dataNode.isArray()) {
+            throw new RuntimeException("排行榜接口返回 data 字段缺失或非数组");
+        }
+
+        // 2. 过滤有效员工 + 筛选通过人员
+        List<Map<String, Object>> passedList = new ArrayList<>();
+        int totalFromApi = dataNode.size();
+        int filteredValid = 0;
+
+        for (JsonNode item : dataNode) {
+            String userId = item.has("user_id") ? item.get("user_id").asText("") : "";
+            if (!VALID_USER_ID_PATTERN.matcher(userId).matches()) {
+                continue;
+            }
+            filteredValid++;
+
+            int score = item.has("score") ? item.get("score").asInt(0) : 0;
+            if (score < agentPassScoreThreshold) {
+                continue;
+            }
+
+            String empNum = userId.substring(1);
+            Map<String, Object> info = new HashMap<>();
+            info.put("empNum", empNum);
+            info.put("score", score);
+            info.put("username", item.has("username") ? item.get("username").asText("") : "");
+            passedList.add(info);
+        }
+
+        // 3. 查询已有记录，增量对比
+        List<String> existingAccounts = handsOnCourseMapper.selectAccountsByTaskType(agentTaskType);
+        Set<String> existingSet = new HashSet<>(existingAccounts != null ? existingAccounts : Collections.emptyList());
+
+        List<String> newlyAdded = new ArrayList<>();
+        List<String> alreadyExists = new ArrayList<>();
+        List<String> failed = new ArrayList<>();
+
+        for (Map<String, Object> info : passedList) {
+            String empNum = (String) info.get("empNum");
+            if (existingSet.contains(empNum)) {
+                alreadyExists.add(empNum);
+                continue;
+            }
+
+            // 4. 复用已有 syncHandsOnCourse 逻辑
+            HandsOnCoursesSyncRequestVO req = new HandsOnCoursesSyncRequestVO();
+            req.setAccount(empNum);
+            req.setTaskType(agentTaskType);
+            req.setTaskStatus(TASK_STATUS_FINISHED);
+            req.setTaskInfo("agent_score:" + info.get("score"));
+
+            try {
+                Map<String, Object> syncResult = syncHandsOnCourse(req);
+                Boolean success = (Boolean) syncResult.get("success");
+                if (success != null && success) {
+                    newlyAdded.add(empNum);
+                    logger.info("Agent 实战同步新增：empNum={}，score={}", empNum, info.get("score"));
+                } else {
+                    failed.add(empNum);
+                    logger.warn("Agent 实战同步失败：empNum={}，原因={}", empNum, syncResult.get("message"));
+                }
+            } catch (Exception e) {
+                failed.add(empNum);
+                logger.error("Agent 实战同步异常：empNum={}", empNum, e);
+            }
+        }
+
+        logger.info("Agent 实战课程数据同步完成：API 总数={}，有效员工={}，通过={}，新增={}，已存在={}，失败={}",
+                totalFromApi, filteredValid, passedList.size(), newlyAdded.size(), alreadyExists.size(), failed.size());
+
+        Map<String, Object> result = new HashMap<>();
+        result.put("success", true);
+        result.put("totalFromApi", totalFromApi);
+        result.put("filteredValid", filteredValid);
+        result.put("totalPassed", passedList.size());
+        result.put("newlyAdded", newlyAdded.size());
+        result.put("alreadyExists", alreadyExists.size());
+        result.put("failed", failed.size());
+        result.put("newlyAddedAccounts", newlyAdded);
+        if (!failed.isEmpty()) {
+            result.put("failedAccounts", failed);
+        }
+        return result;
     }
 
     /**
