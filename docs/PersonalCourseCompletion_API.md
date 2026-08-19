@@ -53,6 +53,8 @@ Cookie: account=Z123456
 | targetCourses | Integer | 目标课程数（等于课程总数） |
 | completedCourses | Integer | 实际完课数 |
 | completionRate | Double | 完课占比（百分比，保留2位小数） |
+| creditCap | BigDecimal | 该分类计入个人总分的学分上限。基础/进阶均为 `credit.theory-cap`（合计上限，前端合并单元格展示）；实战为 `credit.practical-cap`；其它分类为 null |
+| earnedCredit | BigDecimal | 该分类下已获学分（目标课且已完课的 credit 原始累加，未封顶） |
 | courseList | List<CourseInfoVO> | 该分类下的所有目标课程列表（包含已完成和未完成的课程） |
 
 **CourseInfoVO 结构：**
@@ -81,6 +83,8 @@ Cookie: account=Z123456
         "targetCourses": 10,
         "completedCourses": 8,
         "completionRate": 80.00,
+        "creditCap": 30,
+        "earnedCredit": 12,
         "courseList": [
           {
             "courseName": "AI基础课程",
@@ -100,6 +104,8 @@ Cookie: account=Z123456
         "targetCourses": 5,
         "completedCourses": 3,
         "completionRate": 60.00,
+        "creditCap": 30,
+        "earnedCredit": 8,
         "courseList": [
           {
             "courseName": "深度学习进阶",

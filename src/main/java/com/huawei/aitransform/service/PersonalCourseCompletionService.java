@@ -10,6 +10,7 @@ import com.huawei.aitransform.mapper.CoursePlanningInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
 import com.huawei.aitransform.mapper.PersonalCourseCompletionMapper;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
@@ -33,6 +34,14 @@ public class PersonalCourseCompletionService {
     private static final String LEVEL_ADVANCED = "进阶";
     private static final String LEVEL_HIGH = "高阶";
     private static final String LEVEL_PRACTICAL = "实战";
+
+    /** 理论课（基础+进阶）计入总分上限，与 credit.theory-cap 一致 */
+    @Value("${credit.theory-cap:30}")
+    private BigDecimal theoryCreditCap;
+
+    /** 实战课计入总分上限，与 credit.practical-cap 一致 */
+    @Value("${credit.practical-cap:30}")
+    private BigDecimal practicalCreditCap;
 
     @Autowired
     private PersonalCourseCompletionMapper personalCourseCompletionMapper;
@@ -140,6 +149,9 @@ public class PersonalCourseCompletionService {
             statistics.setTargetCourses(targetCoursesCount);
             statistics.setCompletedCourses(completedCourses);
             statistics.setCompletionRate(completionRate);
+            statistics.setCreditCap(resolveCreditCap(courseLevel));
+            // 与下方目标课程列表口径一致：目标课且已完课的 credit 原始累加（未封顶）
+            statistics.setEarnedCredit(sumEarnedCredit(courseList));
             statistics.setCourseList(courseList);
 
             courseStatistics.add(statistics);
@@ -166,6 +178,54 @@ public class PersonalCourseCompletionService {
 
     private static int nullToZero(Integer value) {
         return value == null ? 0 : value;
+    }
+
+    /**
+     * 按分类返回计入总分的学分上限；基础/进阶均为 theory-cap，实战为 practical-cap，其它为 null。
+     */
+    private BigDecimal resolveCreditCap(String courseLevel) {
+        if (LEVEL_BASIC.equals(courseLevel) || LEVEL_ADVANCED.equals(courseLevel)) {
+            return theoryCreditCap;
+        }
+        if (LEVEL_PRACTICAL.equals(courseLevel)) {
+            return practicalCreditCap;
+        }
+        return null;
+    }
+
+    /**
+     * 累加目标课且已完课的学分（与页面下方目标课程列表展示范围一致）。
+     */
+    private static BigDecimal sumEarnedCredit(List<CourseInfoVO> courseList) {
+        if (courseList == null || courseList.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        BigDecimal sum = BigDecimal.ZERO;
+        for (CourseInfoVO course : courseList) {
+            if (course == null) {
+                continue;
+            }
+            if (!Boolean.TRUE.equals(course.getIsCompleted()) || !Boolean.TRUE.equals(course.getIsTargetCourse())) {
+                continue;
+            }
+            sum = sum.add(parseCredit(course.getCredit()));
+        }
+        return sum;
+    }
+
+    private static BigDecimal parseCredit(String credit) {
+        if (credit == null) {
+            return BigDecimal.ZERO;
+        }
+        String s = credit.trim();
+        if (s.isEmpty()) {
+            return BigDecimal.ZERO;
+        }
+        try {
+            return new BigDecimal(s);
+        } catch (NumberFormatException e) {
+            return BigDecimal.ZERO;
+        }
     }
 
     /**

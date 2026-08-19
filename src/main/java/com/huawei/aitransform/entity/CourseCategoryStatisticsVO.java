@@ -1,6 +1,7 @@
 package com.huawei.aitransform.entity;
 
 import java.io.Serializable;
+import java.math.BigDecimal;
 import java.util.List;
 
 /**
@@ -34,6 +35,18 @@ public class CourseCategoryStatisticsVO implements Serializable {
      * 完课占比（百分比，保留2位小数）
      */
     private Double completionRate;
+
+    /**
+     * 该分类计入个人总分的学分上限。
+     * 基础/进阶均为 theory-cap（合计上限，前端合并单元格展示）；
+     * 实战为 practical-cap；其它分类为 null。
+     */
+    private BigDecimal creditCap;
+
+    /**
+     * 该分类下已获学分（目标课且已完课的 credit 原始累加，未封顶）
+     */
+    private BigDecimal earnedCredit;
 
     /**
      * 该分类下的所有目标课程列表（包含已完成和未完成的课程）
@@ -83,6 +96,22 @@ public class CourseCategoryStatisticsVO implements Serializable {
         this.completionRate = completionRate;
     }
 
+    public BigDecimal getCreditCap() {
+        return creditCap;
+    }
+
+    public void setCreditCap(BigDecimal creditCap) {
+        this.creditCap = creditCap;
+    }
+
+    public BigDecimal getEarnedCredit() {
+        return earnedCredit;
+    }
+
+    public void setEarnedCredit(BigDecimal earnedCredit) {
+        this.earnedCredit = earnedCredit;
+    }
+
     public List<CourseInfoVO> getCourseList() {
         return courseList;
     }
@@ -91,4 +120,3 @@ public class CourseCategoryStatisticsVO implements Serializable {
         this.courseList = courseList;
     }
 }
-
