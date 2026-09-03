@@ -9,6 +9,7 @@ import com.huawei.aitransform.service.EntryLevelManagerService;
 import com.huawei.aitransform.service.ExpertCertStatisticsService;
 import com.huawei.aitransform.service.HandsOnCourseService;
 import com.huawei.aitransform.service.PersonalCreditService;
+import com.huawei.aitransform.service.QualificationsDirectionRefreshService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -47,6 +48,9 @@ public class ExternalApiController {
 
     @Autowired
     private PersonalCreditService personalCreditService;
+
+    @Autowired
+    private QualificationsDirectionRefreshService qualificationsDirectionRefreshService;
 
     /**
      * 对外开放数据同步更新接口
@@ -320,6 +324,30 @@ public class ExternalApiController {
         try {
             java.util.Map<String, Object> result = handsOnCourseService.syncAgentPracticalCourses();
             return ResponseEntity.ok(Result.success("同步成功", result));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 刷新初始任职方向
+     *
+     * 将 t_qualifications 表中 direction_cn_name 为 null 的记录，按任职子类刷新为对应 ICT 子方向：
+     * - competence_subcategory_cn = 「AI算法及应用」 → direction_cn_name = 「AI算法及应用（ICT）」
+     * - competence_subcategory_cn = 「数据科学与AI工程」 → direction_cn_name = 「数据科学与AI工程（ICT）」
+     *
+     * @return 刷新结果信息（包含各类更新数量）
+     */
+    @PostMapping("/refresh-initial-qualification-direction")
+    public ResponseEntity<Result<Object>> refreshInitialQualificationDirection() {
+        try {
+            java.util.Map<String, Object> result = qualificationsDirectionRefreshService.refreshInitialQualificationDirection();
+            Boolean success = (Boolean) result.get("success");
+            if (success != null && success) {
+                return ResponseEntity.ok(Result.success((String) result.get("message"), result));
+            } else {
+                return ResponseEntity.ok(Result.error(500, (String) result.get("message")));
+            }
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }
