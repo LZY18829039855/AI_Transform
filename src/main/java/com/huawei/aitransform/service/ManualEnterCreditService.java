@@ -21,6 +21,15 @@ public interface ManualEnterCreditService {
      */
     PageResult<ManualEnterCredit> page(String employeeNumber, String employeeName, int pageNum, int pageSize);
 
+    /**
+     * 个人场景分页查询：复用 {@link #page}，并填充该工号全量学分合计 {@code totalCredits}（精确匹配）。
+     *
+     * @param employeeNumber 工号
+     * @param pageNum        页码，从 1 开始
+     * @param pageSize       每页条数
+     */
+    PageResult<ManualEnterCredit> pageForPersonal(String employeeNumber, int pageNum, int pageSize);
+
     ManualEnterCredit getById(Integer id);
 
     /**

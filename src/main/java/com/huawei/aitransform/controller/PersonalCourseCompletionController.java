@@ -94,7 +94,7 @@ public class PersonalCourseCompletionController {
 
     /**
      * 个人场景下手工录入学分分页查询：入参与 {@link #getPersonalCourseCompletion} 一致（account 优先，否则从 Cookie 解析工号），
-     * 内部调用 {@link ManualEnterCreditService#page}，与 /manual-enter-credit/list 相同查询逻辑。
+     * 内部调用 {@link ManualEnterCreditService#pageForPersonal}；响应复用 {@link PageResult}，额外填充 {@code totalCredits}（该工号全量学分合计）。
      *
      * @param account       工号（可选），与 /completion 一致
      * @param accountCookie Cookie account（可选）
@@ -121,7 +121,7 @@ public class PersonalCourseCompletionController {
             if (empNum == null || empNum.isEmpty()) {
                 return ResponseEntity.ok(Result.error(400, "未获取到用户信息，请先登录"));
             }
-            PageResult<ManualEnterCredit> data = manualEnterCreditService.page(empNum, null, pageNum, pageSize);
+            PageResult<ManualEnterCredit> data = manualEnterCreditService.pageForPersonal(empNum, pageNum, pageSize);
             return ResponseEntity.ok(Result.success("查询成功", data));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));

@@ -1,6 +1,7 @@
 package com.huawei.aitransform.service.impl;
 
 import com.huawei.aitransform.common.PageResult;
+import com.huawei.aitransform.entity.ManualCreditSumRow;
 import com.huawei.aitransform.entity.ManualEnterCredit;
 import com.huawei.aitransform.entity.ManualEnterCreditBatchImportResult;
 import com.huawei.aitransform.entity.PersonalCreditNameRow;
@@ -12,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
@@ -48,6 +50,25 @@ public class ManualEnterCreditServiceImpl implements ManualEnterCreditService {
         List<ManualEnterCredit> rows = manualEnterCreditMapper.selectPage(
                 trimToNull(employeeNumber), trimToNull(employeeName), offset, ps);
         return PageResult.of(total, rows);
+    }
+
+    @Override
+    public PageResult<ManualEnterCredit> pageForPersonal(String employeeNumber, int pageNum, int pageSize) {
+        PageResult<ManualEnterCredit> result = page(employeeNumber, null, pageNum, pageSize);
+        String emp = trimToNull(employeeNumber);
+        if (emp == null) {
+            result.setTotalCredits(BigDecimal.ZERO);
+            return result;
+        }
+        List<ManualCreditSumRow> sumRows =
+                manualEnterCreditMapper.sumCreditsByEmployeeNumbers(Collections.singletonList(emp));
+        BigDecimal totalCredits = BigDecimal.ZERO;
+        if (sumRows != null && !sumRows.isEmpty() && sumRows.get(0) != null
+                && sumRows.get(0).getTotalCredits() != null) {
+            totalCredits = sumRows.get(0).getTotalCredits();
+        }
+        result.setTotalCredits(totalCredits);
+        return result;
     }
 
     @Override
