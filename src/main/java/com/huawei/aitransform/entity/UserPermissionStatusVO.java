@@ -3,19 +3,19 @@ package com.huawei.aitransform.entity;
 import java.io.Serializable;
 
 /**
- * 当前用户权限状态：白名单成员、管理员与多元化学分写权限标识
+ * 当前用户权限状态：普通访问成员、管理员与多元化学分写权限标识
  */
 public class UserPermissionStatusVO implements Serializable {
 
     private static final long serialVersionUID = 1L;
 
     /**
-     * 是否在 user_config 白名单内（未删除）
+     * 是否具备普通用户访问权限（全员开放：有有效工号即为 true）
      */
     private boolean member;
 
     /**
-     * 是否为管理员（仅 member 为 true 时可能为 true）
+     * 是否为管理员（依据 user_config.is_admin；仅 member 为 true 时可能为 true）
      */
     private boolean asAdmin;
 

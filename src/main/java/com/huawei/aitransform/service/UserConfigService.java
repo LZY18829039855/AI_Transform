@@ -83,16 +83,18 @@ public class UserConfigService {
     }
 
     /**
-     * 验证指定工号是否为有效用户
+     * 验证指定工号是否为有效用户（有工号即视为普通用户，全员开放）
      * @param account 工号（若首字符为英文字母会先去掉再查询，与 cookie/request 中 account 约定一致）
-     * @return true表示是有效用户，false表示不是有效用户或不存在
+     * @return true表示是有效用户，false表示未获取到工号
      */
     public boolean isValidUser(String account) {
         return getUserPermissionStatus(account).isMember();
     }
 
     /**
-     * 查询指定工号的权限状态（白名单成员 + 是否管理员）
+     * 查询指定工号的权限状态。
+     * 全员开放：有有效工号即默认普通用户（member=true）；
+     * 管理员 / 超级用户仍仅依据 user_config 表配置判定。
      * @param account 工号（若首字符为英文字母会先去掉再查询）
      */
     public UserPermissionStatusVO getUserPermissionStatus(String account) {
@@ -104,9 +106,10 @@ public class UserConfigService {
             return new UserPermissionStatusVO(false, false);
         }
 
+        // 全员默认普通用户；高级权限仍查配置表
         UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
         if (user == null) {
-            return new UserPermissionStatusVO(false, false);
+            return new UserPermissionStatusVO(true, false, false);
         }
         boolean asAdmin = parsePermissionFlag(user.getIsAdmin());
         boolean canEditCredit = asAdmin && parsePermissionFlag(user.getCanEditCredit());
