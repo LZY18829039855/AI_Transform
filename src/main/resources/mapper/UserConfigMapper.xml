@@ -34,6 +34,52 @@
         (is_deleted IS NULL OR is_deleted = '' OR is_deleted = '0' OR is_deleted = 'N' OR is_deleted = 'false')
     </sql>
 
+    <sql id="Admin_Flag_True">
+        (
+            is_admin = '1'
+            OR UPPER(is_admin) = 'Y'
+            OR UPPER(is_admin) = 'TRUE'
+            OR UPPER(is_admin) = 'YES'
+        )
+    </sql>
+
+    <sql id="Credit_Flag_True">
+        (
+            can_edit_credit = '1'
+            OR UPPER(can_edit_credit) = 'Y'
+            OR UPPER(can_edit_credit) = 'TRUE'
+            OR UPPER(can_edit_credit) = 'YES'
+        )
+    </sql>
+
+    <sql id="Role_Filter">
+        <if test="roleFilter != null and roleFilter != ''">
+            <choose>
+                <when test="roleFilter == 'super'">
+                    AND <include refid="Admin_Flag_True"/>
+                    AND <include refid="Credit_Flag_True"/>
+                </when>
+                <when test="roleFilter == 'admin'">
+                    AND <include refid="Admin_Flag_True"/>
+                    AND NOT <include refid="Credit_Flag_True"/>
+                </when>
+                <when test="roleFilter == 'member'">
+                    AND NOT <include refid="Admin_Flag_True"/>
+                </when>
+            </choose>
+        </if>
+    </sql>
+
+    <sql id="Role_Priority_Order">
+        ORDER BY
+            CASE
+                WHEN <include refid="Admin_Flag_True"/> AND <include refid="Credit_Flag_True"/> THEN 0
+                WHEN <include refid="Admin_Flag_True"/> THEN 1
+                ELSE 2
+            END ASC,
+            id DESC
+    </sql>
+
     <select id="countValidByAccount" resultType="long">
         SELECT COUNT(1)
         FROM user_config
@@ -42,6 +88,7 @@
             <if test="account != null and account != ''">
                 AND account LIKE CONCAT('%', #{account}, '%')
             </if>
+            <include refid="Role_Filter"/>
         </where>
     </select>
 
@@ -58,8 +105,9 @@
             <if test="account != null and account != ''">
                 AND account LIKE CONCAT('%', #{account}, '%')
             </if>
+            <include refid="Role_Filter"/>
         </where>
-        ORDER BY id DESC
+        <include refid="Role_Priority_Order"/>
         LIMIT #{limit} OFFSET #{offset}
     </select>
 
@@ -99,6 +147,31 @@
         WHERE account = #{account}
         ORDER BY id DESC
         LIMIT 1
+    </select>
+
+    <select id="selectByAccounts" resultType="com.huawei.aitransform.entity.UserConfigVO">
+        SELECT
+            id,
+            account,
+            is_admin AS isAdmin,
+            can_edit_credit AS canEditCredit,
+            is_deleted AS isDeleted
+        FROM user_config
+        WHERE account IN
+        <foreach collection="accounts" item="acc" open="(" separator="," close=")">
+            #{acc}
+        </foreach>
+        ORDER BY id DESC
+    </select>
+
+    <select id="selectValidAccountsByAccounts" resultType="java.lang.String">
+        SELECT DISTINCT account
+        FROM user_config
+        WHERE <include refid="Valid_Deleted_Filter"/>
+          AND account IN
+        <foreach collection="accounts" item="acc" open="(" separator="," close=")">
+            #{acc}
+        </foreach>
     </select>
 
     <insert id="insert" useGeneratedKeys="true" keyProperty="id">

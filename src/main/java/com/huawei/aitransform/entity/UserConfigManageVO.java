@@ -17,7 +17,7 @@ public class UserConfigManageVO implements Serializable {
     private String account;
 
     /**
-     * 员工姓名（来自员工表，可空）
+     * 员工姓名（来自 t_employee_training_info，可空）
      */
     private String employeeName;
 

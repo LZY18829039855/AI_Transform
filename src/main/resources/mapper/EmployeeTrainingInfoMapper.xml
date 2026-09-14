@@ -186,6 +186,50 @@
         LIMIT 1
     </select>
 
+    <!-- 根据工号列表查询基本信息（工号、姓名） -->
+    <select id="listBasicInfoByEmployeeNumbers" resultMap="BaseResultMap">
+        SELECT employee_number, last_name
+        FROM t_employee_training_info
+        WHERE employee_number IN
+        <foreach collection="employeeNumbers" item="empNo" open="(" separator="," close=")">
+            #{empNo}
+        </foreach>
+    </select>
+
+    <!-- 权限管理：按部门筛选成员（含该节点下全部人员） -->
+    <sql id="DeptMemberFilter">
+        <where>
+            <choose>
+                <when test="deptLevel == 1">firstdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 2">seconddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 3">thirddeptcode = #{deptCode}</when>
+                <when test="deptLevel == 4">fourthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 5">fifthdeptcode = #{deptCode}</when>
+                <when test="deptLevel == 6">sixthdeptcode = #{deptCode}</when>
+            </choose>
+            <if test="keyword != null and keyword != ''">
+                AND (
+                    last_name LIKE CONCAT('%', #{keyword}, '%')
+                    OR employee_number LIKE CONCAT('%', #{keyword}, '%')
+                )
+            </if>
+        </where>
+    </sql>
+
+    <select id="countMembersByDeptLevelAndCode" resultType="java.lang.Long">
+        SELECT COUNT(1)
+        FROM t_employee_training_info
+        <include refid="DeptMemberFilter"/>
+    </select>
+
+    <select id="listMembersByDeptLevelAndCodePaged" resultMap="BaseResultMap">
+        SELECT employee_number, last_name
+        FROM t_employee_training_info
+        <include refid="DeptMemberFilter"/>
+        ORDER BY employee_number ASC
+        LIMIT #{pageSize} OFFSET #{offset}
+    </select>
+
     <!-- 按工号更新实战完课列表及更新时间 -->
     <update id="updatePracticalCoursesByEmployeeNumber">
         UPDATE t_employee_training_info

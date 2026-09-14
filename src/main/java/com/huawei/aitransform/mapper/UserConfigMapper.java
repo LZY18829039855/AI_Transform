@@ -26,15 +26,17 @@ public interface UserConfigMapper {
     UserConfigVO selectValidUserByAccount(String account);
 
     /**
-     * 有效用户数量（可按工号模糊筛选）
+     * 有效用户数量（可按工号模糊、角色筛选）
+     * @param roleFilter super / admin / member，空表示全部
      */
-    long countValidByAccount(@Param("account") String account);
+    long countValidByAccount(@Param("account") String account, @Param("roleFilter") String roleFilter);
 
     /**
-     * 有效用户分页（可按工号模糊筛选）
+     * 有效用户分页（可按工号模糊、角色筛选；排序：超级用户 > 管理员 > 普通用户）
      */
     List<UserConfigVO> selectValidPage(
             @Param("account") String account,
+            @Param("roleFilter") String roleFilter,
             @Param("offset") int offset,
             @Param("limit") int limit);
 
@@ -52,6 +54,16 @@ public interface UserConfigMapper {
      * 按工号查询（含已删除，用于恢复软删记录）
      */
     UserConfigVO selectByAccount(@Param("account") String account);
+
+    /**
+     * 按工号列表查询（含已删除）
+     */
+    List<UserConfigVO> selectByAccounts(@Param("accounts") List<String> accounts);
+
+    /**
+     * 按工号列表查询有效配置的工号集合
+     */
+    List<String> selectValidAccountsByAccounts(@Param("accounts") List<String> accounts);
 
     int insert(UserConfigVO record);
 

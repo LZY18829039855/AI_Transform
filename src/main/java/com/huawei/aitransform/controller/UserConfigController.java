@@ -3,6 +3,9 @@ package com.huawei.aitransform.controller;
 import com.huawei.aitransform.common.PageResult;
 import com.huawei.aitransform.common.Result;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
+import com.huawei.aitransform.entity.UserConfigBatchRequestVO;
+import com.huawei.aitransform.entity.UserConfigBatchResultVO;
+import com.huawei.aitransform.entity.UserConfigDeptMemberVO;
 import com.huawei.aitransform.entity.UserConfigManageVO;
 import com.huawei.aitransform.entity.UserPermissionStatusVO;
 import com.huawei.aitransform.service.UserConfigService;
@@ -115,6 +118,7 @@ public class UserConfigController {
             HttpServletRequest request,
             @CookieValue(value = "account", required = false) String accountCookie,
             @RequestParam(value = "filterAccount", required = false) String filterAccount,
+            @RequestParam(value = "filterRole", required = false) String filterRole,
             @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
             @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
         String modifier = accountModifierResolver.resolveModifierNumber(request, accountCookie);
@@ -127,8 +131,65 @@ public class UserConfigController {
                     .body(Result.error(403, "暂无访问权限"));
         }
         try {
-            PageResult<UserConfigManageVO> data = userConfigService.page(filterAccount, pageNum, pageSize);
+            PageResult<UserConfigManageVO> data =
+                    userConfigService.page(filterAccount, filterRole, pageNum, pageSize);
             return ResponseEntity.ok(Result.success("查询成功", data));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 按部门查询可选成员（含该节点下全部下级人员）：admin 可查看
+     */
+    @GetMapping("/dept-members")
+    public ResponseEntity<Result<PageResult<UserConfigDeptMemberVO>>> listDeptMembers(
+            HttpServletRequest request,
+            @CookieValue(value = "account", required = false) String accountCookie,
+            @RequestParam(value = "deptId", required = true) String deptId,
+            @RequestParam(value = "keyword", required = false) String keyword,
+            @RequestParam(value = "pageNum", defaultValue = "1") int pageNum,
+            @RequestParam(value = "pageSize", defaultValue = "20") int pageSize) {
+        String modifier = accountModifierResolver.resolveModifierNumber(request, accountCookie);
+        if (!StringUtils.hasText(modifier)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Result.error(401, "未登录或无法从 Cookie 解析 account"));
+        }
+        if (!isAdmin(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无访问权限"));
+        }
+        try {
+            PageResult<UserConfigDeptMemberVO> data =
+                    userConfigService.pageDeptMembers(deptId, keyword, pageNum, pageSize);
+            return ResponseEntity.ok(Result.success("查询成功", data));
+        } catch (Exception e) {
+            return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
+        }
+    }
+
+    /**
+     * 批量新增/覆盖权限配置：超级用户可操作；同一套权限位，已存在则覆盖
+     */
+    @PostMapping("/batch")
+    public ResponseEntity<Result<UserConfigBatchResultVO>> batchCreate(
+            HttpServletRequest request,
+            @CookieValue(value = "account", required = false) String accountCookie,
+            @RequestBody UserConfigBatchRequestVO body) {
+        String modifier = accountModifierResolver.resolveModifierNumber(request, accountCookie);
+        if (!StringUtils.hasText(modifier)) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(Result.error(401, "未登录或无法从 Cookie 解析 account"));
+        }
+        if (!canEditCredit(modifier)) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(Result.error(403, "暂无权限配置更新权限"));
+        }
+        try {
+            UserConfigBatchResultVO data = userConfigService.batchUpsert(body, modifier);
+            return ResponseEntity.ok(Result.success("批量处理完成", data));
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.ok(Result.error(400, e.getMessage()));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
         }

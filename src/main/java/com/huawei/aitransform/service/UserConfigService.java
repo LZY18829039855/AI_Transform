@@ -2,13 +2,19 @@ package com.huawei.aitransform.service;
 
 import com.huawei.aitransform.common.PageResult;
 import com.huawei.aitransform.constant.DepartmentConstants;
-import com.huawei.aitransform.entity.EmployeePO;
+import com.huawei.aitransform.entity.DepartmentInfoVO;
+import com.huawei.aitransform.entity.EmployeeTrainingInfoPO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
+import com.huawei.aitransform.entity.UserConfigBatchRequestVO;
+import com.huawei.aitransform.entity.UserConfigBatchResultVO;
+import com.huawei.aitransform.entity.UserConfigDeptMemberVO;
 import com.huawei.aitransform.entity.UserConfigManageVO;
 import com.huawei.aitransform.entity.UserConfigPermissionResponseVO;
 import com.huawei.aitransform.entity.UserConfigVO;
 import com.huawei.aitransform.entity.UserPermissionStatusVO;
+import com.huawei.aitransform.mapper.DepartmentInfoMapper;
 import com.huawei.aitransform.mapper.EmployeeMapper;
+import com.huawei.aitransform.mapper.EmployeeTrainingInfoMapper;
 import com.huawei.aitransform.mapper.UserConfigMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,8 +26,11 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * 用户权限配置服务类
@@ -37,6 +46,12 @@ public class UserConfigService {
 
     @Autowired
     private EmployeeMapper employeeMapper;
+
+    @Autowired
+    private EmployeeTrainingInfoMapper employeeTrainingInfoMapper;
+
+    @Autowired
+    private DepartmentInfoMapper departmentInfoMapper;
 
     /**
      * 查询所有有效用户的权限，将用户分为admin和非admin两组
@@ -183,19 +198,186 @@ public class UserConfigService {
     }
 
     /**
-     * 权限管理分页列表（仅未删除记录）
+     * 权限管理分页列表（仅未删除记录；默认按超级用户 > 管理员 > 普通用户排序）
+     * @param roleFilter super / admin / member，空表示全部
      */
-    public PageResult<UserConfigManageVO> page(String account, int pageNum, int pageSize) {
+    public PageResult<UserConfigManageVO> page(String account, String roleFilter, int pageNum, int pageSize) {
         int pn = pageNum < 1 ? 1 : pageNum;
         int ps = pageSize < 1 ? DEFAULT_PAGE_SIZE : pageSize;
         if (ps > MAX_PAGE_SIZE) {
             ps = MAX_PAGE_SIZE;
         }
         String accountFilter = trimToNull(account);
+        String normalizedRole = normalizeRoleFilter(roleFilter);
         int offset = (pn - 1) * ps;
-        long total = userConfigMapper.countValidByAccount(accountFilter);
-        List<UserConfigVO> rows = userConfigMapper.selectValidPage(accountFilter, offset, ps);
+        long total = userConfigMapper.countValidByAccount(accountFilter, normalizedRole);
+        List<UserConfigVO> rows = userConfigMapper.selectValidPage(accountFilter, normalizedRole, offset, ps);
         return PageResult.of(total, toManageVOs(rows));
+    }
+
+    private String normalizeRoleFilter(String roleFilter) {
+        String role = trimToNull(roleFilter);
+        if (role == null) {
+            return null;
+        }
+        String lower = role.toLowerCase();
+        if ("super".equals(lower) || "admin".equals(lower) || "member".equals(lower)) {
+            return lower;
+        }
+        return null;
+    }
+
+    /**
+     * 按部门分页查询可选成员（含该节点下全部下级人员，数据源 t_employee_training_info）
+     */
+    public PageResult<UserConfigDeptMemberVO> pageDeptMembers(String deptId, String keyword, int pageNum, int pageSize) {
+        int pn = pageNum < 1 ? 1 : pageNum;
+        int ps = pageSize < 1 ? DEFAULT_PAGE_SIZE : pageSize;
+        if (ps > MAX_PAGE_SIZE) {
+            ps = MAX_PAGE_SIZE;
+        }
+        DepartmentInfoVO dept = resolveDepartment(deptId);
+        if (dept == null) {
+            return PageResult.of(0, Collections.<UserConfigDeptMemberVO>emptyList());
+        }
+        String kw = trimToNull(keyword);
+        int offset = (pn - 1) * ps;
+        Long totalObj = employeeTrainingInfoMapper.countMembersByDeptLevelAndCode(
+                dept.getDeptLevel(), dept.getDeptCode(), kw);
+        long total = totalObj == null ? 0L : totalObj;
+        if (total <= 0) {
+            return PageResult.of(0, Collections.<UserConfigDeptMemberVO>emptyList());
+        }
+        List<EmployeeTrainingInfoPO> rows = employeeTrainingInfoMapper.listMembersByDeptLevelAndCodePaged(
+                dept.getDeptLevel(), dept.getDeptCode(), kw, offset, ps);
+        if (rows == null || rows.isEmpty()) {
+            return PageResult.of(total, Collections.<UserConfigDeptMemberVO>emptyList());
+        }
+
+        List<String> accounts = new ArrayList<>();
+        for (EmployeeTrainingInfoPO row : rows) {
+            if (row != null && StringUtils.hasText(row.getEmployeeNumber())) {
+                accounts.add(row.getEmployeeNumber().trim());
+            }
+        }
+        Set<String> configured = new HashSet<>();
+        if (!accounts.isEmpty()) {
+            List<String> validAccounts = userConfigMapper.selectValidAccountsByAccounts(accounts);
+            if (validAccounts != null) {
+                for (String acc : validAccounts) {
+                    if (StringUtils.hasText(acc)) {
+                        configured.add(acc.trim());
+                    }
+                }
+            }
+        }
+
+        List<UserConfigDeptMemberVO> result = new ArrayList<>(rows.size());
+        for (EmployeeTrainingInfoPO row : rows) {
+            if (row == null || !StringUtils.hasText(row.getEmployeeNumber())) {
+                continue;
+            }
+            String account = row.getEmployeeNumber().trim();
+            String name = StringUtils.hasText(row.getLastName()) ? row.getLastName().trim() : null;
+            result.add(new UserConfigDeptMemberVO(account, name, configured.contains(account)));
+        }
+        return PageResult.of(total, result);
+    }
+
+    /**
+     * 批量新增/覆盖权限配置（同一套权限位）；已存在则覆盖更新（含软删恢复）
+     */
+    @Transactional(rollbackFor = Exception.class)
+    public UserConfigBatchResultVO batchUpsert(UserConfigBatchRequestVO body, String operatorAccount) {
+        UserConfigBatchResultVO result = new UserConfigBatchResultVO();
+        if (body == null || body.getAccounts() == null || body.getAccounts().isEmpty()) {
+            throw new IllegalArgumentException("工号列表不能为空");
+        }
+        boolean asAdmin = body.isAsAdmin();
+        boolean canEditCredit = asAdmin && body.isCanEditCredit();
+
+        // 去重并规范化工号，保留提交顺序
+        LinkedHashSet<String> normalizedAccounts = new LinkedHashSet<>();
+        for (String raw : body.getAccounts()) {
+            String normalized = normalizeAccountForLookup(raw);
+            if (StringUtils.hasText(normalized)) {
+                normalizedAccounts.add(normalized);
+            } else {
+                result.getItems().add(new UserConfigBatchResultVO.Item(
+                        raw == null ? "" : raw.trim(), "failed", "工号不能为空"));
+                result.setFailedCount(result.getFailedCount() + 1);
+            }
+        }
+        if (normalizedAccounts.isEmpty()) {
+            return result;
+        }
+
+        List<String> accountList = new ArrayList<>(normalizedAccounts);
+        Map<String, UserConfigVO> existingMap = new HashMap<>();
+        List<UserConfigVO> existingRows = userConfigMapper.selectByAccounts(accountList);
+        if (existingRows != null) {
+            for (UserConfigVO row : existingRows) {
+                if (row == null || !StringUtils.hasText(row.getAccount())) {
+                    continue;
+                }
+                String key = row.getAccount().trim();
+                // ORDER BY id DESC：保留每个工号最新一条
+                if (!existingMap.containsKey(key)) {
+                    existingMap.put(key, row);
+                }
+            }
+        }
+
+        for (String account : accountList) {
+            try {
+                if (isSameAccount(account, operatorAccount)
+                        && (!asAdmin || !canEditCredit)) {
+                    result.getItems().add(new UserConfigBatchResultVO.Item(
+                            account, "failed", "不能降低自己的权限"));
+                    result.setFailedCount(result.getFailedCount() + 1);
+                    continue;
+                }
+                UserConfigVO existing = existingMap.get(account);
+                if (existing == null) {
+                    UserConfigVO record = new UserConfigVO();
+                    record.setAccount(account);
+                    record.setIsAdmin(toFlag(asAdmin));
+                    record.setCanEditCredit(toFlag(canEditCredit));
+                    record.setIsDeleted("0");
+                    userConfigMapper.insert(record);
+                    result.getItems().add(new UserConfigBatchResultVO.Item(account, "created", "新增成功"));
+                    result.setCreatedCount(result.getCreatedCount() + 1);
+                } else {
+                    existing.setAccount(account);
+                    existing.setIsAdmin(toFlag(asAdmin));
+                    existing.setCanEditCredit(toFlag(canEditCredit));
+                    existing.setIsDeleted("0");
+                    userConfigMapper.updateById(existing);
+                    result.getItems().add(new UserConfigBatchResultVO.Item(account, "updated", "覆盖更新成功"));
+                    result.setUpdatedCount(result.getUpdatedCount() + 1);
+                }
+            } catch (Exception e) {
+                result.getItems().add(new UserConfigBatchResultVO.Item(
+                        account, "failed", e.getMessage() == null ? "处理失败" : e.getMessage()));
+                result.setFailedCount(result.getFailedCount() + 1);
+            }
+        }
+        return result;
+    }
+
+    private DepartmentInfoVO resolveDepartment(String deptId) {
+        if (!StringUtils.hasText(deptId)) {
+            return null;
+        }
+        String resolvedDeptId = deptId.trim();
+        if ("0".equals(resolvedDeptId)) {
+            resolvedDeptId = DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE;
+        }
+        DepartmentInfoVO dept = departmentInfoMapper.getDepartmentByCode(resolvedDeptId);
+        if (dept == null || dept.getDeptLevel() == null || dept.getDeptCode() == null) {
+            return null;
+        }
+        return dept;
     }
 
     /**
@@ -322,12 +504,14 @@ public class UserConfigService {
             return Collections.emptyMap();
         }
         try {
-            List<EmployeePO> employees = employeeMapper.getEmployeesByEmployeeNumbers(accounts);
+            // 从全员训战表取姓名（覆盖非研发族），避免仅依赖 t_employee（仅研发族+干部）
+            List<EmployeeTrainingInfoPO> employees =
+                    employeeTrainingInfoMapper.listBasicInfoByEmployeeNumbers(accounts);
             if (employees == null || employees.isEmpty()) {
                 return Collections.emptyMap();
             }
             Map<String, String> nameMap = new HashMap<>();
-            for (EmployeePO employee : employees) {
+            for (EmployeeTrainingInfoPO employee : employees) {
                 if (employee == null || !StringUtils.hasText(employee.getEmployeeNumber())) {
                     continue;
                 }

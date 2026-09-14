@@ -82,6 +82,32 @@ public interface EmployeeTrainingInfoMapper {
     EmployeeTrainingInfoPO selectByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     /**
+     * 根据工号列表查询基本信息（工号、姓名）
+     *
+     * @param employeeNumbers 工号列表
+     * @return 命中的记录（仅含 employeeNumber、lastName）
+     */
+    List<EmployeeTrainingInfoPO> listBasicInfoByEmployeeNumbers(
+            @Param("employeeNumbers") List<String> employeeNumbers);
+
+    /**
+     * 按部门统计成员数（含该节点下全部下级人员；keyword 匹配姓名或工号）
+     */
+    Long countMembersByDeptLevelAndCode(@Param("deptLevel") String deptLevel,
+                                        @Param("deptCode") String deptCode,
+                                        @Param("keyword") String keyword);
+
+    /**
+     * 按部门分页查询成员基本信息（含该节点下全部下级人员）
+     */
+    List<EmployeeTrainingInfoPO> listMembersByDeptLevelAndCodePaged(
+            @Param("deptLevel") String deptLevel,
+            @Param("deptCode") String deptCode,
+            @Param("keyword") String keyword,
+            @Param("offset") int offset,
+            @Param("pageSize") int pageSize);
+
+    /**
      * 按工号更新实战完课列表及更新时间
      *
      * @param employeeNumber  工号
