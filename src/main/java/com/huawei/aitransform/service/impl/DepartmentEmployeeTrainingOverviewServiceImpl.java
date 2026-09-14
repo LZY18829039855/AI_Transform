@@ -14,7 +14,9 @@ import org.springframework.stereotype.Service;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
@@ -26,8 +28,9 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
 
     private static final int DEFAULT_PAGE_NUM = 1;
     private static final int DEFAULT_PAGE_SIZE = 50;
-    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
-            "basicCompletedCount", "advancedCompletedCount", "practicalCompletedCount");
+    private static final Set<String> ALLOWED_SORT_FIELDS = Collections.unmodifiableSet(
+            new HashSet<>(Arrays.asList(
+                    "basicCompletedCount", "advancedCompletedCount", "practicalCompletedCount")));
 
     @Autowired
     private DepartmentInfoMapper departmentInfoMapper;
