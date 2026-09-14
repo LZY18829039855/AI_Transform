@@ -57,6 +57,15 @@ public interface EmployeeMapper {
     EmployeePO getEmployeeByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
 
     /**
+     * 按工号实时查询个人任职认证信息（不依赖 t_employee，不过滤职位族）。
+     * 基本信息取自 t_employee_sync 该工号最新期号；任职/认证达标与详情计算口径与同步写入 t_employee 一致。
+     *
+     * @param employeeNumber 工号
+     * @return 员工PO（不存在返回 null）
+     */
+    EmployeePO getRealtimeEmployeeCertQualifiedByEmployeeNumber(@Param("employeeNumber") String employeeNumber);
+
+    /**
      * 查询员工已通过的科目二考试明细（指定 exam_code + is_pass=1）
      */
     List<com.huawei.aitransform.entity.Subject2ExamDetailVO> getPassedSubject2ExamsByEmployeeNumber(

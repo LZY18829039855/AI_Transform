@@ -20,7 +20,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- * 个人任职/认证信息查询（基于 t_employee 表）
+ * 个人任职/认证信息查询（实时计算，口径与同步写入 t_employee 一致）
  */
 @RestController
 @RequestMapping("/employee")
@@ -33,7 +33,8 @@ public class EmployeePersonalCertQualifiedController {
     private EmployeeMapper employeeMapper;
 
     /**
-     * 查询个人任职认证信息：account 入参优先，否则从 Cookie 解析工号
+     * 查询个人任职认证信息：account 入参优先，否则从 Cookie 解析工号。
+     * 实时从 t_employee_sync + 任职/认证/考试表计算，不过滤职位族。
      *
      * @param request       HTTP请求对象
      * @param account       工号入参（可选）
@@ -60,7 +61,7 @@ public class EmployeePersonalCertQualifiedController {
                 return ResponseEntity.ok(Result.error(400, "未获取到用户信息，请先登录"));
             }
 
-            EmployeePO employee = employeeMapper.getEmployeeByEmployeeNumber(empNum);
+            EmployeePO employee = employeeMapper.getRealtimeEmployeeCertQualifiedByEmployeeNumber(empNum);
             if (employee == null) {
                 return ResponseEntity.ok(Result.error(404, "未查询到该工号对应的员工信息"));
             }
