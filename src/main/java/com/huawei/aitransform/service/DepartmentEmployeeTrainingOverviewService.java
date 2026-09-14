@@ -24,6 +24,8 @@ public interface DepartmentEmployeeTrainingOverviewService {
      * @param aiMaturity      可选 L1/L2/L3
      * @param name            姓名模糊（可选）
      * @param employeeNumber  工号模糊（可选）
+     * @param sortField       排序字段（可选）：basicCompletedCount / advancedCompletedCount / practicalCompletedCount
+     * @param sortOrder       排序方向（可选）：asc / desc
      * @param pageNum         页码，从 1 开始
      * @param pageSize        每页条数
      */
@@ -33,6 +35,8 @@ public interface DepartmentEmployeeTrainingOverviewService {
             String aiMaturity,
             String name,
             String employeeNumber,
+            String sortField,
+            String sortOrder,
             Integer pageNum,
             Integer pageSize);
 }

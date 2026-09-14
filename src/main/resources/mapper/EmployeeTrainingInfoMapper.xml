@@ -299,7 +299,47 @@
                cadre_position_ai_maturity, expert_position_ai_maturity
         FROM t_employee_training_info
         <include refid="OverviewDeptFilter"/>
-        ORDER BY employee_number ASC
+        <choose>
+            <when test="sortField == 'basicCompletedCount'">
+                ORDER BY
+                CASE
+                    WHEN basic_courses IS NULL OR TRIM(basic_courses) = '' THEN 0
+                    ELSE LENGTH(basic_courses) - LENGTH(REPLACE(basic_courses, ',', '')) + 1
+                END
+                <choose>
+                    <when test="sortOrder == 'DESC'">DESC</when>
+                    <otherwise>ASC</otherwise>
+                </choose>
+                , employee_number ASC
+            </when>
+            <when test="sortField == 'advancedCompletedCount'">
+                ORDER BY
+                CASE
+                    WHEN advanced_courses IS NULL OR TRIM(advanced_courses) = '' THEN 0
+                    ELSE LENGTH(advanced_courses) - LENGTH(REPLACE(advanced_courses, ',', '')) + 1
+                END
+                <choose>
+                    <when test="sortOrder == 'DESC'">DESC</when>
+                    <otherwise>ASC</otherwise>
+                </choose>
+                , employee_number ASC
+            </when>
+            <when test="sortField == 'practicalCompletedCount'">
+                ORDER BY
+                CASE
+                    WHEN practical_courses IS NULL OR TRIM(practical_courses) = '' THEN 0
+                    ELSE LENGTH(practical_courses) - LENGTH(REPLACE(practical_courses, ',', '')) + 1
+                END
+                <choose>
+                    <when test="sortOrder == 'DESC'">DESC</when>
+                    <otherwise>ASC</otherwise>
+                </choose>
+                , employee_number ASC
+            </when>
+            <otherwise>
+                ORDER BY employee_number ASC
+            </otherwise>
+        </choose>
         LIMIT #{pageSize} OFFSET #{offset}
     </select>
 </mapper>

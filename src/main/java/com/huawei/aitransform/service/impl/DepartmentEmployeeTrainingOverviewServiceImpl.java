@@ -16,6 +16,7 @@ import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 /**
  * 部门全员训战总览（下钻）服务实现
@@ -25,6 +26,8 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
 
     private static final int DEFAULT_PAGE_NUM = 1;
     private static final int DEFAULT_PAGE_SIZE = 50;
+    private static final Set<String> ALLOWED_SORT_FIELDS = Set.of(
+            "basicCompletedCount", "advancedCompletedCount", "practicalCompletedCount");
 
     @Autowired
     private DepartmentInfoMapper departmentInfoMapper;
@@ -51,6 +54,8 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
             String aiMaturity,
             String name,
             String employeeNumber,
+            String sortField,
+            String sortOrder,
             Integer pageNum,
             Integer pageSize) {
         int pn = (pageNum == null || pageNum < 1) ? DEFAULT_PAGE_NUM : pageNum;
@@ -70,6 +75,8 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
 
         String nameFilter = trimToNull(name);
         String empFilter = trimToNull(employeeNumber);
+        String normalizedSortField = normalizeSortField(sortField);
+        String normalizedSortOrder = normalizeSortOrder(sortOrder);
         Long total = employeeTrainingInfoMapper.countOverviewByDeptLevelAndCode(
                 dept.getDeptLevel(), dept.getDeptCode(), personType, aiMaturity, nameFilter, empFilter);
         long totalCount = total == null ? 0L : total;
@@ -89,10 +96,28 @@ public class DepartmentEmployeeTrainingOverviewServiceImpl implements Department
                 aiMaturity,
                 nameFilter,
                 empFilter,
+                normalizedSortField,
+                normalizedSortOrder,
                 offset,
                 ps);
         response.setRecords(mapToVoList(list));
         return response;
+    }
+
+    private static String normalizeSortField(String sortField) {
+        String field = trimToNull(sortField);
+        if (field == null || !ALLOWED_SORT_FIELDS.contains(field)) {
+            return null;
+        }
+        return field;
+    }
+
+    private static String normalizeSortOrder(String sortOrder) {
+        String order = trimToNull(sortOrder);
+        if (order == null) {
+            return "ASC";
+        }
+        return "DESC".equalsIgnoreCase(order) ? "DESC" : "ASC";
     }
 
     private DepartmentInfoVO resolveDepartment(String deptId) {

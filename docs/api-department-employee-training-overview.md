@@ -27,13 +27,15 @@
 | ai_maturity    | String  | Query    | 否       | 岗位 AI 成熟度：L1/L2/L3；仅 personType=1 或 2 时可用 |
 | name           | String  | Query    | 否       | 姓名模糊筛选 |
 | employeeNumber | String  | Query    | 否       | 工号模糊筛选 |
+| sortField      | String  | Query    | 否       | 排序字段：`basicCompletedCount`（基础完课数）/ `advancedCompletedCount`（进阶完课数）/ `practicalCompletedCount`（实战完课数）；不传则按工号升序 |
+| sortOrder      | String  | Query    | 否       | 排序方向：`asc` / `desc`（不区分大小写）；仅在传入合法 sortField 时生效，默认 `asc` |
 | pageNum        | Integer | Query    | 否       | 页码，从 1 开始，默认 1 |
 | pageSize       | Integer | Query    | 否       | 每页条数，默认 50 |
 
 **请求示例：**
 
 ```http
-GET /personal-course/department-employee-training-overview?deptId=030681&personType=0&pageNum=1&pageSize=50 HTTP/1.1
+GET /personal-course/department-employee-training-overview?deptId=030681&personType=0&pageNum=1&pageSize=50&sortField=basicCompletedCount&sortOrder=desc HTTP/1.1
 Host: example.com
 ```
 

@@ -56,7 +56,10 @@ public interface EmployeeTrainingInfoMapper {
                                          @Param("employeeNumber") String employeeNumber);
 
     /**
-     * 部门训战总览下钻：分页查询本部门人员（支持姓名/工号模糊）
+     * 部门训战总览下钻：分页查询本部门人员（支持姓名/工号模糊及完课数排序）
+     *
+     * @param sortField 排序字段：basicCompletedCount / advancedCompletedCount / practicalCompletedCount；空则按工号
+     * @param sortOrder ASC 或 DESC；空则 ASC
      */
     List<EmployeeTrainingInfoPO> listOverviewByDeptLevelAndCodePaged(
             @Param("deptLevel") String deptLevel,
@@ -65,6 +68,8 @@ public interface EmployeeTrainingInfoMapper {
             @Param("aiMaturity") String aiMaturity,
             @Param("name") String name,
             @Param("employeeNumber") String employeeNumber,
+            @Param("sortField") String sortField,
+            @Param("sortOrder") String sortOrder,
             @Param("offset") int offset,
             @Param("pageSize") int pageSize);
 

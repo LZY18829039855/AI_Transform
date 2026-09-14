@@ -155,13 +155,16 @@ public class PersonalCourseCompletionController {
 
     /**
      * 部门全员训战总览（下钻）：根据部门ID返回该部门下全员训战明细（含基础/进阶/实战及合计）
-     * 支持分页（pageNum/pageSize，默认 1/50）及姓名、工号模糊筛选，响应结构对齐学分明细
+     * 支持分页（pageNum/pageSize，默认 1/50）、姓名/工号模糊筛选，以及基础/进阶/实战完课数排序（sortField/sortOrder）
+     * 响应结构对齐学分明细
      *
      * @param deptId         部门ID（部门编码）；传 0 时在服务层解析为云核心网二级部门编码
      * @param personType     人员类型：0 全员；1 干部；2 专家
      * @param aiMaturity     岗位 AI 成熟度（可选）：L1、L2、L3
      * @param name           姓名模糊（可选）
      * @param employeeNumber 工号模糊（可选）
+     * @param sortField      排序字段（可选）：basicCompletedCount / advancedCompletedCount / practicalCompletedCount
+     * @param sortOrder      排序方向（可选）：asc / desc
      * @param pageNum        页码，默认 1
      * @param pageSize       每页条数，默认 50
      */
@@ -172,6 +175,8 @@ public class PersonalCourseCompletionController {
             @RequestParam(value = "ai_maturity", required = false) String aiMaturity,
             @RequestParam(value = "name", required = false) String name,
             @RequestParam(value = "employeeNumber", required = false) String employeeNumber,
+            @RequestParam(value = "sortField", required = false) String sortField,
+            @RequestParam(value = "sortOrder", required = false) String sortOrder,
             @RequestParam(value = "pageNum", required = false, defaultValue = "1") Integer pageNum,
             @RequestParam(value = "pageSize", required = false, defaultValue = "50") Integer pageSize) {
         try {
@@ -195,7 +200,7 @@ public class PersonalCourseCompletionController {
             }
             DepartmentEmployeeTrainingOverviewResponseVO data =
                     departmentEmployeeTrainingOverviewService.getDepartmentEmployeeTrainingOverviewPage(
-                            deptId.trim(), pt, maturityFilter, name, employeeNumber, pageNum, pageSize);
+                            deptId.trim(), pt, maturityFilter, name, employeeNumber, sortField, sortOrder, pageNum, pageSize);
             return ResponseEntity.ok(Result.success("查询成功", data));
         } catch (Exception e) {
             return ResponseEntity.ok(Result.error(500, "系统异常：" + e.getMessage()));
