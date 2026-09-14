@@ -34,6 +34,15 @@ public interface EmployeeMapper {
                                                  @Param("secondDeptCode") String secondDeptCode);
 
     /**
+     * 校验工号是否属于指定二级部门（查 t_employee_sync，取最新一条）
+     * @param secondDeptCode 二级部门编码
+     * @param employeeNumber 工号
+     * @return 最新记录 id，不存在则返回 null
+     */
+    Long findLatestIdBySecondDeptCodeAndEmployeeNumber(@Param("secondDeptCode") String secondDeptCode,
+                                                       @Param("employeeNumber") String employeeNumber);
+
+    /**
      * 根据工号列表从 t_employee 表查询员工基本信息
      * @param employeeNumbers 工号列表
      * @return 员工PO列表

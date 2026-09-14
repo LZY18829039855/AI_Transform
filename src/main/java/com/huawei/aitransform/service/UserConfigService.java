@@ -1,6 +1,7 @@
 package com.huawei.aitransform.service;
 
 import com.huawei.aitransform.common.PageResult;
+import com.huawei.aitransform.constant.DepartmentConstants;
 import com.huawei.aitransform.entity.EmployeePO;
 import com.huawei.aitransform.entity.UserAccountResponseVO;
 import com.huawei.aitransform.entity.UserConfigManageVO;
@@ -83,9 +84,9 @@ public class UserConfigService {
     }
 
     /**
-     * 验证指定工号是否为有效用户（有工号即视为普通用户，全员开放）
+     * 验证指定工号是否为有效用户（须为云核心网产品线成员）
      * @param account 工号（若首字符为英文字母会先去掉再查询，与 cookie/request 中 account 约定一致）
-     * @return true表示是有效用户，false表示未获取到工号
+     * @return true表示是有效用户，false表示未获取到工号或不在云核心网产品线
      */
     public boolean isValidUser(String account) {
         return getUserPermissionStatus(account).isMember();
@@ -93,8 +94,8 @@ public class UserConfigService {
 
     /**
      * 查询指定工号的权限状态。
-     * 全员开放：有有效工号即默认普通用户（member=true）；
-     * 管理员 / 超级用户仍仅依据 user_config 表配置判定。
+     * 普通用户：登录工号须在 t_employee_sync 中属于云核心网产品线（seconddeptcode=031562）；
+     * 管理员 / 超级用户仍仅依据 user_config 表配置判定（且同样须先具备普通用户权限）。
      * @param account 工号（若首字符为英文字母会先去掉再查询）
      */
     public UserPermissionStatusVO getUserPermissionStatus(String account) {
@@ -106,7 +107,13 @@ public class UserConfigService {
             return new UserPermissionStatusVO(false, false);
         }
 
-        // 全员默认普通用户；高级权限仍查配置表
+        // 仅云核心网产品线成员具备普通用户权限
+        Long syncId = employeeMapper.findLatestIdBySecondDeptCodeAndEmployeeNumber(
+                DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE, normalized);
+        if (syncId == null) {
+            return new UserPermissionStatusVO(false, false, false);
+        }
+
         UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
         if (user == null) {
             return new UserPermissionStatusVO(true, false, false);

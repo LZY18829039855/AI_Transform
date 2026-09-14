@@ -865,6 +865,16 @@
         GROUP BY e.employee_number
     </select>
 
+    <!-- 校验工号是否属于指定二级部门（取最新一条同步记录） -->
+    <select id="findLatestIdBySecondDeptCodeAndEmployeeNumber" resultType="java.lang.Long">
+        SELECT id
+        FROM t_employee_sync
+        WHERE seconddeptcode = #{secondDeptCode}
+          AND employee_number = #{employeeNumber}
+        ORDER BY id DESC
+        LIMIT 1
+    </select>
+
     <!-- 根据工号列表和期号查询员工同步数据（不过滤职位族） -->
     <select id="getEmployeeSyncDataByEmployeeNumbers" resultType="com.huawei.aitransform.entity.EmployeeSyncDataVO">
         SELECT 

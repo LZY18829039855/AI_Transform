@@ -70,7 +70,7 @@ public class UserConfigController {
      * 查询当前用户权限状态（工号取自 request 中的 account cookie；若首字符为英文字母，校验前会去掉该首字符）
      * @param request HTTP请求对象，用于获取cookie
      * @param accountCookie 从cookie中获取的工号（可选，如果cookie名称为account）
-     * @return member 表示是否具备普通用户访问权限（全员开放：有工号即为 true），
+     * @return member 表示是否具备普通用户访问权限（须为云核心网产品线成员），
      * asAdmin 表示是否为管理员（查 user_config），
      * canEditCredit 表示是否可更新多元化学分（查 user_config）
      */
