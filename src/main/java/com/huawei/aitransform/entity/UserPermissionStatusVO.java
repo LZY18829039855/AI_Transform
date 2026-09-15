@@ -10,7 +10,7 @@ public class UserPermissionStatusVO implements Serializable {
     private static final long serialVersionUID = 1L;
 
     /**
-     * 是否具备普通用户访问权限（须为云核心网产品线成员）
+     * 是否具备普通用户访问权限（云核心网产品线成员，或 user_config 白名单用户）
      */
     private boolean member;
 

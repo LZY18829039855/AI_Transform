@@ -99,9 +99,9 @@ public class UserConfigService {
     }
 
     /**
-     * 验证指定工号是否为有效用户（须为云核心网产品线成员）
+     * 验证指定工号是否为有效用户（云核心网产品线成员，或在 user_config 白名单中）
      * @param account 工号（若首字符为英文字母会先去掉再查询，与 cookie/request 中 account 约定一致）
-     * @return true表示是有效用户，false表示未获取到工号或不在云核心网产品线
+     * @return true表示具备访问权限，false表示未获取到工号且不在云核/白名单
      */
     public boolean isValidUser(String account) {
         return getUserPermissionStatus(account).isMember();
@@ -109,8 +109,11 @@ public class UserConfigService {
 
     /**
      * 查询指定工号的权限状态。
-     * 普通用户：登录工号须在 t_employee_sync 中属于云核心网产品线（seconddeptcode=031562）；
-     * 管理员 / 超级用户仍仅依据 user_config 表配置判定（且同样须先具备普通用户权限）。
+     * 访问权限判定顺序：
+     * 1. 优先：登录工号在 t_employee_sync 中属于云核心网产品线（seconddeptcode=031562）→ 具备普通访问权限；
+     * 2. 否则：查询 user_config 有效白名单，存在则同样具备访问权限；
+     * 3. 均不满足 → 无权限。
+     * 管理员 / 超级用户等细粒度权限一律按 user_config 配置判定。
      * @param account 工号（若首字符为英文字母会先去掉再查询）
      */
     public UserPermissionStatusVO getUserPermissionStatus(String account) {
@@ -122,14 +125,16 @@ public class UserConfigService {
             return new UserPermissionStatusVO(false, false);
         }
 
-        // 仅云核心网产品线成员具备普通用户权限
-        Long syncId = employeeMapper.findLatestIdBySecondDeptCodeAndEmployeeNumber(
-                DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE, normalized);
-        if (syncId == null) {
+        boolean isCloudCoreMember = employeeMapper.findLatestIdBySecondDeptCodeAndEmployeeNumber(
+                DepartmentConstants.CLOUD_CORE_NETWORK_DEPT_CODE, normalized) != null;
+        UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
+
+        // 非云核且不在白名单：无访问权限
+        if (!isCloudCoreMember && user == null) {
             return new UserPermissionStatusVO(false, false, false);
         }
 
-        UserConfigVO user = userConfigMapper.selectValidUserByAccount(normalized);
+        // 云核员工，或白名单用户：具备普通访问权限；细粒度权限读 user_config
         if (user == null) {
             return new UserPermissionStatusVO(true, false, false);
         }
